@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://REEMPLAZAR-CON-TU-URL-RAILWAY.railway.app/api/:path*" },
+    { "source": "/uploads/:path*", "destination": "https://REEMPLAZAR-CON-TU-URL-RAILWAY.railway.app/uploads/:path*" }
+  ]
+}

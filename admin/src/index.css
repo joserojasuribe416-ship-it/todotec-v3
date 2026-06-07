@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --blue:      #1E3A8A;
+    --blue-mid:  #0067B1;
+    --blue-bg:   #EEF4FF;
+    --yellow:    #FFD100;
+    --yellow-dk: #E6BC00;
+    --black:     #0A0A0A;
+    --ink:       #111827;
+    --gray:      #6B7280;
+    --gray-lt:   #F7F8FA;
+    --border:    #E5E7EB;
+    --white:     #FFFFFF;
+    --sidebar-w: 240px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    @apply bg-gray-50 text-gray-900;
+    font-family: system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-weight: 800; }
+}
+
+@layer components {
+  /* ── Buttons ── */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 font-bold px-4 py-2 rounded-lg transition-all duration-150 text-sm;
+    background: var(--yellow);
+    color: var(--blue);
+  }
+  .btn-primary:hover { background: var(--yellow-dk); }
+
+  .btn-blue {
+    @apply inline-flex items-center gap-2 font-bold px-4 py-2 rounded-lg transition-all duration-150 text-sm;
+    background: var(--blue);
+    color: #fff;
+  }
+  .btn-blue:hover { background: var(--blue-mid); }
+
+  .btn-danger {
+    @apply inline-flex items-center gap-2 font-bold px-4 py-2 rounded-lg transition-all duration-150 text-sm bg-red-600 hover:bg-red-700 text-white;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 font-semibold px-4 py-2 rounded-lg transition-all duration-150 text-sm;
+    border: 1.5px solid var(--border);
+    color: var(--gray);
+    background: var(--white);
+  }
+  .btn-ghost:hover { border-color: #9CA3AF; color: var(--ink); }
+
+  /* ── Card ── */
+  .card {
+    @apply bg-white rounded-xl p-6;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+
+  /* ── Form inputs ── */
+  .input {
+    @apply w-full text-sm rounded-lg px-3 py-2.5 outline-none transition-all duration-150;
+    border: 1.5px solid var(--border);
+    background: var(--gray-lt);
+    color: var(--ink);
+  }
+  .input:focus {
+    border-color: var(--blue);
+    background: var(--white);
+    box-shadow: 0 0 0 3px rgba(30,58,138,0.08);
+  }
+
+  .label {
+    @apply block text-xs font-bold mb-1.5 uppercase tracking-wide;
+    color: var(--gray);
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Badges ── */
+  .badge      { @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold; }
+  .badge-green  { background: #DCFCE7; color: #166534; }
+  .badge-yellow { background: #FEF9C3; color: #854D0E; }
+  .badge-red    { background: #FEE2E2; color: #991B1B; }
+  .badge-blue   { background: var(--blue-bg); color: var(--blue); }
+  .badge-gray   { background: var(--border); color: #374151; }
+
+  /* ── Table ── */
+  .table-th {
+    @apply text-left px-4 py-3;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gray);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    background: var(--gray-lt);
+  }
+  .table-td { @apply px-4 py-3 text-sm; color: var(--ink); }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--gray-lt); }
+::-webkit-scrollbar-thumb { background: var(--blue); border-radius: 2px; }
+
+/* Spinner */
+.spin {
+  width: 28px; height: 28px;
+  border: 3px solid var(--border);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

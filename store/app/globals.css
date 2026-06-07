@@ -1,0 +1,172 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --blue:       #1E3A8A;
+    --blue-mid:   #0067B1;
+    --blue-light: #EEF4FF;
+    --yellow:     #FFD100;
+    --yellow-dark:#E6BC00;
+    --black:      #0A0A0A;
+    --gray-dark:  #374151;
+    --gray:       #6B7280;
+    --gray-light: #F7F8FA;
+    --border:     #E5E7EB;
+    --white:      #FFFFFF;
+    --ease:       cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    color: var(--black);
+    background: var(--white);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 { font-weight: 800; line-height: 1.1; color: var(--black); }
+  a { transition: color 0.2s var(--ease), opacity 0.2s var(--ease); }
+}
+
+@layer components {
+  /* ── Buttons ── */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 font-bold px-6 py-3 rounded-lg;
+    background: var(--yellow);
+    color: var(--blue);
+    transition: background 0.35s var(--ease), box-shadow 0.35s var(--ease);
+  }
+  .btn-primary:hover { background: var(--yellow-dark); box-shadow: 0 2px 12px rgba(255,209,0,0.25); }
+
+  .btn-dark {
+    @apply inline-flex items-center gap-2 font-bold px-6 py-3 rounded-lg;
+    background: var(--black);
+    color: var(--white);
+    transition: background 0.35s var(--ease);
+  }
+  .btn-dark:hover { background: var(--blue); }
+
+  .btn-outline {
+    @apply inline-flex items-center gap-2 font-bold px-6 py-3 rounded-lg border-2;
+    border-color: var(--black);
+    color: var(--black);
+    transition: background 0.3s var(--ease), color 0.3s var(--ease);
+  }
+  .btn-outline:hover { background: var(--black); color: var(--white); }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 font-semibold px-4 py-2 rounded-lg;
+    color: var(--gray);
+    transition: background 0.3s var(--ease), color 0.3s var(--ease);
+  }
+  .btn-ghost:hover { background: var(--gray-light); color: var(--black); }
+
+  /* ── Product card ── */
+  .product-card {
+    @apply block bg-white overflow-hidden;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: box-shadow 0.4s var(--ease), border-color 0.4s var(--ease), transform 0.4s var(--ease);
+    will-change: transform;
+  }
+  .product-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(30,58,138,0.08);
+    border-color: #d4e0f7;
+  }
+
+  /* Image zoom inside card */
+  .product-card .card-img {
+    transition: transform 0.6s var(--ease);
+  }
+  .product-card:hover .card-img { transform: scale(1.04); }
+
+  /* ── Add-to-cart button ── */
+  .add-cart-btn {
+    transition: background 0.3s var(--ease), box-shadow 0.3s var(--ease);
+  }
+  .add-cart-btn:hover {
+    background: var(--yellow-dark) !important;
+    box-shadow: 0 2px 10px rgba(255,209,0,0.3);
+  }
+
+  /* ── Nav links ── */
+  .nav-link {
+    transition: color 0.25s var(--ease), background 0.25s var(--ease);
+  }
+  .nav-link:hover { color: var(--blue) !important; background: var(--blue-light) !important; }
+
+  /* ── Category pills ── */
+  .cat-pill {
+    transition: background 0.25s var(--ease), color 0.25s var(--ease), border-color 0.25s var(--ease);
+  }
+  .cat-pill:hover { opacity: 0.8; }
+
+  /* ── Hero CTA ── */
+  .hero-cta-yellow {
+    transition: background 0.3s var(--ease), box-shadow 0.3s var(--ease);
+  }
+  .hero-cta-yellow:hover {
+    background: var(--yellow-dark) !important;
+    box-shadow: 0 4px 16px rgba(255,209,0,0.3);
+  }
+
+  .hero-cta-outline {
+    transition: background 0.3s var(--ease);
+  }
+  .hero-cta-outline:hover { background: rgba(255,255,255,0.1) !important; }
+
+  /* ── Wholesale CTA ── */
+  .wholesale-cta {
+    transition: background 0.3s var(--ease), box-shadow 0.3s var(--ease);
+  }
+  .wholesale-cta:hover {
+    background: var(--yellow-dark) !important;
+    box-shadow: 0 4px 14px rgba(255,209,0,0.25);
+  }
+
+  /* ── Cart icon ── */
+  .cart-icon {
+    transition: opacity 0.25s var(--ease);
+  }
+  .cart-icon:hover { opacity: 0.75; }
+
+  /* ── Footer social ── */
+  .social-icon {
+    transition: background 0.3s var(--ease), color 0.3s var(--ease);
+  }
+  .social-icon:hover {
+    background: var(--yellow) !important;
+    color: var(--blue) !important;
+  }
+
+  /* ── Input ── */
+  .tt-input {
+    @apply w-full text-sm outline-none bg-transparent;
+    color: var(--black);
+  }
+  .tt-input::placeholder { color: var(--gray); }
+
+  /* ── Trust bar items ── */
+  .trust-item {
+    transition: background 0.2s var(--ease);
+  }
+  .trust-item:hover { background: #EEF4FF; }
+
+  /* ── Page fade-in ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fade-up { animation: fadeUp 0.7s var(--ease) both; }
+  .fade-up-1 { animation-delay: 0.08s; }
+  .fade-up-2 { animation-delay: 0.18s; }
+  .fade-up-3 { animation-delay: 0.28s; }
+  .fade-up-4 { animation-delay: 0.38s; }
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--gray-light); }
+::-webkit-scrollbar-thumb { background: var(--blue); border-radius: 2px; }
