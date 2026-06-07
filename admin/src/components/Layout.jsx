@@ -86,7 +86,7 @@ export default function Layout() {
         {/* Store link */}
         <div style={{ padding: '12px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           <a
-            href="http://localhost:3000"
+            href="https://todotec-v3-jtnk.vercel.app"
             target="_blank"
             rel="noopener noreferrer"
             style={{
