@@ -4,6 +4,7 @@ import {
   TrendingUp, Settings, Store, Menu, X, ChevronRight, Tag
 } from 'lucide-react'
 import { useState } from 'react'
+import { useTheme } from '../context/ThemeContext'
 
 const NAV = [
   { to: '/',              icon: LayoutDashboard, label: 'Dashboard' },
@@ -19,6 +20,7 @@ const NAV = [
 export default function Layout() {
   const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
+  const { companyName, logoUrl } = useTheme()
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: '#F7F8FA', overflow: 'hidden' }}>
@@ -39,15 +41,21 @@ export default function Layout() {
           display: 'flex', alignItems: 'center', gap: 10,
           padding: '20px 20px 18px', borderBottom: '1px solid rgba(255,255,255,0.06)'
         }}>
-          <div style={{
-            width: 38, height: 38, background: 'var(--brand-primary, #1E3A8A)', borderRadius: 10,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            border: '2px solid var(--brand-secondary, #FFD100)', flexShrink: 0
-          }}>
-            <span style={{ color: 'var(--brand-secondary, #FFD100)', fontWeight: 900, fontSize: 14, letterSpacing: '-1px' }}>TT</span>
-          </div>
+          {logoUrl ? (
+            <img src={logoUrl} alt={companyName} style={{ width: 38, height: 38, objectFit: 'contain', borderRadius: 8, flexShrink: 0, background: '#fff' }} />
+          ) : (
+            <div style={{
+              width: 38, height: 38, background: 'var(--brand-primary, #1E3A8A)', borderRadius: 10,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              border: '2px solid var(--brand-secondary, #FFD100)', flexShrink: 0
+            }}>
+              <span style={{ color: 'var(--brand-secondary, #FFD100)', fontWeight: 900, fontSize: 14, letterSpacing: '-1px' }}>
+                {companyName.slice(0, 2).toUpperCase()}
+              </span>
+            </div>
+          )}
           <div>
-            <div style={{ fontWeight: 900, fontSize: 16, color: '#fff', letterSpacing: '-0.3px' }}>TodoTec</div>
+            <div style={{ fontWeight: 900, fontSize: 16, color: '#fff', letterSpacing: '-0.3px' }}>{companyName}</div>
             <div style={{ fontSize: 10, color: '#4B5563', fontWeight: 600, letterSpacing: '0.5px' }}>ADMIN PANEL</div>
           </div>
           <button onClick={() => setOpen(false)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280' }} className="lg:hidden">

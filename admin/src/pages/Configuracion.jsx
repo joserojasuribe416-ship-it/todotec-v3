@@ -69,7 +69,7 @@ function ColorPalette({ colors, selected, onChange }) {
 export default function Configuracion() {
   const [form, setForm] = useState(null)
   const [uploading, setUploading] = useState(false)
-  const { updateTheme } = useTheme()
+  const { updateTheme, updateBrand } = useTheme()
 
   useEffect(() => { getConfig().then(setForm) }, [])
 
@@ -77,6 +77,7 @@ export default function Configuracion() {
     try {
       await updateConfig(form)
       updateTheme(form.primary_color || '#1E3A8A', form.secondary_color || '#FFD100')
+      updateBrand(form.company_name, form.logo_url)
       toast.success('Configuración guardada')
     } catch { toast.error('Error al guardar') }
   }
@@ -98,6 +99,7 @@ export default function Configuracion() {
     try {
       const res = await uploadLogo(file)
       setForm(f => ({ ...f, logo_url: res.url }))
+      updateBrand(undefined, res.url)
       toast.success('Logo actualizado')
     } catch { toast.error('Error al subir logo') }
     finally { setUploading(false) }
