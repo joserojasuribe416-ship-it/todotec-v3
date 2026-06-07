@@ -29,6 +29,10 @@ class CompanyConfig(Base):
     instagram = Column(String, default="")
     facebook = Column(String, default="")
     tiktok = Column(String, default="")
+    primary_color = Column(String, default="#1E3A8A")
+    secondary_color = Column(String, default="#FFD100")
+    banner_title = Column(String, default="Todo lo que necesitas,\nen un solo lugar.")
+    banner_subtitle = Column(String, default="Importamos directamente los mejores productos tecnológicos. Precios justos, calidad garantizada.")
 
 
 class Supplier(Base):

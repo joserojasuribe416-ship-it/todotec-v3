@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
+import { ThemeProvider } from './context/ThemeContext'
 import Dashboard from './pages/Dashboard'
 import Proveedores from './pages/Proveedores'
 import Inventario from './pages/Inventario'
@@ -11,6 +12,7 @@ import Categorias from './pages/Categorias'
 
 export default function App() {
   return (
+    <ThemeProvider>
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<Dashboard />} />
@@ -23,5 +25,6 @@ export default function App() {
         <Route path="configuracion" element={<Configuracion />} />
       </Route>
     </Routes>
+    </ThemeProvider>
   )
 }

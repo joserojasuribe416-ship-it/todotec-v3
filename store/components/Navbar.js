@@ -6,7 +6,7 @@ import { ShoppingCart, Search, ChevronDown, X } from 'lucide-react'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
-export default function Navbar() {
+export default function Navbar({ companyName = 'TodoTec', logoUrl = '' }) {
   const router = useRouter()
   const [cartCount, setCartCount] = useState(0)
   const [search, setSearch] = useState('')
@@ -66,14 +66,20 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 }}>
-            <div style={{
-              width: 40, height: 40, background: '#1E3A8A', borderRadius: 10,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: '2px solid #FFD100'
-            }}>
-              <span style={{ color: '#FFD100', fontWeight: 900, fontSize: 15, letterSpacing: '-1px' }}>TT</span>
-            </div>
-            <span style={{ fontWeight: 900, fontSize: 20, color: '#1E3A8A', letterSpacing: '-0.5px' }}>TodoTec</span>
+            {logoUrl ? (
+              <img src={logoUrl} alt={companyName} style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 8 }} />
+            ) : (
+              <div style={{
+                width: 40, height: 40, background: 'var(--brand-primary, #1E3A8A)', borderRadius: 10,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: '2px solid var(--brand-secondary, #FFD100)'
+              }}>
+                <span style={{ color: 'var(--brand-secondary, #FFD100)', fontWeight: 900, fontSize: 15, letterSpacing: '-1px' }}>
+                  {companyName.slice(0, 2).toUpperCase()}
+                </span>
+              </div>
+            )}
+            <span style={{ fontWeight: 900, fontSize: 20, color: 'var(--brand-primary, #1E3A8A)', letterSpacing: '-0.5px' }}>{companyName}</span>
           </Link>
 
           {/* Search bar */}
@@ -107,7 +113,7 @@ export default function Navbar() {
                   style={{
                     display: 'flex', alignItems: 'center', gap: 6,
                     padding: '0 16px', height: 44, background: 'none', border: 'none',
-                    cursor: 'pointer', fontWeight: 600, fontSize: 13, color: '#1E3A8A',
+                    cursor: 'pointer', fontWeight: 600, fontSize: 13, color: 'var(--brand-primary, #1E3A8A)',
                     whiteSpace: 'nowrap'
                   }}
                 >
@@ -124,7 +130,7 @@ export default function Navbar() {
                       style={{
                         display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left',
                         background: !activeCat ? '#EEF4FF' : 'none', border: 'none', cursor: 'pointer',
-                        fontSize: 13, fontWeight: !activeCat ? 700 : 400, color: '#1E3A8A'
+                        fontSize: 13, fontWeight: !activeCat ? 700 : 400, color: 'var(--brand-primary, #1E3A8A)'
                       }}
                     >Todas las categorías</button>
                     {categories.map(cat => (
@@ -145,12 +151,12 @@ export default function Navbar() {
               <button
                 type="submit"
                 style={{
-                  height: 44, padding: '0 20px', background: '#1E3A8A', color: '#FFD100',
+                  height: 44, padding: '0 20px', background: 'var(--brand-primary, #1E3A8A)', color: 'var(--brand-secondary, #FFD100)',
                   border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13,
                   transition: 'background 0.15s'
                 }}
                 onMouseEnter={e => e.target.style.background = '#0067B1'}
-                onMouseLeave={e => e.target.style.background = '#1E3A8A'}
+                onMouseLeave={e => e.target.style.background = 'var(--brand-primary, #1E3A8A)'}
               >Buscar</button>
             </div>
           </form>
@@ -162,12 +168,12 @@ export default function Navbar() {
               {cartCount > 0 && (
                 <span style={{
                   position: 'absolute', top: -8, right: -8, width: 18, height: 18,
-                  background: '#FFD100', color: '#1E3A8A', fontSize: 10, fontWeight: 900,
+                  background: 'var(--brand-secondary, #FFD100)', color: 'var(--brand-primary, #1E3A8A)', fontSize: 10, fontWeight: 900,
                   borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>{cartCount}</span>
               )}
             </div>
-            <span style={{ fontWeight: 600, fontSize: 13, color: '#1E3A8A', display: 'none' }} className="lg:block">
+            <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--brand-primary, #1E3A8A)', display: 'none' }} className="lg:block">
               Carrito
             </span>
           </Link>
@@ -179,7 +185,7 @@ export default function Navbar() {
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', gap: 4, height: 42, overflowX: 'auto' }}>
           <Link href="/catalog" style={{
             padding: '4px 14px', borderRadius: 6, fontWeight: 700, fontSize: 12,
-            textDecoration: 'none', color: '#1E3A8A', background: '#1E3A8A', color: '#FFD100',
+            textDecoration: 'none', color: 'var(--brand-primary, #1E3A8A)', background: 'var(--brand-primary, #1E3A8A)', color: 'var(--brand-secondary, #FFD100)',
             whiteSpace: 'nowrap', transition: 'all 0.15s'
           }}>Todos</Link>
           {categories.map(cat => (
@@ -191,7 +197,7 @@ export default function Navbar() {
                 textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap',
                 transition: 'all 0.15s'
               }}
-              onMouseEnter={e => { e.target.style.background = '#E5E7EB'; e.target.style.color = '#1E3A8A' }}
+              onMouseEnter={e => { e.target.style.background = '#E5E7EB'; e.target.style.color = 'var(--brand-primary, #1E3A8A)' }}
               onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = '#374151' }}
             >{cat}</Link>
           ))}

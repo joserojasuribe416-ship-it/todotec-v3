@@ -8,6 +8,28 @@ import os
 # Create tables
 Base.metadata.create_all(bind=engine)
 
+# Auto-migrate: add new columns if they don't exist (safe for existing DBs)
+def _run_migrations():
+    from sqlalchemy import text
+    migrations = [
+        "ALTER TABLE company_config ADD COLUMN IF NOT EXISTS primary_color VARCHAR DEFAULT '#1E3A8A'",
+        "ALTER TABLE company_config ADD COLUMN IF NOT EXISTS secondary_color VARCHAR DEFAULT '#FFD100'",
+        "ALTER TABLE company_config ADD COLUMN IF NOT EXISTS banner_title VARCHAR DEFAULT 'Todo lo que necesitas, en un solo lugar.'",
+        "ALTER TABLE company_config ADD COLUMN IF NOT EXISTS banner_subtitle VARCHAR DEFAULT 'Importamos directamente los mejores productos tecnológicos.'",
+    ]
+    with engine.connect() as conn:
+        for sql in migrations:
+            try:
+                conn.execute(text(sql))
+            except Exception:
+                pass
+        conn.commit()
+
+try:
+    _run_migrations()
+except Exception:
+    pass
+
 # Ensure uploads directory exists
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)

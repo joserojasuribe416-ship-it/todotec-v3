@@ -1,17 +1,22 @@
 import Link from 'next/link'
-import { fetchProducts } from '../lib/api'
+import { fetchProducts, fetchConfig } from '../lib/api'
 import ProductCard from '../components/ProductCard'
 import { ArrowRight, ChevronRight } from 'lucide-react'
 
 export default async function HomePage() {
-  const products = await fetchProducts({ store_only: 'true' })
+  const [products, config] = await Promise.all([
+    fetchProducts({ store_only: 'true' }),
+    fetchConfig().catch(() => null),
+  ])
   const topSellers = products.slice(0, 8)
+  const bannerTitle    = config?.banner_title    || 'Todo lo que necesitas,\nen un solo lugar.'
+  const bannerSubtitle = config?.banner_subtitle || 'Importamos directamente los mejores productos tecnológicos. Precios justos, calidad garantizada.'
 
   return (
     <>
       {/* ── Hero Banner ─────────────────────────────────── */}
       <section style={{
-        background: '#1E3A8A',
+        background: 'var(--brand-primary, #1E3A8A)',
         minHeight: 480,
         display: 'flex',
         alignItems: 'center',
@@ -33,7 +38,7 @@ export default async function HomePage() {
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '80px 24px', width: '100%' }}>
           <div style={{ maxWidth: 600 }}>
             <span className="fade-up fade-up-1" style={{
-              display: 'inline-block', background: '#FFD100', color: '#1E3A8A',
+              display: 'inline-block', background: 'var(--brand-secondary, #FFD100)', color: 'var(--brand-primary, #1E3A8A)',
               fontWeight: 800, fontSize: 11, letterSpacing: '1.5px',
               padding: '4px 12px', borderRadius: 4, marginBottom: 24
             }}>TECNOLOGÍA DE VANGUARDIA</span>
@@ -41,21 +46,27 @@ export default async function HomePage() {
             <h1 className="fade-up fade-up-2" style={{
               fontSize: 'clamp(2.5rem, 6vw, 4.5rem)',
               fontWeight: 900, color: '#FFFFFF',
-              lineHeight: 1.0, marginBottom: 24, letterSpacing: '-1px'
+              lineHeight: 1.0, marginBottom: 24, letterSpacing: '-1px',
+              whiteSpace: 'pre-line'
             }}>
-              Todo lo que<br />
-              <span style={{ color: '#FFD100' }}>necesitas,</span><br />
-              en un solo lugar.
+              {bannerTitle.includes('\n') ? (
+                <>
+                  {bannerTitle.split('\n')[0]}<br />
+                  <span style={{ color: 'var(--brand-secondary, #FFD100)' }}>{bannerTitle.split('\n')[1]}</span>
+                </>
+              ) : (
+                <span style={{ color: 'var(--brand-secondary, #FFD100)' }}>{bannerTitle}</span>
+              )}
             </h1>
 
             <p className="fade-up fade-up-3" style={{ color: '#93C5FD', fontSize: 17, lineHeight: 1.7, marginBottom: 36, maxWidth: 480 }}>
-              Importamos directamente los mejores productos tecnológicos. Precios justos, calidad garantizada.
+              {bannerSubtitle}
             </p>
 
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <Link href="/catalog" className="hero-cta-yellow fade-up fade-up-3" style={{
                 display: 'inline-flex', alignItems: 'center', gap: 8,
-                background: '#FFD100', color: '#1E3A8A',
+                background: 'var(--brand-secondary, #FFD100)', color: 'var(--brand-primary, #1E3A8A)',
                 fontWeight: 800, fontSize: 15, padding: '14px 28px',
                 borderRadius: 8, textDecoration: 'none',
               }}>
@@ -87,7 +98,7 @@ export default async function HomePage() {
                 padding: '20px 24px', textAlign: 'center',
                 borderRight: i < 2 ? '1px solid #E5E7EB' : 'none'
               }}>
-                <div style={{ fontWeight: 800, fontSize: 14, color: '#1E3A8A' }}>{item.label}</div>
+                <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--brand-primary, #1E3A8A)' }}>{item.label}</div>
                 <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>{item.sub}</div>
               </div>
             ))}
@@ -100,7 +111,7 @@ export default async function HomePage() {
         {/* Section header */}
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 40 }}>
           <div>
-            <p style={{ fontSize: 12, fontWeight: 700, color: '#FFD100', letterSpacing: '2px', marginBottom: 8 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-secondary, #FFD100)', letterSpacing: '2px', marginBottom: 8 }}>
               ★ TOP SELLERS
             </p>
             <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 900, color: '#0A0A0A', lineHeight: 1.1 }}>
@@ -109,7 +120,7 @@ export default async function HomePage() {
           </div>
           <Link href="/catalog" style={{
             display: 'inline-flex', alignItems: 'center', gap: 4,
-            fontSize: 13, fontWeight: 700, color: '#1E3A8A',
+            fontSize: 13, fontWeight: 700, color: 'var(--brand-primary, #1E3A8A)',
             textDecoration: 'none', paddingBottom: 4, borderBottom: '2px solid #FFD100'
           }}>
             Ver todos <ChevronRight size={15} />
@@ -134,7 +145,7 @@ export default async function HomePage() {
                 }}>
                   <div style={{
                     width: 32, height: 32, borderRadius: '50%',
-                    background: '#1E3A8A', color: '#FFD100',
+                    background: 'var(--brand-primary, #1E3A8A)', color: 'var(--brand-secondary, #FFD100)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontWeight: 900, fontSize: 13
                   }}>{i + 1}</div>
@@ -184,14 +195,14 @@ export default async function HomePage() {
         flexWrap: 'wrap', gap: 24
       }}>
         <div>
-          <p style={{ color: '#FFD100', fontWeight: 700, fontSize: 12, letterSpacing: '2px', marginBottom: 8 }}>DISTRIBUIDORES Y EMPRESAS</p>
+          <p style={{ color: 'var(--brand-secondary, #FFD100)', fontWeight: 700, fontSize: 12, letterSpacing: '2px', marginBottom: 8 }}>DISTRIBUIDORES Y EMPRESAS</p>
           <h3 style={{ color: '#fff', fontSize: 'clamp(1.4rem, 3vw, 2rem)', fontWeight: 900, lineHeight: 1.1 }}>
             ¿Compras en volumen?<br />Tenemos precio mayorista.
           </h3>
         </div>
         <Link href="/contact" className="wholesale-cta" style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
-          background: '#FFD100', color: '#1E3A8A',
+          background: 'var(--brand-secondary, #FFD100)', color: 'var(--brand-primary, #1E3A8A)',
           fontWeight: 800, fontSize: 15, padding: '14px 28px',
           borderRadius: 8, textDecoration: 'none', flexShrink: 0
         }}>

@@ -40,11 +40,11 @@ export default function Layout() {
           padding: '20px 20px 18px', borderBottom: '1px solid rgba(255,255,255,0.06)'
         }}>
           <div style={{
-            width: 38, height: 38, background: '#1E3A8A', borderRadius: 10,
+            width: 38, height: 38, background: 'var(--brand-primary, #1E3A8A)', borderRadius: 10,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            border: '2px solid #FFD100', flexShrink: 0
+            border: '2px solid var(--brand-secondary, #FFD100)', flexShrink: 0
           }}>
-            <span style={{ color: '#FFD100', fontWeight: 900, fontSize: 14, letterSpacing: '-1px' }}>TT</span>
+            <span style={{ color: 'var(--brand-secondary, #FFD100)', fontWeight: 900, fontSize: 14, letterSpacing: '-1px' }}>TT</span>
           </div>
           <div>
             <div style={{ fontWeight: 900, fontSize: 16, color: '#fff', letterSpacing: '-0.3px' }}>TodoTec</div>
@@ -68,8 +68,8 @@ export default function Layout() {
                   display: 'flex', alignItems: 'center', gap: 10,
                   padding: '9px 12px', borderRadius: 8, textDecoration: 'none',
                   fontSize: 13, fontWeight: active ? 700 : 500,
-                  background: active ? '#1E3A8A' : 'transparent',
-                  color: active ? '#FFD100' : '#9CA3AF',
+                  background: active ? 'var(--brand-primary, #1E3A8A)' : 'transparent',
+                  color: active ? 'var(--brand-secondary, #FFD100)' : '#9CA3AF',
                   transition: 'all 0.15s',
                 }}
                 onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#fff' } }}

@@ -20,6 +20,10 @@ class ConfigUpdate(BaseModel):
     instagram: Optional[str] = None
     facebook: Optional[str] = None
     tiktok: Optional[str] = None
+    primary_color: Optional[str] = None
+    secondary_color: Optional[str] = None
+    banner_title: Optional[str] = None
+    banner_subtitle: Optional[str] = None
 
 class ConfigOut(BaseModel):
     id: int
@@ -39,6 +43,10 @@ class ConfigOut(BaseModel):
     instagram: str
     facebook: str
     tiktok: str
+    primary_color: str
+    secondary_color: str
+    banner_title: str
+    banner_subtitle: str
     class Config:
         from_attributes = True
 
