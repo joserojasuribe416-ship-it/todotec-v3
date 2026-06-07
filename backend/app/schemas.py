@@ -55,7 +55,9 @@ class ConfigOut(BaseModel):
 class SupplierCreate(BaseModel):
     name: str
     email: Optional[str] = ""
+    email2: Optional[str] = ""
     phone: Optional[str] = ""
+    phone2: Optional[str] = ""
     description: Optional[str] = ""
     city: Optional[str] = ""
     rating: Optional[float] = 5.0
@@ -67,7 +69,9 @@ class SupplierOut(BaseModel):
     id: int
     name: str
     email: str
+    email2: str
     phone: str
+    phone2: str
     description: str
     city: str
     rating: float
@@ -258,6 +262,18 @@ class CapitalOut(BaseModel):
     created_at: Optional[datetime]
     class Config:
         from_attributes = True
+
+
+# ── Purchase Rectify ─────────────────────────────────────────────────
+class RectifyItem(BaseModel):
+    purchase_item_id: int
+    new_quantity: int
+    new_unit_cost: float
+    new_variants: Optional[List[Any]] = None
+
+class PurchaseRectify(BaseModel):
+    items: List[RectifyItem]
+    notes: Optional[str] = None
 
 
 # ── Accounting ───────────────────────────────────────────────────────

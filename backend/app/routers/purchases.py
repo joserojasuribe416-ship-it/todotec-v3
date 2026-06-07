@@ -4,7 +4,7 @@ from sqlalchemy import func
 from typing import List
 from ..database import get_db
 from ..models import Purchase, PurchaseItem, Product, ProductVariant, AccountingEntry
-from ..schemas import PurchaseCreate, PurchaseOut
+from ..schemas import PurchaseCreate, PurchaseOut, PurchaseRectify
 import random, string
 from datetime import datetime
 
@@ -153,6 +153,100 @@ def create_purchase(data: PurchaseCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(purchase)
     return purchase
+
+
+@router.patch("/{purchase_id}/rectify", response_model=PurchaseOut)
+def rectify_purchase(purchase_id: int, data: PurchaseRectify, db: Session = Depends(get_db)):
+    """Rectificar una compra: ajusta cantidades/costos, inventario y contabilidad."""
+    p = db.query(Purchase).filter(Purchase.id == purchase_id).first()
+    if not p:
+        raise HTTPException(status_code=404, detail="Compra no encontrada")
+
+    new_total = 0.0
+
+    for upd in data.items:
+        item = db.query(PurchaseItem).filter(PurchaseItem.id == upd.purchase_item_id).first()
+        if not item:
+            continue
+
+        old_qty = item.quantity
+        new_qty = upd.new_quantity
+        diff_qty = new_qty - old_qty
+
+        product = db.query(Product).filter(Product.id == item.product_id).first()
+        if product:
+            if item.variants_data and len(item.variants_data) > 0:
+                # Use provided variants if given, otherwise adjust proportionally
+                if upd.new_variants:
+                    # Reverse old variants
+                    for v in item.variants_data:
+                        variant = db.query(ProductVariant).filter(
+                            ProductVariant.product_id == product.id,
+                            ProductVariant.color == v.get("color")
+                        ).first()
+                        if variant:
+                            variant.stock = max(0, variant.stock - v.get("qty", 0))
+                    # Apply new variants
+                    for v in upd.new_variants:
+                        variant = db.query(ProductVariant).filter(
+                            ProductVariant.product_id == product.id,
+                            ProductVariant.color == v.get("color")
+                        ).first()
+                        if variant:
+                            variant.stock += v.get("qty", 0)
+                        else:
+                            db.add(ProductVariant(product_id=product.id, color=v.get("color"), stock=v.get("qty", 0)))
+                    item.variants_data = upd.new_variants
+                else:
+                    # Adjust each variant proportionally
+                    ratio = (new_qty / old_qty) if old_qty > 0 else 1
+                    new_variants_data = []
+                    for v in item.variants_data:
+                        variant = db.query(ProductVariant).filter(
+                            ProductVariant.product_id == product.id,
+                            ProductVariant.color == v.get("color")
+                        ).first()
+                        if variant:
+                            old_v_qty = v.get("qty", 0)
+                            new_v_qty = max(0, round(old_v_qty * ratio))
+                            variant.stock = max(0, variant.stock - old_v_qty + new_v_qty)
+                            new_variants_data.append({"color": v.get("color"), "qty": new_v_qty})
+                    item.variants_data = new_variants_data
+            else:
+                default = db.query(ProductVariant).filter(
+                    ProductVariant.product_id == product.id
+                ).first()
+                if default:
+                    default.stock = max(0, default.stock + diff_qty)
+
+        new_subtotal = new_qty * upd.new_unit_cost
+        item.quantity = new_qty
+        item.unit_cost = upd.new_unit_cost
+        item.subtotal = new_subtotal
+        new_total += new_subtotal
+
+    p.total_cost = new_total
+    if data.notes is not None:
+        p.notes = data.notes
+
+    # Reverse old accounting entries and create new ones
+    old_entries = db.query(AccountingEntry).filter(AccountingEntry.purchase_id == purchase_id).all()
+    for entry in old_entries:
+        db.delete(entry)
+
+    credit_account = "Cuentas por Pagar" if p.is_credit else "Efectivo"
+    db.add(AccountingEntry(
+        purchase_id=purchase_id,
+        entry_type="compra",
+        description=f"Compra #{purchase_id} — rectificada",
+        debit_account="Inventarios",
+        credit_account=credit_account,
+        amount=new_total,
+    ))
+
+    db.commit()
+    db.refresh(p)
+    return p
 
 
 @router.delete("/{purchase_id}")

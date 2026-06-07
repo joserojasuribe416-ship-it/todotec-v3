@@ -47,6 +47,7 @@ export const deleteVariantImage = (variantId) => api.delete(`/products/variants/
 export const getPurchases = () => api.get('/purchases').then(r => r.data)
 export const getPurchase = (id) => api.get(`/purchases/${id}`).then(r => r.data)
 export const createPurchase = (data) => api.post('/purchases', data).then(r => r.data)
+export const rectifyPurchase = (id, data) => api.patch(`/purchases/${id}/rectify`, data).then(r => r.data)
 export const deletePurchase = (id) => api.delete(`/purchases/${id}`).then(r => r.data)
 
 // ── Sales ─────────────────────────────────────────────────────────────

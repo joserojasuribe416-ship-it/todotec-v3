@@ -16,6 +16,8 @@ def _run_migrations():
         "ALTER TABLE company_config ADD COLUMN IF NOT EXISTS secondary_color VARCHAR DEFAULT '#FFD100'",
         "ALTER TABLE company_config ADD COLUMN IF NOT EXISTS banner_title VARCHAR DEFAULT 'Todo lo que necesitas, en un solo lugar.'",
         "ALTER TABLE company_config ADD COLUMN IF NOT EXISTS banner_subtitle VARCHAR DEFAULT 'Importamos directamente los mejores productos tecnológicos.'",
+        "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS email2 VARCHAR DEFAULT ''",
+        "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS phone2 VARCHAR DEFAULT ''",
     ]
     with engine.connect() as conn:
         for sql in migrations:

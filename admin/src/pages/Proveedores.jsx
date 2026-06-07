@@ -3,13 +3,13 @@ import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '..
 import { Plus, Search, Edit2, Trash2, Star, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-const EMPTY = { name: '', email: '', phone: '', description: '', city: '', rating: 5 }
+const EMPTY = { name: '', email: '', email2: '', phone: '', phone2: '', description: '', city: '', rating: 5 }
 
 function Modal({ title, data, onChange, onSave, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl w-full max-w-lg shadow-2xl">
-        <div className="flex items-center justify-between p-6 border-b">
+      <div className="bg-white rounded-xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white z-10">
           <h3 className="font-bold text-lg text-gray-900">{title}</h3>
           <button onClick={onClose}><X size={20} className="text-gray-400" /></button>
         </div>
@@ -18,16 +18,29 @@ function Modal({ title, data, onChange, onSave, onClose }) {
             <label className="label">Nombre *</label>
             <input className="input" value={data.name} onChange={e => onChange('name', e.target.value)} placeholder="Nombre del proveedor" />
           </div>
+
+          {/* Emails */}
+          <div>
+            <label className="label">Email principal *</label>
+            <input className="input" value={data.email} onChange={e => onChange('email', e.target.value)} placeholder="email@ejemplo.com" />
+          </div>
+          <div>
+            <label className="label">Email secundario <span className="text-gray-400 font-normal">(opcional)</span></label>
+            <input className="input" value={data.email2 || ''} onChange={e => onChange('email2', e.target.value)} placeholder="email2@ejemplo.com" />
+          </div>
+
+          {/* Phones */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="label">Email</label>
-              <input className="input" value={data.email} onChange={e => onChange('email', e.target.value)} placeholder="email@ejemplo.com" />
-            </div>
-            <div>
-              <label className="label">Celular</label>
+              <label className="label">Celular principal *</label>
               <input className="input" value={data.phone} onChange={e => onChange('phone', e.target.value)} placeholder="+51 999 999 999" />
             </div>
+            <div>
+              <label className="label">Celular secundario <span className="text-gray-400 font-normal text-xs">(opcional)</span></label>
+              <input className="input" value={data.phone2 || ''} onChange={e => onChange('phone2', e.target.value)} placeholder="+51 888 888 888" />
+            </div>
           </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">Ciudad</label>
@@ -43,7 +56,7 @@ function Modal({ title, data, onChange, onSave, onClose }) {
             <textarea className="input" rows={3} value={data.description} onChange={e => onChange('description', e.target.value)} placeholder="Descripción del proveedor..." />
           </div>
         </div>
-        <div className="flex gap-3 p-6 border-t">
+        <div className="flex gap-3 p-6 border-t sticky bottom-0 bg-white">
           <button className="btn-ghost flex-1" onClick={onClose}>Cancelar</button>
           <button className="btn-blue flex-1" onClick={onSave} disabled={!data.name}>Guardar</button>
         </div>
@@ -143,7 +156,9 @@ export default function Proveedores() {
                 <td className="table-td">{s.city || '—'}</td>
                 <td className="table-td">
                   <div className="text-xs">{s.email || '—'}</div>
-                  <div className="text-xs text-gray-400">{s.phone || ''}</div>
+                  {s.email2 && <div className="text-xs text-gray-400">{s.email2}</div>}
+                  <div className="text-xs text-gray-500 mt-0.5">{s.phone || ''}</div>
+                  {s.phone2 && <div className="text-xs text-gray-400">{s.phone2}</div>}
                 </td>
                 <td className="table-td">
                   <span className="text-yellow-500 text-sm">{stars(s.rating)}</span>
