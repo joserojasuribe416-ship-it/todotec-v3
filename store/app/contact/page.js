@@ -1,86 +1,133 @@
 'use client'
-import { MessageCircle, Mail, Phone, MapPin, Instagram, Facebook } from 'lucide-react'
+import { MessageCircle, Mail, Instagram, Facebook } from 'lucide-react'
 
 export default function ContactPage() {
   const whatsapp = '51904811639'
 
   return (
-    <div>
-      {/* Hero */}
-      <section className="bg-secondary py-16 text-center text-white">
-        <h1 className="text-4xl font-black mb-3">Contáctanos</h1>
-        <p className="text-blue-200 max-w-md mx-auto">Estamos aquí para ayudarte. Cuéntanos lo que necesitas.</p>
-      </section>
+    <div style={{ background: '#FAF7F4', minHeight: '100vh' }}>
+      {/* Header */}
+      <div style={{ background: '#1E1A1A', padding: '48px 24px 44px' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: '#C49A8A', letterSpacing: '4px', textTransform: 'uppercase', marginBottom: 10 }}>Estamos aquí</p>
+          <h1 style={{ fontFamily: "'Josefin Sans', sans-serif", fontWeight: 100, fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#FAF7F4', letterSpacing: '0.06em', textTransform: 'uppercase', lineHeight: 1 }}>
+            Contacto
+          </h1>
+          <p style={{ fontFamily: "'Inter', sans-serif", color: '#6B7280', fontSize: 13, marginTop: 12, fontWeight: 300, maxWidth: 400 }}>
+            Cuéntanos qué necesitas para tu rutina y te ayudamos a encontrar los productos ideales.
+          </p>
+        </div>
+      </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          {/* Contact info */}
-          <div className="space-y-6">
-            <h2 className="text-2xl font-black text-secondary">Canales de contacto</h2>
-            {[
-              { icon: MessageCircle, label: 'WhatsApp', value: '+51 904 811 639', href: `https://wa.me/${whatsapp}`, color: 'text-green-500' },
-              { icon: Mail, label: 'Email', value: 'info@todotec.pe', href: 'mailto:info@todotec.pe', color: 'text-blue-500' },
-              { icon: Instagram, label: 'Instagram', value: '@todotec', href: 'https://instagram.com', color: 'text-pink-500' },
-              { icon: Facebook, label: 'Facebook', value: 'Glowi Skin', href: 'https://facebook.com', color: 'text-blue-600' },
-            ].map(({ icon: Icon, label, value, href, color }) => (
-              <a key={label} href={href} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-100 hover:shadow-md transition-all group">
-                <div className={`w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center ${color} group-hover:scale-110 transition-transform`}>
-                  <Icon size={22} />
-                </div>
-                <div>
-                  <div className="text-xs text-gray-400 font-semibold uppercase">{label}</div>
-                  <div className="font-bold text-secondary">{value}</div>
-                </div>
-              </a>
-            ))}
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '56px 24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48 }}>
 
-            <div className="bg-primary rounded-2xl p-6">
-              <h3 className="font-black text-secondary mb-2">¿Buscas precio al por mayor?</h3>
-              <p className="text-secondary/70 text-sm mb-4">Somos distribuidores. Contáctanos para cotizaciones personalizadas.</p>
-              <a
-                href={`https://wa.me/${whatsapp}?text=Hola, me interesa precio mayorista`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-secondary text-sm"
-              >
-                <MessageCircle size={15} /> Consultar mayoreo
+          {/* Channels */}
+          <div>
+            <div style={{ fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300, fontSize: 14, color: '#1E1A1A', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 24 }}>Canales de contacto</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[
+                { icon: MessageCircle, label: 'WhatsApp', value: '+51 904 811 639', href: `https://wa.me/${whatsapp}`, color: '#B5C4B1' },
+                { icon: Mail, label: 'Email', value: 'hola@glowiskin.pe', href: 'mailto:hola@glowiskin.pe', color: '#EEC5C5' },
+                { icon: Instagram, label: 'Instagram', value: '@glowiskin', href: 'https://instagram.com', color: '#C49A8A' },
+                { icon: Facebook, label: 'Facebook', value: 'Glowi Skin', href: 'https://facebook.com', color: '#EEC5C5' },
+              ].map(({ icon: Icon, label, value, href, color }) => (
+                <a key={label} href={href} target="_blank" rel="noopener noreferrer" style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  padding: '16px 18px', background: '#fff',
+                  borderRadius: 12, border: '1px solid #EDE8E4',
+                  textDecoration: 'none', transition: 'border-color 0.2s'
+                }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = '#EEC5C5'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = '#EDE8E4'}
+                >
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: '#FAF7F4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Icon size={18} color={color} strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 9, color: '#9CA3AF', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>{label}</div>
+                    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 400, color: '#1E1A1A' }}>{value}</div>
+                  </div>
+                </a>
+              ))}
+            </div>
+
+            {/* Mayoristas box */}
+            <div style={{ marginTop: 24, background: '#EEC5C5', borderRadius: 14, padding: '24px 22px' }}>
+              <div style={{ fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300, fontSize: 14, color: '#1E1A1A', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 8 }}>
+                ¿Tienes un spa o clínica?
+              </div>
+              <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: '#3A3434', fontWeight: 300, lineHeight: 1.7, marginBottom: 16 }}>
+                Distribuimos a profesionales del skincare y centros de estética. Consúltanos por precios mayoristas.
+              </p>
+              <a href={`https://wa.me/${whatsapp}?text=Hola, me interesa precio mayorista para mi negocio`}
+                target="_blank" rel="noopener noreferrer" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  background: '#1E1A1A', color: '#EEC5C5',
+                  padding: '10px 20px', borderRadius: 8, textDecoration: 'none',
+                  fontFamily: "'Inter', sans-serif", fontSize: 11,
+                  letterSpacing: '0.08em', textTransform: 'uppercase'
+                }}>
+                <MessageCircle size={13} /> Consultar mayoreo
               </a>
             </div>
           </div>
 
           {/* Form */}
           <div>
-            <h2 className="text-2xl font-black text-secondary mb-6">Envíanos un mensaje</h2>
-            <form
-              onSubmit={e => {
-                e.preventDefault()
-                const data = Object.fromEntries(new FormData(e.target))
-                const msg = `Hola, me llamo ${data.name}.\n\n${data.message}\n\nEmail: ${data.email}\nTeléfono: ${data.phone}`
-                window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`, '_blank')
+            <div style={{ fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300, fontSize: 14, color: '#1E1A1A', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 24 }}>Envíanos un mensaje</div>
+            <form onSubmit={e => {
+              e.preventDefault()
+              const data = Object.fromEntries(new FormData(e.target))
+              const msg = `Hola, me llamo ${data.name}.\n\n${data.message}\n\nEmail: ${data.email}\nTeléfono: ${data.phone}`
+              window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`, '_blank')
+            }} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {[
+                { label: 'Nombre', name: 'name', required: true, placeholder: 'Tu nombre', type: 'text' },
+                { label: 'Email', name: 'email', required: false, placeholder: 'tu@email.com', type: 'email' },
+                { label: 'Teléfono', name: 'phone', required: false, placeholder: '+51 999 999 999', type: 'text' },
+              ].map(field => (
+                <div key={field.name}>
+                  <label style={{ display: 'block', fontFamily: "'Inter', sans-serif", fontSize: 10, color: '#9CA3AF', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>
+                    {field.label}{field.required && ' *'}
+                  </label>
+                  <input name={field.name} required={field.required} type={field.type} placeholder={field.placeholder} style={{
+                    width: '100%', border: '1px solid #EDE8E4', borderRadius: 8,
+                    padding: '12px 14px', fontSize: 13, fontFamily: "'Inter', sans-serif",
+                    background: '#fff', color: '#1E1A1A', outline: 'none', boxSizing: 'border-box',
+                    transition: 'border-color 0.2s'
+                  }}
+                    onFocus={e => e.target.style.borderColor = '#C49A8A'}
+                    onBlur={e => e.target.style.borderColor = '#EDE8E4'}
+                  />
+                </div>
+              ))}
+              <div>
+                <label style={{ display: 'block', fontFamily: "'Inter', sans-serif", fontSize: 10, color: '#9CA3AF', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>
+                  Mensaje *
+                </label>
+                <textarea name="message" required rows={5} placeholder="¿Qué productos buscas? ¿Tienes alguna consulta sobre tu rutina?" style={{
+                  width: '100%', border: '1px solid #EDE8E4', borderRadius: 8,
+                  padding: '12px 14px', fontSize: 13, fontFamily: "'Inter', sans-serif",
+                  background: '#fff', color: '#1E1A1A', outline: 'none',
+                  resize: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s'
+                }}
+                  onFocus={e => e.target.style.borderColor = '#C49A8A'}
+                  onBlur={e => e.target.style.borderColor = '#EDE8E4'}
+                />
+              </div>
+              <button type="submit" style={{
+                width: '100%', background: '#1E1A1A', color: '#EEC5C5',
+                border: 'none', borderRadius: 10, padding: '14px 0',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 400,
+                letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer',
+                transition: 'background 0.2s'
               }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Nombre *</label>
-                <input name="name" required className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Tu nombre" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Email</label>
-                  <input name="email" type="email" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" placeholder="tu@email.com" />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Teléfono</label>
-                  <input name="phone" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" placeholder="+51 999 999 999" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Mensaje *</label>
-                <textarea name="message" required rows={5} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none" placeholder="¿En qué podemos ayudarte?" />
-              </div>
-              <button type="submit" className="w-full btn-primary justify-center text-base py-4">
-                <MessageCircle size={18} /> Enviar por WhatsApp
+                onMouseEnter={e => e.currentTarget.style.background = '#3A3434'}
+                onMouseLeave={e => e.currentTarget.style.background = '#1E1A1A'}
+              >
+                <MessageCircle size={14} /> Enviar por WhatsApp
               </button>
             </form>
           </div>
