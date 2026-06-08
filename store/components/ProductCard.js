@@ -1,14 +1,19 @@
 'use client'
 import Link from 'next/link'
-import { ShoppingCart, Package } from 'lucide-react'
+import { Package } from 'lucide-react'
 import { getImageUrl } from '../lib/api'
 
-export default function ProductCard({ product, rank }) {
+export default function ProductCard({ product }) {
   const firstVariantImg = product.variants?.find(v => v.image_url && v.stock > 0)?.image_url
   const productImg = product.images?.find(i => i.is_primary)?.url || product.images?.[0]?.url
   const imgUrl = firstVariantImg || productImg || null
   const fmt = (n) => `S/ ${(n || 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}`
   const inStock = product.total_stock > 0
+
+  const hasDiscount = product.original_price && product.original_price > product.sale_price
+  const discountPct = hasDiscount
+    ? Math.round((1 - product.sale_price / product.original_price) * 100)
+    : null
 
   const addToCart = (e) => {
     e.preventDefault()
@@ -30,97 +35,125 @@ export default function ProductCard({ product, rank }) {
       sessionStorage.setItem('cart', JSON.stringify(cart))
       window.dispatchEvent(new Event('cartUpdated'))
       const btn = e.currentTarget
+      const original = btn.innerHTML
       btn.style.background = '#B5C4B1'
-      btn.style.color = '#1E1A1A'
-      btn.innerHTML = '✓'
+      btn.style.color = '#fff'
+      btn.innerHTML = '✓ Agregado'
       setTimeout(() => {
-        btn.style.background = '#EEC5C5'
-        btn.style.color = '#1E1A1A'
-        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>'
+        btn.style.background = '#1E1A1A'
+        btn.style.color = '#EEC5C5'
+        btn.innerHTML = original
       }, 1200)
     } catch {}
   }
 
   return (
-    <Link href={`/product/${product.id}`} className="product-card group" style={{ textDecoration: 'none', display: 'block' }}>
+    <Link href={`/product/${product.id}`} style={{ textDecoration: 'none', display: 'block' }}>
+      <div style={{
+        background: '#fff', border: '1px solid #EDE8E4', borderRadius: 12,
+        overflow: 'hidden', transition: 'box-shadow 0.2s, border-color 0.2s', cursor: 'pointer'
+      }}
+        onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 20px rgba(196,154,138,0.15)'; e.currentTarget.style.borderColor = '#EEC5C5' }}
+        onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = '#EDE8E4' }}
+      >
+        {/* Image */}
+        <div style={{ position: 'relative', aspectRatio: '1/1', background: '#FDF0F0', overflow: 'hidden' }}>
+          {/* Heart */}
+          <button
+            onClick={e => { e.preventDefault(); e.stopPropagation() }}
+            style={{
+              position: 'absolute', top: 8, right: 8, zIndex: 2,
+              width: 28, height: 28, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.9)', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 13, color: '#C49A8A'
+            }}
+          >♡</button>
 
-      {/* Image */}
-      <div style={{ position: 'relative', aspectRatio: '1/1', background: '#FDF0F0', overflow: 'hidden' }}>
-        {rank && rank <= 3 && (
-          <div style={{
-            position: 'absolute', top: 10, left: 10, zIndex: 2,
-            width: 26, height: 26, borderRadius: '50%',
-            background: '#1E1A1A', color: '#EEC5C5',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 500, fontSize: 11, fontFamily: "'Inter', sans-serif"
-          }}>{rank}</div>
-        )}
-        {product.category && (
-          <div style={{
-            position: 'absolute', top: 10, right: 10, zIndex: 2,
-            background: 'rgba(250,247,244,0.92)', color: '#C49A8A',
-            padding: '2px 9px', borderRadius: 20, fontSize: 9, fontWeight: 500,
-            letterSpacing: '0.08em', textTransform: 'uppercase',
-            fontFamily: "'Inter', sans-serif"
-          }}>{product.category}</div>
-        )}
-        {imgUrl ? (
-          <img
-            src={getImageUrl(imgUrl)}
-            alt={product.name}
-            className="card-img"
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-        ) : (
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Package size={36} color="#EEC5C5" />
-          </div>
-        )}
-        {!inStock && (
-          <div style={{
-            position: 'absolute', inset: 0, background: 'rgba(250,247,244,0.80)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}>
-            <span style={{
-              background: '#1E1A1A', color: '#FAF7F4', fontWeight: 500,
-              padding: '5px 14px', borderRadius: 4, fontSize: 10,
-              letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'Inter', sans-serif"
-            }}>AGOTADO</span>
-          </div>
-        )}
-      </div>
+          {/* Discount badge */}
+          {hasDiscount && (
+            <div style={{
+              position: 'absolute', top: 8, left: 8, zIndex: 2,
+              background: '#EEC5C5', color: '#1E1A1A', fontWeight: 600,
+              fontSize: 9, padding: '2px 7px', borderRadius: 10,
+              fontFamily: "'Inter', sans-serif", letterSpacing: '0.03em'
+            }}>-{discountPct}%</div>
+          )}
 
-      {/* Info */}
-      <div style={{ padding: '14px 16px 14px', background: '#fff' }}>
-        <p style={{ fontSize: 11, color: '#C49A8A', marginBottom: 4, letterSpacing: '0.04em', fontFamily: "'Inter', sans-serif" }}>
-          {product.variants?.filter(v => v.stock > 0).map(v => v.color).join(' · ') || ''}
-        </p>
-        <h3 style={{
-          fontFamily: "'Josefin Sans', sans-serif",
-          fontSize: 13, fontWeight: 300, color: '#1E1A1A',
-          lineHeight: 1.4, marginBottom: 12, minHeight: 36,
-          letterSpacing: '0.03em', textTransform: 'uppercase'
-        }} className="line-clamp-2">
-          {product.name}
-        </h3>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{
+          {imgUrl ? (
+            <img
+              src={getImageUrl(imgUrl)}
+              alt={product.name}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s' }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+            />
+          ) : (
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Package size={32} color="#EEC5C5" />
+            </div>
+          )}
+
+          {!inStock && (
+            <div style={{
+              position: 'absolute', inset: 0, background: 'rgba(250,247,244,0.80)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              <span style={{
+                background: '#1E1A1A', color: '#FAF7F4', fontWeight: 500,
+                padding: '5px 14px', borderRadius: 4, fontSize: 10,
+                letterSpacing: '2px', textTransform: 'uppercase', fontFamily: "'Inter', sans-serif"
+              }}>AGOTADO</span>
+            </div>
+          )}
+        </div>
+
+        {/* Info */}
+        <div style={{ padding: '12px 14px 14px' }}>
+          {product.category && (
+            <div style={{ fontSize: 10, color: '#C49A8A', marginBottom: 3, fontWeight: 500, letterSpacing: '0.04em', fontFamily: "'Inter', sans-serif" }}>
+              {product.category}
+            </div>
+          )}
+          <div style={{
             fontFamily: "'Inter', sans-serif",
-            fontSize: 16, fontWeight: 400, color: '#1E1A1A', letterSpacing: '0.02em'
-          }}>{fmt(product.sale_price)}</span>
+            fontSize: 12, fontWeight: 500, color: '#1E1A1A',
+            lineHeight: 1.4, marginBottom: 4,
+            overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical'
+          }}>
+            {product.name}
+          </div>
+
+          {/* Price row */}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginBottom: 10 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#1E1A1A', fontFamily: "'Inter', sans-serif" }}>
+              {fmt(product.sale_price)}
+            </span>
+            {hasDiscount && (
+              <span style={{ fontSize: 11, color: '#9CA3AF', textDecoration: 'line-through', fontFamily: "'Inter', sans-serif" }}>
+                {fmt(product.original_price)}
+              </span>
+            )}
+          </div>
+
+          {/* Add to cart */}
           {inStock && (
             <button
               onClick={addToCart}
-              title="Agregar al carrito"
-              className="add-cart-btn"
               style={{
-                width: 32, height: 32, borderRadius: 8,
-                background: '#EEC5C5', border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#1E1A1A'
+                width: '100%', height: 32, borderRadius: 7,
+                background: '#1E1A1A', color: '#EEC5C5',
+                border: 'none', cursor: 'pointer',
+                fontSize: 10, fontWeight: 500, letterSpacing: '0.08em',
+                textTransform: 'uppercase', fontFamily: "'Inter', sans-serif",
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                transition: 'background 0.2s'
               }}
+              onMouseEnter={e => e.currentTarget.style.background = '#3A3434'}
+              onMouseLeave={e => { if (e.currentTarget.innerHTML !== '✓ Agregado') e.currentTarget.style.background = '#1E1A1A' }}
             >
-              <ShoppingCart size={14} />
+              🛒 Añadir
             </button>
           )}
         </div>

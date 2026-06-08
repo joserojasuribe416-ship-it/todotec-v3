@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react'
-import { getProducts, updateProduct, deleteProduct, getCategories, uploadProductImage, deleteProductImage, uploadVariantImage, deleteVariantImage } from '../api/client'
+import { getProducts, updateProduct, deleteProduct, getCategories, getBrands, uploadProductImage, deleteProductImage, uploadVariantImage, deleteVariantImage } from '../api/client'
 import { Search, Edit2, Trash2, X, Image, Eye, EyeOff, Camera } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 function EditModal({ product, onClose, onSaved }) {
-  const [data, setData] = useState({ name: product.name, category: product.category, description: product.description, sale_price: product.sale_price, show_in_store: product.show_in_store })
+  const [data, setData] = useState({ name: product.name, category: product.category, brand: product.brand || '', benefit: product.benefit || '', description: product.description, sale_price: product.sale_price, show_in_store: product.show_in_store })
   const [uploading, setUploading] = useState(false)
   const [variantUploading, setVariantUploading] = useState({})
   const [categoryList, setCategoryList] = useState([])
+  const [brandList, setBrandList] = useState([])
 
   useEffect(() => {
     import('../api/client').then(m => m.default.get('/categories').then(r => setCategoryList(r.data)))
+    getBrands().then(setBrandList)
   }, [])
 
   const save = async () => {
@@ -62,6 +64,17 @@ function EditModal({ product, onClose, onSaved }) {
                 <option value="">Sin categoría</option>
                 {categoryList.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
               </select>
+            </div>
+            <div>
+              <label className="label">Marca</label>
+              <select className="input" value={data.brand} onChange={e => setData(d => ({ ...d, brand: e.target.value }))}>
+                <option value="">Sin marca</option>
+                {brandList.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Beneficio</label>
+              <input className="input" value={data.benefit} onChange={e => setData(d => ({ ...d, benefit: e.target.value }))} placeholder="Ej: Hidratación, Anti-acné..." />
             </div>
           </div>
           <div>
@@ -257,8 +270,12 @@ export default function Inventario() {
               {/* Info */}
               <div className="p-4">
                 <div className="font-semibold text-gray-900 truncate">{p.name}</div>
-                <div className="text-xs text-gray-400 font-mono mb-2">{p.sku}</div>
-                <div className="text-xs text-gray-500 mb-3">{p.category}</div>
+                <div className="text-xs text-gray-400 font-mono mb-1">{p.sku}</div>
+                <div className="flex gap-1 flex-wrap mb-2">
+                  {p.category && <span className="badge badge-blue">{p.category}</span>}
+                  {p.brand && <span className="badge badge-gray">{p.brand}</span>}
+                  {p.benefit && <span className="badge" style={{background:'#F0FDF4',color:'#166534'}}>{p.benefit}</span>}
+                </div>
 
                 {/* Stock variants */}
                 <div className="flex flex-wrap gap-1 mb-3">

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { getPurchases, createPurchase, deletePurchase, rectifyPurchase, getSuppliers, getProducts } from '../api/client'
+import { getPurchases, createPurchase, deletePurchase, rectifyPurchase, getSuppliers, getProducts, getBrands } from '../api/client'
 import api from '../api/client'
 import { Plus, Trash2, X, ChevronDown, ChevronUp, Package, Edit2, Search } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -112,7 +112,7 @@ function ProductSearch({ products, value, onChange }) {
 const EMPTY_ITEM = {
   is_new: true,
   product_id: null,
-  product_name: '', category: '', description: '', sale_price: '',
+  product_name: '', category: '', brand: '', benefit: '', description: '', sale_price: '',
   quantity: '',
   costo_base: '', flete: '', impuestos: '', otros: '',
   unit_cost: 0,
@@ -130,7 +130,7 @@ function variantTotal(item) {
   return item.variants.reduce((s, v) => s + (parseInt(v.qty) || 0), 0)
 }
 
-function PurchaseForm({ suppliers, products, categoryList, onSave, onClose }) {
+function PurchaseForm({ suppliers, products, categoryList, brandList, onSave, onClose }) {
   const [form, setForm] = useState({
     supplier_id: '', notes: '', is_credit: false,
     items: [{ ...EMPTY_ITEM }]
@@ -154,6 +154,8 @@ function PurchaseForm({ suppliers, products, categoryList, onSave, onClose }) {
         product_id: p.id,
         product_name: p.name,
         category: p.category,
+        brand: p.brand || '',
+        benefit: p.benefit || '',
         description: p.description,
         sale_price: p.sale_price,
       }
@@ -221,6 +223,8 @@ function PurchaseForm({ suppliers, products, categoryList, onSave, onClose }) {
           product_id: it.product_id ? parseInt(it.product_id) : null,
           product_name: it.product_name,
           category: it.category || '',
+          brand: it.brand || '',
+          benefit: it.benefit || '',
           description: it.description || '',
           sale_price: parseFloat(it.sale_price) || 0,
           quantity: parseInt(it.quantity),
@@ -318,7 +322,7 @@ function PurchaseForm({ suppliers, products, categoryList, onSave, onClose }) {
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="label">Nombre del producto *</label>
-                          <input className="input" value={item.product_name} onChange={e => setItem(i, 'product_name', e.target.value)} placeholder="Ej: Monitor 27 pulgadas" />
+                          <input className="input" value={item.product_name} onChange={e => setItem(i, 'product_name', e.target.value)} placeholder="Ej: Snail Mucin Essence" />
                         </div>
                         <div>
                           <label className="label">Categoría</label>
@@ -326,6 +330,17 @@ function PurchaseForm({ suppliers, products, categoryList, onSave, onClose }) {
                             <option value="">Sin categoría</option>
                             {categoryList.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                           </select>
+                        </div>
+                        <div>
+                          <label className="label">Marca</label>
+                          <select className="input" value={item.brand} onChange={e => setItem(i, 'brand', e.target.value)}>
+                            <option value="">Sin marca</option>
+                            {brandList.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="label">Beneficio</label>
+                          <input className="input" value={item.benefit} onChange={e => setItem(i, 'benefit', e.target.value)} placeholder="Ej: Hidratación, Anti-acné..." />
                         </div>
                         <div className="col-span-2">
                           <label className="label">Descripción</label>
@@ -557,6 +572,7 @@ export default function Compras() {
   const [suppliers, setSuppliers] = useState([])
   const [products, setProducts] = useState([])
   const [categoryList, setCategoryList] = useState([])
+  const [brandList, setBrandList] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [rectify, setRectify] = useState(null)
   const [expanded, setExpanded] = useState(null)
@@ -568,6 +584,7 @@ export default function Compras() {
     getSuppliers().then(setSuppliers)
     getProducts().then(setProducts)
     api.get('/categories').then(r => setCategoryList(r.data))
+    getBrands().then(setBrandList)
   }, [])
 
   const del = async (id) => {
@@ -678,6 +695,7 @@ export default function Compras() {
           suppliers={suppliers}
           products={products}
           categoryList={categoryList}
+          brandList={brandList}
           onSave={load}
           onClose={() => setShowForm(false)}
         />

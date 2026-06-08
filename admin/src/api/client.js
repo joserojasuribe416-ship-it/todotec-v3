@@ -32,6 +32,7 @@ export const createProduct = (data) => api.post('/products', data).then(r => r.d
 export const updateProduct = (id, data) => api.put(`/products/${id}`, data).then(r => r.data)
 export const deleteProduct = (id) => api.delete(`/products/${id}`).then(r => r.data)
 export const getCategories = () => api.get('/products/categories').then(r => r.data)
+export const getBrands = () => api.get('/brands').then(r => r.data)
 export const uploadProductImage = (productId, file) => {
   const fd = new FormData(); fd.append('file', file)
   return api.post(`/products/${productId}/images`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data)

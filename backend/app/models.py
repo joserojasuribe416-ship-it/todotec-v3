@@ -60,6 +60,8 @@ class Product(Base):
     sku = Column(String, unique=True, nullable=False)
     name = Column(String, nullable=False)
     category = Column(String, default="")
+    brand = Column(String, default="")
+    benefit = Column(String, default="")
     description = Column(Text, default="")
     sale_price = Column(Float, default=0.0)
     is_active = Column(Boolean, default=True)
@@ -214,6 +216,17 @@ class AccountingEntry(Base):
 
 class Category(Base):
     __tablename__ = "categories"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, unique=True, nullable=False)
+    description = Column(String, default="")
+    is_active = Column(Boolean, default=True)
+    order = Column(Integer, default=0)
+    created_at = Column(DateTime, server_default=func.now())
+
+
+class Brand(Base):
+    __tablename__ = "brands"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, nullable=False)

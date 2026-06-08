@@ -109,6 +109,8 @@ class VariantOut(BaseModel):
 class ProductCreate(BaseModel):
     name: str
     category: Optional[str] = ""
+    brand: Optional[str] = ""
+    benefit: Optional[str] = ""
     description: Optional[str] = ""
     sale_price: float = 0.0
     show_in_store: bool = True
@@ -116,6 +118,8 @@ class ProductCreate(BaseModel):
 class ProductUpdate(BaseModel):
     name: Optional[str] = None
     category: Optional[str] = None
+    brand: Optional[str] = None
+    benefit: Optional[str] = None
     description: Optional[str] = None
     sale_price: Optional[float] = None
     is_active: Optional[bool] = None
@@ -126,6 +130,8 @@ class ProductOut(BaseModel):
     sku: str
     name: str
     category: str
+    brand: str = ""
+    benefit: str = ""
     description: str
     sale_price: float
     is_active: bool
@@ -148,6 +154,8 @@ class PurchaseItemCreate(BaseModel):
     product_id: Optional[int] = None
     product_name: Optional[str] = None
     category: Optional[str] = ""
+    brand: Optional[str] = ""
+    benefit: Optional[str] = ""
     description: Optional[str] = ""
     sale_price: float = 0.0
     quantity: int

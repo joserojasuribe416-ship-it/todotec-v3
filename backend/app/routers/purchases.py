@@ -90,6 +90,8 @@ def create_purchase(data: PurchaseCreate, db: Session = Depends(get_db)):
                 sku=make_sku(db),
                 name=item_data.product_name or "Producto sin nombre",
                 category=item_data.category or "",
+                brand=item_data.brand or "",
+                benefit=item_data.benefit or "",
                 description=item_data.description or "",
                 sale_price=item_data.sale_price or 0.0,
             )
