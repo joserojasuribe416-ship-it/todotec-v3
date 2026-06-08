@@ -66,7 +66,9 @@ function SuccessContent() {
           {orderId && (
             <div style={{ background: '#FAF7F4', borderRadius: 10, padding: '10px 20px', display: 'inline-block' }}>
               <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: '#9CA3AF', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Pedido #</span>
-              <span style={{ fontFamily: "'Josefin Sans', sans-serif", fontWeight: 400, fontSize: 14, color: '#1E1A1A', marginLeft: 6 }}>{orderId}</span>
+              <span style={{ fontFamily: "'Josefin Sans', sans-serif", fontWeight: 400, fontSize: 18, color: '#1E1A1A', marginLeft: 6, letterSpacing: '0.06em' }}>
+                {order?.order_number || (10000 + parseInt(orderId))}
+              </span>
             </div>
           )}
         </div>

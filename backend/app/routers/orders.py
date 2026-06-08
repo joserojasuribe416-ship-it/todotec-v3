@@ -138,6 +138,7 @@ def create_preference(data: CreatePreferenceIn, db: Session = Depends(get_db)):
 
     return {
         "order_id": order.id,
+        "order_number": 10000 + order.id,
         "checkout_url": checkout_url,
     }
 
@@ -196,6 +197,7 @@ def verify_payment(order_id: int, payment_id: Optional[str] = None, db: Session 
 
     return {
         "id": order.id,
+        "order_number": 10000 + order.id,
         "status": order.status,
         "customer_nombre": order.customer_nombre,
         "customer_apellido": order.customer_apellido,
@@ -213,6 +215,7 @@ def list_orders(db: Session = Depends(get_db)):
     return [
         {
             "id": o.id,
+            "order_number": 10000 + o.id,
             "status": o.status,
             "customer_nombre": o.customer_nombre,
             "customer_apellido": o.customer_apellido,

@@ -47,7 +47,7 @@ function OrderRow({ order, onStatusChange }) {
         onMouseEnter={e => e.currentTarget.style.background = '#FDFBFA'}
         onMouseLeave={e => e.currentTarget.style.background = '#fff'}
       >
-        <td style={td}><span style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 600, color: '#1E1A1A' }}>#{order.id}</span></td>
+        <td style={td}><span style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 600, color: '#1E1A1A' }}>#{order.order_number || (10000 + order.id)}</span></td>
         <td style={td}><span style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: '#6B7280' }}>{createdAt}</span></td>
         <td style={td}>
           <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: '#1E1A1A' }}>{order.customer_nombre} {order.customer_apellido}</div>
