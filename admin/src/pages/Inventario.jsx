@@ -1,7 +1,147 @@
 import { useEffect, useState } from 'react'
-import { getProducts, updateProduct, deleteProduct, getCategories, getBrands, uploadProductImage, deleteProductImage, uploadVariantImage, deleteVariantImage } from '../api/client'
-import { Search, Edit2, Trash2, X, Image, Eye, EyeOff, Camera } from 'lucide-react'
+import { getProducts, updateProduct, deleteProduct, getCategories, getBrands, uploadProductImage, deleteProductImage, uploadVariantImage, deleteVariantImage, createProduct, addVariant } from '../api/client'
+import { Search, Edit2, Trash2, X, Image, Eye, EyeOff, Camera, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
+
+function NewProductModal({ onClose, onSaved }) {
+  const [form, setForm] = useState({
+    name: '', category: '', brand: '', benefit: '',
+    description: '', sale_price: '', ref_cost: '', show_in_store: true
+  })
+  const [variants, setVariants] = useState([{ color: '' }])
+  const [categoryList, setCategoryList] = useState([])
+  const [brandList, setBrandList] = useState([])
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    import('../api/client').then(m => m.default.get('/categories').then(r => setCategoryList(r.data)))
+    getBrands().then(setBrandList)
+  }, [])
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const addVariantRow = () => setVariants(v => [...v, { color: '' }])
+  const removeVariantRow = (i) => setVariants(v => v.filter((_, idx) => idx !== i))
+  const setVariantColor = (i, val) => setVariants(v => v.map((r, idx) => idx === i ? { ...r, color: val } : r))
+
+  const save = async () => {
+    if (!form.name.trim()) return toast.error('El nombre es obligatorio')
+    if (variants.some(v => !v.color.trim())) return toast.error('Completa el nombre de todas las variantes')
+    setSaving(true)
+    try {
+      const product = await createProduct({
+        name: form.name.trim(),
+        category: form.category,
+        brand: form.brand,
+        benefit: form.benefit,
+        description: form.description,
+        sale_price: parseFloat(form.sale_price) || 0,
+        ref_cost: parseFloat(form.ref_cost) || 0,
+        show_in_store: form.show_in_store,
+      })
+      for (const v of variants) {
+        await addVariant(product.id, { color: v.color.trim(), stock: 0 })
+      }
+      toast.success('Producto creado')
+      onSaved()
+      onClose()
+    } catch { toast.error('Error al crear producto') }
+    finally { setSaving(false) }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white">
+          <div>
+            <h3 className="font-bold text-lg">Nuevo producto</h3>
+            <p className="text-xs text-gray-400 mt-0.5">El stock inicia en 0. Se actualiza al registrar una compra.</p>
+          </div>
+          <button onClick={onClose}><X size={20} className="text-gray-400" /></button>
+        </div>
+        <div className="p-6 space-y-4">
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label className="label">Nombre del producto *</label>
+              <input className="input" value={form.name} onChange={e => set('name', e.target.value)} placeholder="Ej: COSRX Snail Mucin 96%" />
+            </div>
+            <div>
+              <label className="label">Categoría</label>
+              <select className="input" value={form.category} onChange={e => set('category', e.target.value)}>
+                <option value="">Sin categoría</option>
+                {categoryList.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Marca</label>
+              <select className="input" value={form.brand} onChange={e => set('brand', e.target.value)}>
+                <option value="">Sin marca</option>
+                {brandList.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Precio de venta (S/)</label>
+              <input className="input" type="number" step="0.01" min="0" value={form.sale_price} onChange={e => set('sale_price', e.target.value)} placeholder="0.00" />
+            </div>
+            <div>
+              <label className="label">Costo referencial (S/)</label>
+              <input className="input" type="number" step="0.01" min="0" value={form.ref_cost} onChange={e => set('ref_cost', e.target.value)} placeholder="0.00" />
+              <p className="text-xs text-gray-400 mt-1">Estimado. El costo real se registra al hacer la compra.</p>
+            </div>
+            <div className="col-span-2">
+              <label className="label">Beneficio</label>
+              <input className="input" value={form.benefit} onChange={e => set('benefit', e.target.value)} placeholder="Ej: Hidratación, Anti-acné..." />
+            </div>
+            <div className="col-span-2">
+              <label className="label">Descripción</label>
+              <textarea className="input" rows={2} value={form.description} onChange={e => set('description', e.target.value)} />
+            </div>
+          </div>
+
+          {/* Variantes */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="label mb-0">Variantes / colores *</label>
+              <button onClick={addVariantRow} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                <Plus size={12} /> Agregar variante
+              </button>
+            </div>
+            <div className="space-y-2">
+              {variants.map((v, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    className="input flex-1"
+                    value={v.color}
+                    onChange={e => setVariantColor(i, e.target.value)}
+                    placeholder={`Variante ${i + 1} (ej: 100ml, Negro, Único...)`}
+                  />
+                  {variants.length > 1 && (
+                    <button onClick={() => removeVariantRow(i)} className="p-1.5 hover:bg-red-50 rounded-lg text-red-400">
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 mt-1">Si el producto no tiene variantes, pon "Único".</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <input type="checkbox" id="store_new" checked={form.show_in_store} onChange={e => set('show_in_store', e.target.checked)} className="w-4 h-4 accent-[#C49A8A]" />
+            <label htmlFor="store_new" className="text-sm text-gray-700">Mostrar en tienda online</label>
+          </div>
+        </div>
+        <div className="flex gap-3 p-6 border-t sticky bottom-0 bg-white">
+          <button className="btn-ghost flex-1" onClick={onClose}>Cancelar</button>
+          <button className="btn-blue flex-1" onClick={save} disabled={saving}>
+            {saving ? 'Creando...' : 'Crear producto'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function EditModal({ product, onClose, onSaved }) {
   const [data, setData] = useState({ name: product.name, category: product.category, brand: product.brand || '', benefit: product.benefit || '', description: product.description, sale_price: product.sale_price, show_in_store: product.show_in_store })
@@ -197,6 +337,7 @@ export default function Inventario() {
   const [search, setSearch] = useState('')
   const [cat, setCat] = useState('')
   const [editing, setEditing] = useState(null)
+  const [creating, setCreating] = useState(false)
 
   const load = () => getProducts({ search: search || undefined, category: cat || undefined }).then(setProducts)
 
@@ -224,9 +365,14 @@ export default function Inventario() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Inventario</h1>
-        <p className="text-sm text-gray-500">{products.length} producto{products.length !== 1 ? 's' : ''}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Inventario</h1>
+          <p className="text-sm text-gray-500">{products.length} producto{products.length !== 1 ? 's' : ''}</p>
+        </div>
+        <button className="btn-blue flex items-center gap-2" onClick={() => setCreating(true)}>
+          <Plus size={15} /> Nuevo producto
+        </button>
       </div>
 
       {/* Filters */}
@@ -245,7 +391,7 @@ export default function Inventario() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {products.length === 0 && (
           <div className="col-span-full text-center py-16 text-gray-400">
-            Sin productos. Registra una compra para agregar inventario.
+            Sin productos. Usa "Nuevo producto" para agregar o registra una compra.
           </div>
         )}
         {products.map(p => {
@@ -290,7 +436,10 @@ export default function Inventario() {
                 <div className="flex justify-between items-center text-sm">
                   <div>
                     <div className="font-bold text-[#1E1A1A]">{fmt(p.sale_price)}</div>
-                    <div className="text-xs text-gray-400">Costo: {fmt(p.unit_cost)}</div>
+                    {p.unit_cost > 0
+                      ? <div className="text-xs text-gray-400">Costo: {fmt(p.unit_cost)}</div>
+                      : <div className="text-xs text-amber-500">Ref: {fmt(p.ref_cost)}</div>
+                    }
                   </div>
                   <div className={`text-sm font-semibold ${margin >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                     {margin.toFixed(1)}%
@@ -314,6 +463,10 @@ export default function Inventario() {
           )
         })}
       </div>
+
+      {creating && (
+        <NewProductModal onClose={() => setCreating(false)} onSaved={load} />
+      )}
 
       {editing && (
         <EditModal product={editing} onClose={() => setEditing(null)} onSaved={() => {

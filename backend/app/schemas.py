@@ -113,6 +113,7 @@ class ProductCreate(BaseModel):
     benefit: Optional[str] = ""
     description: Optional[str] = ""
     sale_price: float = 0.0
+    ref_cost: float = 0.0
     show_in_store: bool = True
 
 class ProductUpdate(BaseModel):
@@ -122,6 +123,7 @@ class ProductUpdate(BaseModel):
     benefit: Optional[str] = None
     description: Optional[str] = None
     sale_price: Optional[float] = None
+    ref_cost: Optional[float] = None
     is_active: Optional[bool] = None
     show_in_store: Optional[bool] = None
 
@@ -134,6 +136,7 @@ class ProductOut(BaseModel):
     benefit: str = ""
     description: str
     sale_price: float
+    ref_cost: float = 0.0
     is_active: bool
     show_in_store: bool
     total_stock: int

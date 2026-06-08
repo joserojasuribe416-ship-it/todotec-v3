@@ -64,6 +64,7 @@ class Product(Base):
     benefit = Column(String, default="")
     description = Column(Text, default="")
     sale_price = Column(Float, default=0.0)
+    ref_cost = Column(Float, default=0.0)
     is_active = Column(Boolean, default=True)
     show_in_store = Column(Boolean, default=True)
     created_at = Column(DateTime, server_default=func.now())

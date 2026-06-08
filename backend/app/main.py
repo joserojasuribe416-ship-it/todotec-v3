@@ -27,6 +27,7 @@ def _run_migrations():
         "CREATE TABLE IF NOT EXISTS banners (id SERIAL PRIMARY KEY, tag VARCHAR DEFAULT '', title VARCHAR DEFAULT '', subtitle VARCHAR DEFAULT '', cta VARCHAR DEFAULT 'Ver catálogo', href VARCHAR DEFAULT '/catalog', image_url VARCHAR DEFAULT '', bg VARCHAR DEFAULT '#1E1A1A', accent VARCHAR DEFAULT '#EEC5C5', text_bg VARCHAR DEFAULT '#1E1A1A', text_color VARCHAR DEFAULT '#FAF7F4', tag_color VARCHAR DEFAULT '#EEC5C5', cta_bg VARCHAR DEFAULT '#EEC5C5', cta_color VARCHAR DEFAULT '#1E1A1A', \"order\" INTEGER DEFAULT 0, is_active BOOLEAN DEFAULT TRUE, created_at TIMESTAMP DEFAULT NOW())",
         "CREATE TABLE IF NOT EXISTS homepage_sections (id SERIAL PRIMARY KEY, key VARCHAR UNIQUE NOT NULL, title VARCHAR DEFAULT '', subtitle VARCHAR DEFAULT '', product_ids JSON DEFAULT '[]', max_items INTEGER DEFAULT 10, is_active BOOLEAN DEFAULT TRUE)",
         "ALTER TABLE company_config ADD COLUMN IF NOT EXISTS announcement_text VARCHAR DEFAULT 'Envío gratis por compras desde S/200'",
+        "ALTER TABLE products ADD COLUMN IF NOT EXISTS ref_cost FLOAT DEFAULT 0",
     ]
     with engine.connect() as conn:
         for sql in migrations:
