@@ -94,7 +94,7 @@ export default async function HomePage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0 }}>
             {[
               { label: 'Importado desde Corea', sub: 'Productos auténticos K-beauty' },
-              { label: 'Rutinas verificadas', sub: 'Selección dermatológicamente probada' },
+              { label: 'Envíos gratis desde S/ 200', sub: 'A todo Lima en pedidos calificados' },
               { label: 'Entrega en Lima', sub: 'Envío rápido a todo el país' },
             ].map((item, i) => (
               <div key={i} className="trust-item" style={{

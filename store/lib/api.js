@@ -22,7 +22,7 @@ export async function fetchCategories() {
 
 export async function fetchConfig() {
   const res = await fetch(`${API_BASE}/api/config`, { cache: 'no-store' })
-  if (!res.ok) return { company_name: 'TodoTec', whatsapp: '', email: '' }
+  if (!res.ok) return { company_name: 'Glowi Skin', whatsapp: '', email: '' }
   return res.json()
 }
 
