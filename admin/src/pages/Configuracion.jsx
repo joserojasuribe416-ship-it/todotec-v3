@@ -138,7 +138,7 @@ export default function Configuracion() {
           </div>
           <div>
             <label className="label">Correlativo actual</label>
-            <input className="input" type="number" value={form.invoice_correlativo} disabled className="bg-gray-50 cursor-not-allowed" />
+            <input className="input bg-gray-50 cursor-not-allowed" type="number" value={form.invoice_correlativo} disabled />
           </div>
         </div>
       </div>
