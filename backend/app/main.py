@@ -30,6 +30,7 @@ def _run_migrations():
         "ALTER TABLE products ADD COLUMN IF NOT EXISTS ref_cost FLOAT DEFAULT 0",
         "CREATE TABLE IF NOT EXISTS orders (id SERIAL PRIMARY KEY, status VARCHAR DEFAULT 'pending_payment', customer_nombre VARCHAR DEFAULT '', customer_apellido VARCHAR DEFAULT '', customer_email VARCHAR DEFAULT '', customer_dni VARCHAR DEFAULT '', customer_celular VARCHAR DEFAULT '', delivery_type VARCHAR DEFAULT 'pickup', delivery_data JSON DEFAULT '{}', items JSON DEFAULT '[]', subtotal FLOAT DEFAULT 0, shipping_cost FLOAT DEFAULT 0, total FLOAT DEFAULT 0, mp_preference_id VARCHAR DEFAULT '', mp_payment_id VARCHAR DEFAULT '', created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP)",
         "ALTER TABLE orders ADD COLUMN IF NOT EXISTS sale_id INTEGER",
+        "ALTER TABLE orders ADD COLUMN IF NOT EXISTS source VARCHAR DEFAULT 'web'",
     ]
     with engine.connect() as conn:
         for sql in migrations:

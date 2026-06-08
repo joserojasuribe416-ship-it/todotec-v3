@@ -184,6 +184,15 @@ class CreatePreferenceIn(BaseModel):
     shipping_cost: float
     total: float
 
+class CreateManualOrderIn(BaseModel):
+    items: List[OrderItemIn]
+    customer: CustomerIn
+    delivery: DeliveryIn
+    subtotal: float
+    shipping_cost: float
+    total: float
+    notes: Optional[str] = ""
+
 class StatusUpdate(BaseModel):
     status: str
 
@@ -369,6 +378,7 @@ def list_orders(db: Session = Depends(get_db)):
             "subtotal": o.subtotal,
             "shipping_cost": o.shipping_cost,
             "total": o.total,
+            "source": o.source or "web",
             "mp_preference_id": o.mp_preference_id,
             "mp_payment_id": o.mp_payment_id,
             "sale_id": o.sale_id,
@@ -378,11 +388,78 @@ def list_orders(db: Session = Depends(get_db)):
     ]
 
 
+@router.post("/manual")
+def create_manual_order(data: CreateManualOrderIn, db: Session = Depends(get_db)):
+    order = Order(
+        source="manual",
+        status="pending_payment",
+        customer_nombre=data.customer.nombre,
+        customer_apellido=data.customer.apellido,
+        customer_email=data.customer.email,
+        customer_dni=data.customer.dni,
+        customer_celular=data.customer.celular,
+        delivery_type=data.delivery.type,
+        delivery_data=data.delivery.model_dump(),
+        items=[i.model_dump() for i in data.items],
+        subtotal=data.subtotal,
+        shipping_cost=data.shipping_cost,
+        total=data.total,
+        mp_preference_id="",
+        mp_payment_id="",
+    )
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+    return {
+        "order_id": order.id,
+        "order_number": 10000 + order.id,
+    }
+
+
 @router.put("/{order_id}/status")
 def update_order_status(order_id: int, data: StatusUpdate, db: Session = Depends(get_db)):
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
+
+    prev_status = order.status
     order.status = data.status
+
+    # Si se marca como pagado y aún no tiene venta, generarla
+    if data.status == "paid" and prev_status != "paid" and not order.sale_id:
+        db.flush()
+        sale_id = _create_sale_from_order(order, db)
+        if sale_id:
+            order.sale_id = sale_id
+
     db.commit()
     return {"ok": True, "status": data.status}
+
+
+@router.delete("/{order_id}")
+def delete_order(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+
+    # Si tiene venta enlazada, eliminarla y revertir stock
+    if order.sale_id:
+        sale = db.query(Sale).filter(Sale.id == order.sale_id).first()
+        if sale:
+            # Revertir stock
+            for item in sale.items:
+                if item.variant_id:
+                    variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
+                    if variant:
+                        variant.stock += item.quantity
+                elif item.product:
+                    for v in item.product.variants:
+                        v.stock += item.quantity
+                        break
+            # Eliminar asientos contables primero (FK constraint)
+            db.query(AccountingEntry).filter(AccountingEntry.sale_id == sale.id).delete()
+            db.delete(sale)
+
+    db.delete(order)
+    db.commit()
+    return {"ok": True}

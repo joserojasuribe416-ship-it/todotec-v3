@@ -326,6 +326,9 @@ class Order(Base):
     shipping_cost = Column(Float, default=0.0)
     total = Column(Float, default=0.0)
 
+    # Origen del pedido
+    source = Column(String, default="web")  # web | manual
+
     # MercadoPago
     mp_preference_id = Column(String, default="")
     mp_payment_id = Column(String, default="")
