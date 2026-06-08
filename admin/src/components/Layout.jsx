@@ -44,14 +44,10 @@ export default function Layout() {
           display: 'flex', alignItems: 'center', gap: 10,
           padding: '20px 20px 18px', borderBottom: '1px solid rgba(255,255,255,0.06)'
         }}>
-          {logoUrl ? (
-            <img src={logoUrl} alt={companyName} style={{ width: 38, height: 38, objectFit: 'contain', borderRadius: 8, flexShrink: 0, background: '#fff' }} />
-          ) : (
-            <div style={{ lineHeight: 1, flexShrink: 0 }}>
-              <div style={{ fontFamily: "'Josefin Sans', sans-serif", fontWeight: 100, fontSize: 18, color: '#fff', letterSpacing: '8px', textTransform: 'uppercase', textIndent: '8px' }}>GLOWI</div>
-              <div style={{ fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300, fontSize: 7, color: '#EEC5C5', letterSpacing: '4px', textTransform: 'uppercase', textIndent: '4px', marginTop: 1 }}>SKIN</div>
-            </div>
-          )}
+          <div style={{ lineHeight: 1, flexShrink: 0 }}>
+            <div style={{ fontFamily: "'Josefin Sans', sans-serif", fontWeight: 100, fontSize: 18, color: '#fff', letterSpacing: '8px', textTransform: 'uppercase', textIndent: '8px' }}>GLOWI</div>
+            <div style={{ fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300, fontSize: 7, color: '#EEC5C5', letterSpacing: '4px', textTransform: 'uppercase', textIndent: '4px', marginTop: 1 }}>SKIN</div>
+          </div>
           <div>
             <div style={{ fontSize: 10, color: '#4B5563', fontWeight: 600, letterSpacing: '0.5px' }}>ADMIN PANEL</div>
           </div>
