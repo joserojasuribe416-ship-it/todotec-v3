@@ -46,13 +46,13 @@ function NavbarInner() {
 
       {/* ── Announcement bar ── */}
       <div style={{
-        background: '#1E1A1A', textAlign: 'center', padding: '7px 16px',
-        fontSize: 11, fontWeight: 400, color: '#EEC5C5', letterSpacing: '0.04em',
+        background: '#EEC5C5', textAlign: 'center', padding: '7px 16px',
+        fontSize: 11, fontWeight: 500, color: '#1E1A1A', letterSpacing: '0.02em',
         fontFamily: "'Inter', sans-serif"
       }}>
-        <em style={{ fontStyle: 'italic', fontWeight: 600, color: '#fff' }}>Envío gratis</em>
+        <em style={{ fontStyle: 'italic', fontWeight: 600 }}>Envío gratis</em>
         {' '}por compras desde S/200.{' '}
-        <span style={{ opacity: 0.5, fontSize: 10 }}>Aplican T&C</span>
+        <span style={{ opacity: 0.7, fontSize: 10 }}>Aplican T&C</span>
       </div>
 
       {/* ── Main header ── */}
@@ -124,38 +124,40 @@ function NavbarInner() {
       </div>
 
       {/* ── Category bar ── */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #EDE8E4' }}>
+      <div style={{ background: '#1E1A1A' }}>
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', height: 40, overflowX: 'auto', gap: 0 }}>
           <Link href="/" style={{
             padding: '0 14px', height: 40, display: 'flex', alignItems: 'center',
-            fontWeight: isHome ? 500 : 400, fontSize: 11, color: isHome ? '#1E1A1A' : '#6B7280',
+            fontWeight: isHome ? 600 : 400, fontSize: 11,
+            color: isHome ? '#EEC5C5' : 'rgba(255,255,255,0.55)',
             textDecoration: 'none', whiteSpace: 'nowrap', fontFamily: "'Inter', sans-serif",
-            borderBottom: isHome ? '2px solid #1E1A1A' : '2px solid transparent',
+            borderBottom: isHome ? '2px solid #EEC5C5' : '2px solid transparent',
             transition: 'all 0.15s'
           }}>Inicio</Link>
           <Link href="/catalog" style={{
             padding: '0 14px', height: 40, display: 'flex', alignItems: 'center',
-            fontWeight: isCatalog && !activeCategory ? 500 : 400,
-            fontSize: 11, color: isCatalog && !activeCategory ? '#1E1A1A' : '#6B7280',
+            fontWeight: isCatalog && !activeCategory ? 600 : 400,
+            fontSize: 11,
+            color: isCatalog && !activeCategory ? '#EEC5C5' : 'rgba(255,255,255,0.55)',
             textDecoration: 'none', whiteSpace: 'nowrap', fontFamily: "'Inter', sans-serif",
-            borderBottom: isCatalog && !activeCategory ? '2px solid #1E1A1A' : '2px solid transparent',
+            borderBottom: isCatalog && !activeCategory ? '2px solid #EEC5C5' : '2px solid transparent',
             transition: 'all 0.15s'
           }}>Todo</Link>
           {categories.map(cat => (
             <Link key={cat} href={`/catalog?category=${encodeURIComponent(cat)}`} style={{
               padding: '0 14px', height: 40, display: 'flex', alignItems: 'center',
-              fontWeight: activeCategory === cat ? 500 : 400,
+              fontWeight: activeCategory === cat ? 600 : 400,
               fontSize: 11,
-              color: activeCategory === cat ? '#1E1A1A' : '#6B7280',
+              color: activeCategory === cat ? '#EEC5C5' : 'rgba(255,255,255,0.55)',
               textDecoration: 'none', whiteSpace: 'nowrap', fontFamily: "'Inter', sans-serif",
-              borderBottom: activeCategory === cat ? '2px solid #1E1A1A' : '2px solid transparent',
+              borderBottom: activeCategory === cat ? '2px solid #EEC5C5' : '2px solid transparent',
               transition: 'all 0.15s'
             }}>{cat}</Link>
           ))}
           <div style={{ flex: 1 }} />
           <Link href="/catalog?category=Descuentos" style={{
             padding: '0 14px', height: 40, display: 'flex', alignItems: 'center',
-            fontSize: 11, fontWeight: 500, color: '#C49A8A',
+            fontSize: 11, fontWeight: 600, color: '#C49A8A',
             textDecoration: 'none', whiteSpace: 'nowrap', fontFamily: "'Inter', sans-serif",
           }}>Descuentos</Link>
         </div>
