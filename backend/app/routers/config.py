@@ -3,11 +3,9 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import CompanyConfig
 from ..schemas import ConfigOut, ConfigUpdate
-import os, shutil, uuid
+from ..cloudinary_client import upload_image, delete_image
 
 router = APIRouter(prefix="/api/config", tags=["config"])
-
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
 
 
 def get_or_create_config(db: Session) -> CompanyConfig:
@@ -37,14 +35,9 @@ def update_config(data: ConfigUpdate, db: Session = Depends(get_db)):
 
 @router.post("/logo")
 async def upload_logo(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    ext = file.filename.split(".")[-1]
-    filename = f"logo_{uuid.uuid4().hex[:8]}.{ext}"
-    filepath = os.path.join(UPLOAD_DIR, filename)
-    with open(filepath, "wb") as f:
-        shutil.copyfileobj(file.file, f)
-    url = f"/uploads/{filename}"
     config = get_or_create_config(db)
+    delete_image(config.logo_url)
+    url = await upload_image(file, folder="glowi-skin/logo", public_id="logo")
     config.logo_url = url
     db.commit()
     return {"url": url}

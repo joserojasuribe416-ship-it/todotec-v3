@@ -4,11 +4,11 @@ from typing import List, Optional
 from ..database import get_db
 from ..models import Product, ProductVariant, ProductImage
 from ..schemas import ProductCreate, ProductUpdate, ProductOut, VariantCreate, VariantOut
-import os, shutil, uuid
+from ..cloudinary_client import upload_image as cld_upload, delete_image as cld_delete
+import uuid
 
 router = APIRouter(prefix="/api/products", tags=["products"])
 
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
 
 
 def make_sku(db: Session) -> str:
@@ -122,18 +122,8 @@ async def upload_variant_image(variant_id: int, file: UploadFile = File(...), db
     v = db.query(ProductVariant).filter(ProductVariant.id == variant_id).first()
     if not v:
         raise HTTPException(status_code=404, detail="Variante no encontrada")
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    ext = file.filename.split(".")[-1].lower()
-    filename = f"variant_{variant_id}_{uuid.uuid4().hex[:8]}.{ext}"
-    filepath = os.path.join(UPLOAD_DIR, filename)
-    # Remove old image if exists
-    if v.image_url:
-        old_file = os.path.join(UPLOAD_DIR, v.image_url.split("/")[-1])
-        if os.path.exists(old_file):
-            os.remove(old_file)
-    with open(filepath, "wb") as f:
-        shutil.copyfileobj(file.file, f)
-    v.image_url = f"/uploads/{filename}"
+    cld_delete(v.image_url)
+    v.image_url = await cld_upload(file, folder="glowi-skin/variants", public_id=f"variant_{variant_id}")
     db.commit()
     return {"id": variant_id, "image_url": v.image_url}
 
@@ -143,10 +133,7 @@ def delete_variant_image(variant_id: int, db: Session = Depends(get_db)):
     v = db.query(ProductVariant).filter(ProductVariant.id == variant_id).first()
     if not v:
         raise HTTPException(status_code=404, detail="Variante no encontrada")
-    if v.image_url:
-        old_file = os.path.join(UPLOAD_DIR, v.image_url.split("/")[-1])
-        if os.path.exists(old_file):
-            os.remove(old_file)
+    cld_delete(v.image_url)
     v.image_url = ""
     db.commit()
     return {"ok": True}
@@ -164,22 +151,18 @@ def delete_variant(variant_id: int, db: Session = Depends(get_db)):
 
 # ── Images ────────────────────────────────────────────────────────────
 @router.post("/{product_id}/images")
-async def upload_image(product_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_product_image(product_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
     p = db.query(Product).filter(Product.id == product_id).first()
     if not p:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    ext = file.filename.split(".")[-1].lower()
-    filename = f"product_{product_id}_{uuid.uuid4().hex[:8]}.{ext}"
-    filepath = os.path.join(UPLOAD_DIR, filename)
-    with open(filepath, "wb") as f:
-        shutil.copyfileobj(file.file, f)
+    public_id = f"product_{product_id}_{uuid.uuid4().hex[:6]}"
+    url = await cld_upload(file, folder="glowi-skin/products", public_id=public_id)
     is_primary = len(p.images) == 0
     order = len(p.images)
     img = ProductImage(
         product_id=product_id,
-        filename=filename,
-        url=f"/uploads/{filename}",
+        filename=public_id,
+        url=url,
         is_primary=is_primary,
         order=order
     )
@@ -190,13 +173,11 @@ async def upload_image(product_id: int, file: UploadFile = File(...), db: Sessio
 
 
 @router.delete("/images/{image_id}")
-def delete_image(image_id: int, db: Session = Depends(get_db)):
+def delete_product_image(image_id: int, db: Session = Depends(get_db)):
     img = db.query(ProductImage).filter(ProductImage.id == image_id).first()
     if not img:
         raise HTTPException(status_code=404, detail="Imagen no encontrada")
-    filepath = os.path.join(UPLOAD_DIR, img.filename)
-    if os.path.exists(filepath):
-        os.remove(filepath)
+    cld_delete(img.url)
     db.delete(img)
     db.commit()
     return {"ok": True}

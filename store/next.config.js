@@ -3,10 +3,11 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 const nextConfig = {
   images: {
-    domains: ['localhost', 'railway.app'],
+    domains: ['localhost', 'railway.app', 'res.cloudinary.com'],
     remotePatterns: [
       { protocol: 'https', hostname: '**.railway.app' },
       { protocol: 'https', hostname: '**.up.railway.app' },
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
     ],
   },
   async rewrites() {

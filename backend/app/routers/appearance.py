@@ -4,11 +4,10 @@ from typing import List, Optional, Any
 from pydantic import BaseModel
 from ..database import get_db
 from ..models import Banner, HomepageSection, CompanyConfig, Product
-import os, uuid, shutil
+from ..cloudinary_client import upload_image, delete_image
+import uuid
 
 router = APIRouter(prefix="/api/appearance", tags=["appearance"])
-
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
@@ -144,12 +143,11 @@ async def upload_banner_image(banner_id: int, file: UploadFile = File(...), db: 
     banner = db.query(Banner).filter(Banner.id == banner_id).first()
     if not banner:
         raise HTTPException(status_code=404, detail="Banner no encontrado")
-    ext = os.path.splitext(file.filename)[1]
-    filename = f"banner_{banner_id}_{uuid.uuid4().hex[:8]}{ext}"
-    filepath = os.path.join(UPLOAD_DIR, filename)
-    with open(filepath, "wb") as f:
-        shutil.copyfileobj(file.file, f)
-    banner.image_url = f"/uploads/{filename}"
+    delete_image(banner.image_url)
+    banner.image_url = await upload_image(
+        file, folder="glowi-skin/banners",
+        public_id=f"banner_{banner_id}"
+    )
     db.commit()
     db.refresh(banner)
     return banner
@@ -159,6 +157,7 @@ def delete_banner_image(banner_id: int, db: Session = Depends(get_db)):
     banner = db.query(Banner).filter(Banner.id == banner_id).first()
     if not banner:
         raise HTTPException(status_code=404, detail="Banner no encontrado")
+    delete_image(banner.image_url)
     banner.image_url = ""
     db.commit()
     db.refresh(banner)
