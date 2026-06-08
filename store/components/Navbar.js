@@ -46,13 +46,13 @@ function NavbarInner() {
 
       {/* ── Announcement bar ── */}
       <div style={{
-        background: '#EEC5C5', textAlign: 'center', padding: '7px 16px',
-        fontSize: 11, fontWeight: 500, color: '#1E1A1A', letterSpacing: '0.02em',
+        background: '#1E1A1A', textAlign: 'center', padding: '7px 16px',
+        fontSize: 11, fontWeight: 400, color: '#EEC5C5', letterSpacing: '0.04em',
         fontFamily: "'Inter', sans-serif"
       }}>
-        <em style={{ fontStyle: 'italic', fontWeight: 600 }}>Envío gratis</em>
+        <em style={{ fontStyle: 'italic', fontWeight: 600, color: '#fff' }}>Envío gratis</em>
         {' '}por compras desde S/200.{' '}
-        <span style={{ opacity: 0.7, fontSize: 10 }}>Aplican T&C</span>
+        <span style={{ opacity: 0.5, fontSize: 10 }}>Aplican T&C</span>
       </div>
 
       {/* ── Main header ── */}

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { fetchProducts, fetchConfig } from '../lib/api'
 import ProductCard from '../components/ProductCard'
+import BannerCarousel from '../components/BannerCarousel'
 import { ArrowRight } from 'lucide-react'
 
 export default async function HomePage() {
@@ -17,115 +18,9 @@ export default async function HomePage() {
   return (
     <div style={{ background: '#FAF7F4', minHeight: '100vh' }}>
 
-      {/* ── Banner Grid 3 cols ── */}
+      {/* ── Banner Carousel ── */}
       <section style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 24px 0' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
-
-          {/* Banner 1 — Hero oscuro */}
-          <div style={{ borderRadius: 16, overflow: 'hidden', cursor: 'pointer' }}>
-            <div style={{
-              background: '#1E1A1A', height: 220, padding: '28px 28px 24px',
-              display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
-              position: 'relative', overflow: 'hidden'
-            }}>
-              <div style={{ position: 'absolute', right: -30, top: -30, width: 200, height: 200, borderRadius: '50%', background: 'rgba(238,197,197,0.06)' }} />
-              <div style={{ position: 'absolute', right: 40, bottom: -40, width: 140, height: 140, borderRadius: '50%', background: 'rgba(196,154,138,0.07)' }} />
-              <div style={{ position: 'relative', zIndex: 1 }}>
-                <div style={{ fontSize: 9, fontWeight: 500, color: '#EEC5C5', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: 6, fontFamily: "'Inter', sans-serif" }}>
-                  Korean Skincare
-                </div>
-                <div style={{
-                  fontFamily: "'Josefin Sans', sans-serif",
-                  fontSize: 26, fontWeight: 100, color: '#FAF7F4',
-                  letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1.1,
-                  whiteSpace: 'pre-line'
-                }}>
-                  {bannerTitle.split('\n')[0]}{'\n'}
-                  <span style={{ color: '#EEC5C5' }}>{bannerTitle.split('\n')[1] || ''}</span>
-                </div>
-                <Link href="/catalog" style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 14,
-                  background: '#EEC5C5', color: '#1E1A1A', fontWeight: 500,
-                  fontSize: 10, padding: '7px 16px', borderRadius: 5, textDecoration: 'none',
-                  letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: "'Inter', sans-serif"
-                }}>Ver catálogo <ArrowRight size={12} /></Link>
-              </div>
-            </div>
-            <div style={{ background: '#fff', border: '1px solid #EDE8E4', borderTop: 'none', borderRadius: '0 0 16px 16px', padding: '12px 16px' }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: '#1E1A1A', marginBottom: 2 }}>Catálogo completo</div>
-              <Link href="/catalog" style={{ fontSize: 11, color: '#C49A8A', textDecoration: 'none' }}>¡Ver todos los productos!</Link>
-            </div>
-          </div>
-
-          {/* Banner 2 — Blush */}
-          <div style={{ borderRadius: 16, overflow: 'hidden', cursor: 'pointer' }}>
-            <div style={{
-              background: 'linear-gradient(135deg, #EEC5C5 30%, #C49A8A)',
-              height: 220, padding: '28px 28px 24px',
-              display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
-              position: 'relative', overflow: 'hidden'
-            }}>
-              <div style={{ position: 'absolute', left: -20, top: -20, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.12)' }} />
-              <div style={{ position: 'relative', zIndex: 1 }}>
-                <div style={{ fontSize: 9, fontWeight: 500, color: 'rgba(30,26,26,0.65)', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: 6, fontFamily: "'Inter', sans-serif" }}>
-                  Ofertas especiales
-                </div>
-                <div style={{
-                  fontFamily: "'Josefin Sans', sans-serif",
-                  fontSize: 26, fontWeight: 100, color: '#1E1A1A',
-                  letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1.1
-                }}>
-                  Hasta<br />30% dscto.
-                </div>
-                <Link href="/catalog" style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 14,
-                  background: '#1E1A1A', color: '#EEC5C5', fontWeight: 500,
-                  fontSize: 10, padding: '7px 16px', borderRadius: 5, textDecoration: 'none',
-                  letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: "'Inter', sans-serif"
-                }}>Ver ofertas <ArrowRight size={12} /></Link>
-              </div>
-            </div>
-            <div style={{ background: '#fff', border: '1px solid #EDE8E4', borderTop: 'none', borderRadius: '0 0 16px 16px', padding: '12px 16px' }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: '#1E1A1A', marginBottom: 2 }}>Descuentos en serums</div>
-              <Link href="/catalog" style={{ fontSize: 11, color: '#C49A8A', textDecoration: 'none' }}>¡Compra Aquí!</Link>
-            </div>
-          </div>
-
-          {/* Banner 3 — Sage */}
-          <div style={{ borderRadius: 16, overflow: 'hidden', cursor: 'pointer' }}>
-            <div style={{
-              background: 'linear-gradient(135deg, #B5C4B1 30%, #8aa385)',
-              height: 220, padding: '28px 28px 24px',
-              display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
-              position: 'relative', overflow: 'hidden'
-            }}>
-              <div style={{ position: 'absolute', right: -20, top: -20, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.15)' }} />
-              <div style={{ position: 'relative', zIndex: 1 }}>
-                <div style={{ fontSize: 9, fontWeight: 500, color: 'rgba(30,26,26,0.6)', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: 6, fontFamily: "'Inter', sans-serif" }}>
-                  Protección solar
-                </div>
-                <div style={{
-                  fontFamily: "'Josefin Sans', sans-serif",
-                  fontSize: 26, fontWeight: 100, color: '#fff',
-                  letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1.1
-                }}>
-                  SPF Coreano<br />esencial
-                </div>
-                <Link href="/catalog?category=Protector%20Solar" style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 14,
-                  background: '#fff', color: '#1E1A1A', fontWeight: 500,
-                  fontSize: 10, padding: '7px 16px', borderRadius: 5, textDecoration: 'none',
-                  letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: "'Inter', sans-serif"
-                }}>Ver SPF <ArrowRight size={12} /></Link>
-              </div>
-            </div>
-            <div style={{ background: '#fff', border: '1px solid #EDE8E4', borderTop: 'none', borderRadius: '0 0 16px 16px', padding: '12px 16px' }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: '#1E1A1A', marginBottom: 2 }}>Pack SPF Coreano</div>
-              <Link href="/catalog?category=Protector%20Solar" style={{ fontSize: 11, color: '#C49A8A', textDecoration: 'none' }}>¡Compra Aquí!</Link>
-            </div>
-          </div>
-
-        </div>
+        <BannerCarousel />
       </section>
 
       {/* ── Promo strip 2 cols ── */}
