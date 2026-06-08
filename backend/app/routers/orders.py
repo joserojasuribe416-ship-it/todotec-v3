@@ -5,9 +5,140 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
 from ..database import get_db
-from ..models import Order
+from ..models import Order, Sale, SaleItem, Product, ProductVariant, AccountingEntry, CompanyConfig
 
 router = APIRouter(prefix="/api/orders", tags=["orders"])
+
+
+# ── Auto-venta al pagar ───────────────────────────────────────────────────────
+
+def _create_sale_from_order(order: Order, db: Session):
+    """Crea un registro Sale con stock y contabilidad cuando el pedido se paga."""
+    # Config de empresa (número de factura, IGV)
+    config = db.query(CompanyConfig).first()
+    if not config:
+        config = CompanyConfig(id=1)
+        db.add(config)
+        db.flush()
+
+    subtotal = 0.0
+    sale_items_data = []
+
+    for item_json in (order.items or []):
+        product_id = item_json.get("product_id")
+        quantity = int(item_json.get("quantity", 1))
+        price = float(item_json.get("price", 0.0))
+        variant_color = item_json.get("variant_color", "")
+
+        product = db.query(Product).filter(Product.id == product_id).first()
+        if not product:
+            continue
+
+        # Buscar variante por color
+        variant = None
+        if variant_color:
+            variant = db.query(ProductVariant).filter(
+                ProductVariant.product_id == product_id,
+                ProductVariant.color == variant_color,
+            ).first()
+        if not variant and product.variants:
+            variant = product.variants[0]
+
+        item_subtotal = round(price * quantity, 2)
+        subtotal += item_subtotal
+        sale_items_data.append({
+            "product": product,
+            "variant": variant,
+            "quantity": quantity,
+            "price": price,
+            "subtotal": item_subtotal,
+        })
+
+    if not sale_items_data:
+        return  # Nada que registrar
+
+    tax_rate = getattr(config, "tax_rate", 0.18) or 0.18
+    tax_amount = round(subtotal * tax_rate, 2)
+    total = round(subtotal + tax_amount, 2)
+
+    invoice_series = getattr(config, "invoice_series", "B001") or "B001"
+    correlativo = getattr(config, "invoice_correlativo", 1) or 1
+    invoice_number = f"{invoice_series}-{str(correlativo).zfill(8)}"
+    config.invoice_correlativo = correlativo + 1
+
+    # Dirección de entrega
+    if order.delivery_type == "pickup":
+        delivery_address = (order.delivery_data or {}).get("point_address", "")
+    else:
+        dd = order.delivery_data or {}
+        parts = [dd.get("address", ""), dd.get("district", ""), dd.get("province", ""), dd.get("department", "")]
+        delivery_address = ", ".join(p for p in parts if p)
+
+    order_number = 10000 + order.id
+    sale = Sale(
+        customer_name=f"{order.customer_nombre} {order.customer_apellido}".strip() or "Cliente Web",
+        customer_email=order.customer_email or "",
+        customer_phone=order.customer_celular or "",
+        customer_address=delivery_address,
+        subtotal=subtotal,
+        tax_amount=tax_amount,
+        total=total,
+        is_credit=False,
+        status="cobrado",
+        invoice_number=invoice_number,
+        notes=f"Pedido web #{order_number} · MP {order.mp_payment_id or ''}",
+        sale_type="retail",
+    )
+    db.add(sale)
+    db.flush()
+
+    cogs = 0.0
+    for item_data in sale_items_data:
+        product = item_data["product"]
+        variant = item_data["variant"]
+        unit_cost = float(product.unit_cost or 0.0)
+
+        db.add(SaleItem(
+            sale_id=sale.id,
+            product_id=product.id,
+            variant_id=variant.id if variant else None,
+            quantity=item_data["quantity"],
+            catalog_price=item_data["price"],
+            sale_price=item_data["price"],
+            unit_cost=unit_cost,
+            subtotal=item_data["subtotal"],
+        ))
+
+        # Descontar stock
+        if variant:
+            variant.stock = max(0, variant.stock - item_data["quantity"])
+        elif product.variants:
+            for v in product.variants:
+                if v.stock >= item_data["quantity"]:
+                    v.stock -= item_data["quantity"]
+                    break
+
+        cogs += unit_cost * item_data["quantity"]
+
+    # Asiento contable — ingresos
+    db.add(AccountingEntry(
+        sale_id=sale.id,
+        entry_type="venta",
+        description=f"Venta web {invoice_number} — Pedido #{order_number}",
+        debit_account="Efectivo",
+        credit_account="Ventas",
+        amount=total,
+    ))
+    # Asiento contable — costo de ventas
+    if cogs > 0:
+        db.add(AccountingEntry(
+            sale_id=sale.id,
+            entry_type="cogs",
+            description=f"Costo de ventas web {invoice_number}",
+            debit_account="Costo de Ventas",
+            credit_account="Inventarios",
+            amount=round(cogs, 2),
+        ))
 
 
 def get_mp_sdk():
@@ -167,6 +298,8 @@ async def mp_webhook(request: Request, db: Session = Depends(get_db)):
                     if order and order.status == "pending_payment":
                         order.status = "paid"
                         order.mp_payment_id = str(resource_id)
+                        db.flush()
+                        _create_sale_from_order(order, db)
                         db.commit()
         except Exception:
             pass
@@ -190,6 +323,8 @@ def verify_payment(order_id: int, payment_id: Optional[str] = None, db: Session 
                 if payment.get("status") == "approved":
                     order.status = "paid"
                     order.mp_payment_id = str(payment_id)
+                    db.flush()
+                    _create_sale_from_order(order, db)
                     db.commit()
                     db.refresh(order)
         except Exception:
