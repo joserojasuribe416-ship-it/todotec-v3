@@ -28,7 +28,15 @@ export async function fetchConfig() {
 
 export async function fetchSections() {
   try {
-    const res = await fetch(`${API_BASE}/api/appearance/sections`, { cache: 'no-store' })
+    const res = await fetch(`${API_BASE}/api/appearance/sections`, { next: { revalidate: 3600 } })
+    if (!res.ok) return []
+    return res.json()
+  } catch { return [] }
+}
+
+export async function fetchBanners() {
+  try {
+    const res = await fetch(`${API_BASE}/api/appearance/banners`, { next: { revalidate: 3600 } })
     if (!res.ok) return []
     return res.json()
   } catch { return [] }

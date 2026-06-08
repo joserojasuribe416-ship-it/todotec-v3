@@ -1,13 +1,14 @@
 import Link from 'next/link'
-import { fetchProducts, fetchConfig, fetchSections } from '../lib/api'
+import { fetchProducts, fetchConfig, fetchSections, fetchBanners } from '../lib/api'
 import ProductCard from '../components/ProductCard'
 import BannerCarousel from '../components/BannerCarousel'
 
 export default async function HomePage() {
-  const [products, config, sections] = await Promise.all([
+  const [products, config, sections, banners] = await Promise.all([
     fetchProducts({ store_only: 'true' }),
     fetchConfig().catch(() => null),
     fetchSections().catch(() => []),
+    fetchBanners().catch(() => []),
   ])
 
   // Build a map for quick lookup
@@ -41,7 +42,7 @@ export default async function HomePage() {
 
       {/* ── Banner Carousel ── */}
       <section style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 24px 0' }}>
-        <BannerCarousel />
+        <BannerCarousel banners={banners} />
       </section>
 
       {/* ── Promo strip 2 cols ── */}

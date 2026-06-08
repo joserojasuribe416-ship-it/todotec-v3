@@ -5,19 +5,10 @@ import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
 
 const VISIBLE = 3
 
-export default function BannerCarousel() {
-  const [banners, setBanners] = useState([])
+export default function BannerCarousel({ banners = [] }) {
   const [offset, setOffset] = useState(0)
   const intervalRef = useRef(null)
   const touchStartX = useRef(null)
-
-  useEffect(() => {
-    const base = process.env.NEXT_PUBLIC_API_URL || ''
-    fetch(`${base}/api/appearance/banners`)
-      .then(r => r.json())
-      .then(data => setBanners(Array.isArray(data) ? data : []))
-      .catch(() => {})
-  }, [])
 
   const total = banners.length
   const maxOffset = Math.max(0, total - VISIBLE)
@@ -87,11 +78,9 @@ export default function BannerCarousel() {
                   />
                 ) : (
                   <>
-                    {/* Decorative circles */}
                     <div style={{ position: 'absolute', right: -40, top: -40, width: 200, height: 200, borderRadius: '50%', background: `${b.accent}12` }} />
                     <div style={{ position: 'absolute', left: -20, bottom: -30, width: 130, height: 130, borderRadius: '50%', background: `${b.accent}09` }} />
-                    {/* Bottle placeholders */}
-                    <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-end', gap: 10, paddingBottom: 0 }}>
+                    <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-end', gap: 10 }}>
                       <div style={{ width: 36, height: 110, borderRadius: '18px 18px 8px 8px', background: `${b.accent}20`, border: `1px solid ${b.accent}25` }} />
                       <div style={{ width: 46, height: 140, borderRadius: '16px 16px 10px 10px', background: `${b.accent}18`, border: `1px solid ${b.accent}22`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <div style={{ width: 20, height: 20, borderRadius: '50%', background: `${b.accent}35` }} />
