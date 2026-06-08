@@ -236,6 +236,40 @@ class Brand(Base):
     created_at = Column(DateTime, server_default=func.now())
 
 
+class Banner(Base):
+    __tablename__ = "banners"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    tag = Column(String, default="")
+    title = Column(String, default="")
+    subtitle = Column(String, default="")
+    cta = Column(String, default="Ver catálogo")
+    href = Column(String, default="/catalog")
+    image_url = Column(String, default="")
+    bg = Column(String, default="#1E1A1A")
+    accent = Column(String, default="#EEC5C5")
+    text_bg = Column(String, default="#1E1A1A")
+    text_color = Column(String, default="#FAF7F4")
+    tag_color = Column(String, default="#EEC5C5")
+    cta_bg = Column(String, default="#EEC5C5")
+    cta_color = Column(String, default="#1E1A1A")
+    order = Column(Integer, default=0)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, server_default=func.now())
+
+
+class HomepageSection(Base):
+    __tablename__ = "homepage_sections"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    key = Column(String, unique=True, nullable=False)   # "favoritos" | "nuevos"
+    title = Column(String, default="")
+    subtitle = Column(String, default="")
+    product_ids = Column(JSON, default=list)
+    max_items = Column(Integer, default=10)
+    is_active = Column(Boolean, default=True)
+
+
 class CapitalContribution(Base):
     __tablename__ = "capital_contributions"
 

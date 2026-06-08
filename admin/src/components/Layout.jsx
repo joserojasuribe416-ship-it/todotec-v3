@@ -1,7 +1,7 @@
 import { Link, useLocation, Outlet } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Package, ShoppingCart, DollarSign,
-  TrendingUp, Settings, Store, Menu, X, ChevronRight, Tag, Wallet, Bookmark
+  TrendingUp, Settings, Store, Menu, X, ChevronRight, Tag, Wallet, Bookmark, Palette
 } from 'lucide-react'
 import { useState } from 'react'
 import { useTheme } from '../context/ThemeContext'
@@ -16,6 +16,7 @@ const NAV = [
   { to: '/contabilidad',  icon: TrendingUp,      label: 'Contabilidad' },
   { to: '/categorias',    icon: Tag,             label: 'Categorías' },
   { to: '/marcas',        icon: Bookmark,        label: 'Marcas' },
+  { to: '/apariencia',    icon: Palette,         label: 'Apariencia' },
   { to: '/configuracion', icon: Settings,        label: 'Configuración' },
 ]
 

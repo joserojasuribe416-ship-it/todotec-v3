@@ -65,6 +65,20 @@ export const deleteCapital = (id) => api.delete(`/accounting/capital/${id}`).the
 export const getIncomeStatement = () => api.get('/accounting/income-statement').then(r => r.data)
 export const getBalanceSheet = () => api.get('/accounting/balance-sheet').then(r => r.data)
 
+// ── Appearance ────────────────────────────────────────────────────────
+export const getAnnouncement = () => api.get('/appearance/announcement').then(r => r.data)
+export const updateAnnouncement = (text) => api.put('/appearance/announcement', { announcement_text: text }).then(r => r.data)
+export const getBannersAll = () => api.get('/appearance/banners/all').then(r => r.data)
+export const getBannersActive = () => api.get('/appearance/banners').then(r => r.data)
+export const updateBanner = (id, data) => api.put(`/appearance/banners/${id}`, data).then(r => r.data)
+export const uploadBannerImage = (id, file) => {
+  const fd = new FormData(); fd.append('file', file)
+  return api.post(`/appearance/banners/${id}/image`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data)
+}
+export const deleteBannerImage = (id) => api.delete(`/appearance/banners/${id}/image`).then(r => r.data)
+export const getSections = () => api.get('/appearance/sections').then(r => r.data)
+export const updateSection = (key, data) => api.put(`/appearance/sections/${key}`, data).then(r => r.data)
+
 // ── Cobranzas ─────────────────────────────────────────────────────────
 export const getPayables = () => api.get('/cobranzas/payables').then(r => r.data)
 export const payPurchase = (id, data) => api.post(`/cobranzas/payables/${id}/pay`, data).then(r => r.data)

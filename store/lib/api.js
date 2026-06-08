@@ -26,6 +26,21 @@ export async function fetchConfig() {
   return res.json()
 }
 
+export async function fetchSections() {
+  try {
+    const res = await fetch(`${API_BASE}/api/appearance/sections`, { cache: 'no-store' })
+    if (!res.ok) return []
+    return res.json()
+  } catch { return [] }
+}
+
+export async function fetchProductsByIds(ids = []) {
+  if (ids.length === 0) return []
+  const all = await fetchProducts({ store_only: 'true' })
+  const map = Object.fromEntries(all.map(p => [p.id, p]))
+  return ids.map(id => map[id]).filter(Boolean)
+}
+
 export function getImageUrl(url) {
   if (!url) return null
   if (url.startsWith('http')) return url

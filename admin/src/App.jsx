@@ -11,6 +11,7 @@ import Configuracion from './pages/Configuracion'
 import Cobranzas from './pages/Cobranzas'
 import Categorias from './pages/Categorias'
 import Marcas from './pages/Marcas'
+import Apariencia from './pages/Apariencia'
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="contabilidad" element={<Contabilidad />} />
         <Route path="categorias" element={<Categorias />} />
         <Route path="marcas" element={<Marcas />} />
+        <Route path="apariencia" element={<Apariencia />} />
         <Route path="configuracion" element={<Configuracion />} />
       </Route>
     </Routes>

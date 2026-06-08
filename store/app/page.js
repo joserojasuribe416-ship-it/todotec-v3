@@ -1,19 +1,40 @@
 import Link from 'next/link'
-import { fetchProducts, fetchConfig } from '../lib/api'
+import { fetchProducts, fetchConfig, fetchSections } from '../lib/api'
 import ProductCard from '../components/ProductCard'
 import BannerCarousel from '../components/BannerCarousel'
-import { ArrowRight } from 'lucide-react'
 
 export default async function HomePage() {
-  const [products, config] = await Promise.all([
+  const [products, config, sections] = await Promise.all([
     fetchProducts({ store_only: 'true' }),
     fetchConfig().catch(() => null),
+    fetchSections().catch(() => []),
   ])
-  const topSellers = products.slice(0, 10)
-  const newArrivals = products.slice(0, 10)
 
-  const bannerTitle    = config?.banner_title    || 'Tu rutina coreana,\nen un solo lugar.'
-  const bannerSubtitle = config?.banner_subtitle || 'Korean skincare importado directamente desde Corea del Sur.'
+  // Build a map for quick lookup
+  const productMap = Object.fromEntries(products.map(p => [p.id, p]))
+
+  // Get section data; fall back to first/last 10 products if no selections made
+  const favSection  = sections.find(s => s.key === 'favoritos') || {}
+  const newSection  = sections.find(s => s.key === 'nuevos')    || {}
+
+  const favIds  = favSection.product_ids  || []
+  const newIds  = newSection.product_ids  || []
+  const favMax  = favSection.max_items    || 10
+  const newMax  = newSection.max_items    || 10
+
+  const favTitle    = favSection.title    || 'Los favoritos'
+  const favSubtitle = favSection.subtitle || '✦ más vendidos'
+  const newTitle    = newSection.title    || 'Lo más nuevo'
+  const newSubtitle = newSection.subtitle || '✦ recién llegados'
+
+  // If admin hasn't picked products yet, fall back to all products
+  const topSellers  = (favIds.length > 0
+    ? favIds.map(id => productMap[id]).filter(Boolean)
+    : products).slice(0, favMax)
+
+  const newArrivals = (newIds.length > 0
+    ? newIds.map(id => productMap[id]).filter(Boolean)
+    : products).slice(0, newMax)
 
   return (
     <div style={{ background: '#FAF7F4', minHeight: '100vh' }}>
@@ -71,8 +92,8 @@ export default async function HomePage() {
       <section style={{ maxWidth: 1280, margin: '0 auto', padding: '40px 24px 0' }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 18 }}>
           <div>
-            <div style={{ fontSize: 9, fontWeight: 500, color: '#C49A8A', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: 6, fontFamily: "'Inter', sans-serif" }}>✦ más vendidos</div>
-            <div style={{ fontFamily: "'Josefin Sans', sans-serif", fontSize: 22, fontWeight: 100, color: '#1E1A1A', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Los favoritos</div>
+            <div style={{ fontSize: 9, fontWeight: 500, color: '#C49A8A', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: 6, fontFamily: "'Inter', sans-serif" }}>{favSubtitle}</div>
+            <div style={{ fontFamily: "'Josefin Sans', sans-serif", fontSize: 22, fontWeight: 100, color: '#1E1A1A', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{favTitle}</div>
           </div>
           <Link href="/catalog" style={{ fontSize: 11, fontWeight: 500, color: '#1E1A1A', textDecoration: 'none', paddingBottom: 2, borderBottom: '1px solid #EEC5C5' }}>Ver todos →</Link>
         </div>
@@ -97,8 +118,8 @@ export default async function HomePage() {
       <section style={{ maxWidth: 1280, margin: '0 auto', padding: '36px 24px 48px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 18 }}>
           <div>
-            <div style={{ fontSize: 9, fontWeight: 500, color: '#C49A8A', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: 6, fontFamily: "'Inter', sans-serif" }}>✦ recién llegados</div>
-            <div style={{ fontFamily: "'Josefin Sans', sans-serif", fontSize: 22, fontWeight: 100, color: '#1E1A1A', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Lo más nuevo</div>
+            <div style={{ fontSize: 9, fontWeight: 500, color: '#C49A8A', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: 6, fontFamily: "'Inter', sans-serif" }}>{newSubtitle}</div>
+            <div style={{ fontFamily: "'Josefin Sans', sans-serif", fontSize: 22, fontWeight: 100, color: '#1E1A1A', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{newTitle}</div>
           </div>
           <Link href="/catalog" style={{ fontSize: 11, fontWeight: 500, color: '#1E1A1A', textDecoration: 'none', paddingBottom: 2, borderBottom: '1px solid #EEC5C5' }}>Ver todos →</Link>
         </div>

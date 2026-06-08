@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from .database import engine, Base
-from .routers import config, suppliers, products, purchases, sales, accounting, dashboard, categories, cobranzas, brands
+from .routers import config, suppliers, products, purchases, sales, accounting, dashboard, categories, cobranzas, brands, appearance
 import os
 
 # Create tables
@@ -24,6 +24,9 @@ def _run_migrations():
         "ALTER TABLE products ADD COLUMN IF NOT EXISTS brand VARCHAR DEFAULT ''",
         "ALTER TABLE products ADD COLUMN IF NOT EXISTS benefit VARCHAR DEFAULT ''",
         "CREATE TABLE IF NOT EXISTS brands (id SERIAL PRIMARY KEY, name VARCHAR UNIQUE NOT NULL, description VARCHAR DEFAULT '', is_active BOOLEAN DEFAULT TRUE, \"order\" INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT NOW())",
+        "CREATE TABLE IF NOT EXISTS banners (id SERIAL PRIMARY KEY, tag VARCHAR DEFAULT '', title VARCHAR DEFAULT '', subtitle VARCHAR DEFAULT '', cta VARCHAR DEFAULT 'Ver catálogo', href VARCHAR DEFAULT '/catalog', image_url VARCHAR DEFAULT '', bg VARCHAR DEFAULT '#1E1A1A', accent VARCHAR DEFAULT '#EEC5C5', text_bg VARCHAR DEFAULT '#1E1A1A', text_color VARCHAR DEFAULT '#FAF7F4', tag_color VARCHAR DEFAULT '#EEC5C5', cta_bg VARCHAR DEFAULT '#EEC5C5', cta_color VARCHAR DEFAULT '#1E1A1A', \"order\" INTEGER DEFAULT 0, is_active BOOLEAN DEFAULT TRUE, created_at TIMESTAMP DEFAULT NOW())",
+        "CREATE TABLE IF NOT EXISTS homepage_sections (id SERIAL PRIMARY KEY, key VARCHAR UNIQUE NOT NULL, title VARCHAR DEFAULT '', subtitle VARCHAR DEFAULT '', product_ids JSON DEFAULT '[]', max_items INTEGER DEFAULT 10, is_active BOOLEAN DEFAULT TRUE)",
+        "ALTER TABLE company_config ADD COLUMN IF NOT EXISTS announcement_text VARCHAR DEFAULT 'Envío gratis por compras desde S/200'",
     ]
     with engine.connect() as conn:
         for sql in migrations:
@@ -85,6 +88,7 @@ app.include_router(accounting.router)
 app.include_router(dashboard.router)
 app.include_router(categories.router)
 app.include_router(brands.router)
+app.include_router(appearance.router)
 app.include_router(cobranzas.router)
 
 
