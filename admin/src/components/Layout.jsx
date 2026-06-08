@@ -1,7 +1,7 @@
 import { Link, useLocation, Outlet } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Package, ShoppingCart, DollarSign,
-  TrendingUp, Settings, Store, Menu, X, ChevronRight, Tag
+  TrendingUp, Settings, Store, Menu, X, ChevronRight, Tag, Wallet
 } from 'lucide-react'
 import { useState } from 'react'
 import { useTheme } from '../context/ThemeContext'
@@ -12,6 +12,7 @@ const NAV = [
   { to: '/inventario',    icon: Package,         label: 'Inventario' },
   { to: '/compras',       icon: ShoppingCart,    label: 'Compras' },
   { to: '/ventas',        icon: DollarSign,      label: 'Ventas' },
+  { to: '/cobranzas',     icon: Wallet,          label: 'Cobranzas' },
   { to: '/contabilidad',  icon: TrendingUp,      label: 'Contabilidad' },
   { to: '/categorias',    icon: Tag,             label: 'Categorías' },
   { to: '/configuracion', icon: Settings,        label: 'Configuración' },
@@ -45,17 +46,17 @@ export default function Layout() {
             <img src={logoUrl} alt={companyName} style={{ width: 38, height: 38, objectFit: 'contain', borderRadius: 8, flexShrink: 0, background: '#fff' }} />
           ) : (
             <div style={{
-              width: 38, height: 38, background: 'var(--brand-primary, #1E3A8A)', borderRadius: 10,
+              width: 38, height: 38, background: 'var(--brand-primary, #1E1A1A)', borderRadius: 10,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: '2px solid var(--brand-secondary, #FFD100)', flexShrink: 0
+              border: '2px solid var(--brand-secondary, #EEC5C5)', flexShrink: 0
             }}>
-              <span style={{ color: 'var(--brand-secondary, #FFD100)', fontWeight: 900, fontSize: 14, letterSpacing: '-1px' }}>
+              <span style={{ color: 'var(--brand-secondary, #EEC5C5)', fontWeight: 300, fontSize: 14, letterSpacing: '-1px' }}>
                 {companyName.slice(0, 2).toUpperCase()}
               </span>
             </div>
           )}
           <div>
-            <div style={{ fontWeight: 900, fontSize: 16, color: '#fff', letterSpacing: '-0.3px' }}>{companyName}</div>
+            <div style={{ fontWeight: 300, fontSize: 16, color: '#fff', letterSpacing: '-0.3px' }}>{companyName}</div>
             <div style={{ fontSize: 10, color: '#4B5563', fontWeight: 600, letterSpacing: '0.5px' }}>ADMIN PANEL</div>
           </div>
           <button onClick={() => setOpen(false)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280' }} className="lg:hidden">
@@ -76,8 +77,8 @@ export default function Layout() {
                   display: 'flex', alignItems: 'center', gap: 10,
                   padding: '9px 12px', borderRadius: 8, textDecoration: 'none',
                   fontSize: 13, fontWeight: active ? 700 : 500,
-                  background: active ? 'var(--brand-primary, #1E3A8A)' : 'transparent',
-                  color: active ? 'var(--brand-secondary, #FFD100)' : '#9CA3AF',
+                  background: active ? 'var(--brand-primary, #1E1A1A)' : 'transparent',
+                  color: active ? 'var(--brand-secondary, #EEC5C5)' : '#9CA3AF',
                   transition: 'all 0.15s',
                 }}
                 onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#fff' } }}
@@ -102,7 +103,7 @@ export default function Layout() {
               padding: '9px 12px', borderRadius: 8, textDecoration: 'none',
               fontSize: 13, fontWeight: 600, color: '#6B7280', transition: 'all 0.15s'
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,209,0,0.08)'; e.currentTarget.style.color = '#FFD100' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(238,197,197,0.15)'; e.currentTarget.style.color = '#EEC5C5' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#6B7280' }}
           >
             <Store size={16} />

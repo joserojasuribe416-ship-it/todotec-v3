@@ -21,7 +21,7 @@ export default function ContactPage() {
               { icon: MessageCircle, label: 'WhatsApp', value: '+51 904 811 639', href: `https://wa.me/${whatsapp}`, color: 'text-green-500' },
               { icon: Mail, label: 'Email', value: 'info@todotec.pe', href: 'mailto:info@todotec.pe', color: 'text-blue-500' },
               { icon: Instagram, label: 'Instagram', value: '@todotec', href: 'https://instagram.com', color: 'text-pink-500' },
-              { icon: Facebook, label: 'Facebook', value: 'TodoTec', href: 'https://facebook.com', color: 'text-blue-600' },
+              { icon: Facebook, label: 'Facebook', value: 'Glowi Skin', href: 'https://facebook.com', color: 'text-blue-600' },
             ].map(({ icon: Icon, label, value, href, color }) => (
               <a key={label} href={href} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-100 hover:shadow-md transition-all group">

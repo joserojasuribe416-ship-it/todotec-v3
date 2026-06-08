@@ -6,13 +6,13 @@ import {
 } from 'recharts'
 import { DollarSign, Package, TrendingUp, Wallet, AlertTriangle } from 'lucide-react'
 
-const COLORS = ['#FFD100', '#1E3A8A', '#1D4ED8', '#fbbf24', '#60a5fa', '#34d399']
+const COLORS = ['#EEC5C5', '#1E1A1A', '#1D4ED8', '#fbbf24', '#60a5fa', '#34d399']
 
 function StatCard({ icon: Icon, label, value, sub, color = 'yellow' }) {
   return (
     <div className="card flex items-start gap-4">
       <div className={`p-3 rounded-xl ${color === 'yellow' ? 'bg-yellow-50' : 'bg-blue-50'}`}>
-        <Icon size={22} className={color === 'yellow' ? 'text-[#FFD100]' : 'text-[#1E3A8A]'} />
+        <Icon size={22} className={color === 'yellow' ? 'text-[#EEC5C5]' : 'text-[#1E1A1A]'} />
       </div>
       <div>
         <div className="text-2xl font-bold text-gray-900">{value}</div>
@@ -33,7 +33,7 @@ export default function Dashboard() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
-      <div className="animate-spin w-8 h-8 border-4 border-[#FFD100] border-t-transparent rounded-full" />
+      <div className="animate-spin w-8 h-8 border-4 border-[#EEC5C5] border-t-transparent rounded-full" />
     </div>
   )
 
@@ -45,7 +45,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-500 text-sm mt-1">Resumen ejecutivo de TodoTec</p>
+        <p className="text-gray-500 text-sm mt-1">Resumen ejecutivo de Glowi Skin</p>
       </div>
 
       {/* Sales KPIs */}
@@ -74,7 +74,7 @@ export default function Dashboard() {
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `S/${(v/1000).toFixed(0)}k`} />
               <Tooltip formatter={(v) => [`S/ ${v.toFixed(2)}`, 'Ventas']} />
-              <Line type="monotone" dataKey="sales" stroke="#FFD100" strokeWidth={3} dot={{ fill: '#1E3A8A', r: 4 }} />
+              <Line type="monotone" dataKey="sales" stroke="#EEC5C5" strokeWidth={3} dot={{ fill: '#1E1A1A', r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -120,7 +120,7 @@ export default function Dashboard() {
                 <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={v => `${v}`} />
                 <YAxis dataKey="name" type="category" tick={{ fontSize: 10 }} width={100} />
                 <Tooltip />
-                <Bar dataKey="qty_sold" fill="#1E3A8A" name="Unidades" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="qty_sold" fill="#1E1A1A" name="Unidades" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}

@@ -6,7 +6,7 @@ import toast from 'react-hot-toast'
 import { useTheme } from '../context/ThemeContext'
 
 const PRIMARY_COLORS = [
-  { label: 'Azul marino',   value: '#1E3A8A' },
+  { label: 'Azul marino',   value: '#1E1A1A' },
   { label: 'Azul royal',    value: '#2563EB' },
   { label: 'Índigo',        value: '#4338CA' },
   { label: 'Violeta',       value: '#7C3AED' },
@@ -19,7 +19,7 @@ const PRIMARY_COLORS = [
 ]
 
 const SECONDARY_COLORS = [
-  { label: 'Amarillo',   value: '#FFD100' },
+  { label: 'Amarillo',   value: '#EEC5C5' },
   { label: 'Ámbar',      value: '#F59E0B' },
   { label: 'Naranja',    value: '#F97316' },
   { label: 'Rojo',       value: '#EF4444' },
@@ -76,7 +76,7 @@ export default function Configuracion() {
   const save = async () => {
     try {
       await updateConfig(form)
-      updateTheme(form.primary_color || '#1E3A8A', form.secondary_color || '#FFD100')
+      updateTheme(form.primary_color || '#1E1A1A', form.secondary_color || '#EEC5C5')
       updateBrand(form.company_name, form.logo_url)
       toast.success('Configuración guardada')
     } catch { toast.error('Error al guardar') }
@@ -84,12 +84,12 @@ export default function Configuracion() {
 
   const handlePrimary = (color) => {
     set('primary_color', color)
-    updateTheme(color, form.secondary_color || '#FFD100')
+    updateTheme(color, form.secondary_color || '#EEC5C5')
   }
 
   const handleSecondary = (color) => {
     set('secondary_color', color)
-    updateTheme(form.primary_color || '#1E3A8A', color)
+    updateTheme(form.primary_color || '#1E1A1A', color)
   }
 
   const uploadLogoFile = async (e) => {
@@ -120,7 +120,7 @@ export default function Configuracion() {
     }
   }
 
-  if (!form) return <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-4 border-[#FFD100] border-t-transparent rounded-full" /></div>
+  if (!form) return <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-4 border-[#EEC5C5] border-t-transparent rounded-full" /></div>
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -136,7 +136,7 @@ export default function Configuracion() {
 
       {/* Company data */}
       <div className="card space-y-4">
-        <h2 className="font-bold text-[#1E3A8A]">Datos de la Empresa</h2>
+        <h2 className="font-bold text-[#1E1A1A]">Datos de la Empresa</h2>
         <div className="flex items-center gap-4">
           {form.logo_url && <img src={form.logo_url} alt="Logo" className="w-16 h-16 object-contain rounded-lg border" />}
           <label className="cursor-pointer">
@@ -180,7 +180,7 @@ export default function Configuracion() {
 
       {/* Financial */}
       <div className="card space-y-4">
-        <h2 className="font-bold text-[#1E3A8A]">Parámetros Financieros</h2>
+        <h2 className="font-bold text-[#1E1A1A]">Parámetros Financieros</h2>
         <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="label">Moneda principal</label>
@@ -202,7 +202,7 @@ export default function Configuracion() {
 
       {/* Invoicing */}
       <div className="card space-y-4">
-        <h2 className="font-bold text-[#1E3A8A]">Facturación</h2>
+        <h2 className="font-bold text-[#1E1A1A]">Facturación</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">Serie</label>
@@ -217,7 +217,7 @@ export default function Configuracion() {
 
       {/* Social media */}
       <div className="card space-y-4">
-        <h2 className="font-bold text-[#1E3A8A]">Redes Sociales</h2>
+        <h2 className="font-bold text-[#1E1A1A]">Redes Sociales</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">Instagram</label>
@@ -225,7 +225,7 @@ export default function Configuracion() {
           </div>
           <div>
             <label className="label">Facebook</label>
-            <input className="input" value={form.facebook} onChange={e => set('facebook', e.target.value)} placeholder="TodoTec" />
+            <input className="input" value={form.facebook} onChange={e => set('facebook', e.target.value)} placeholder="Glowi Skin" />
           </div>
           <div>
             <label className="label">TikTok</label>
@@ -237,7 +237,7 @@ export default function Configuracion() {
       {/* ── Apariencia ── */}
       <div className="card space-y-6">
         <div>
-          <h2 className="font-bold text-[#1E3A8A]">Apariencia</h2>
+          <h2 className="font-bold text-[#1E1A1A]">Apariencia</h2>
           <p className="text-xs text-gray-400 mt-0.5">Los cambios de color se aplican en tiempo real al guardar.</p>
         </div>
 
@@ -247,19 +247,19 @@ export default function Configuracion() {
           boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
         }}>
           <div style={{
-            background: form.primary_color || '#1E3A8A',
+            background: form.primary_color || '#1E1A1A',
             padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 12
           }}>
             <div style={{
               width: 36, height: 36, borderRadius: 8,
-              background: form.secondary_color || '#FFD100',
+              background: form.secondary_color || '#EEC5C5',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 900, fontSize: 13, color: form.primary_color || '#1E3A8A'
+              fontWeight: 900, fontSize: 13, color: form.primary_color || '#1E1A1A'
             }}>TT</div>
             <span style={{ color: '#fff', fontWeight: 800, fontSize: 16 }}>{form.company_name || 'Mi Empresa'}</span>
             <span style={{
-              marginLeft: 'auto', background: form.secondary_color || '#FFD100',
-              color: form.primary_color || '#1E3A8A',
+              marginLeft: 'auto', background: form.secondary_color || '#EEC5C5',
+              color: form.primary_color || '#1E1A1A',
               fontWeight: 700, fontSize: 11, padding: '3px 10px', borderRadius: 4
             }}>BOTÓN</span>
           </div>
@@ -274,13 +274,13 @@ export default function Configuracion() {
             <div className="flex items-center gap-3 mb-3">
               <div style={{
                 width: 28, height: 28, borderRadius: 6,
-                background: form.primary_color || '#1E3A8A', border: '1px solid #E5E7EB'
+                background: form.primary_color || '#1E1A1A', border: '1px solid #E5E7EB'
               }} />
-              <span className="text-xs text-gray-500 font-mono">{form.primary_color || '#1E3A8A'}</span>
+              <span className="text-xs text-gray-500 font-mono">{form.primary_color || '#1E1A1A'}</span>
             </div>
             <ColorPalette
               colors={PRIMARY_COLORS}
-              selected={form.primary_color || '#1E3A8A'}
+              selected={form.primary_color || '#1E1A1A'}
               onChange={handlePrimary}
             />
           </div>
@@ -289,13 +289,13 @@ export default function Configuracion() {
             <div className="flex items-center gap-3 mb-3">
               <div style={{
                 width: 28, height: 28, borderRadius: 6,
-                background: form.secondary_color || '#FFD100', border: '1px solid #E5E7EB'
+                background: form.secondary_color || '#EEC5C5', border: '1px solid #E5E7EB'
               }} />
-              <span className="text-xs text-gray-500 font-mono">{form.secondary_color || '#FFD100'}</span>
+              <span className="text-xs text-gray-500 font-mono">{form.secondary_color || '#EEC5C5'}</span>
             </div>
             <ColorPalette
               colors={SECONDARY_COLORS}
-              selected={form.secondary_color || '#FFD100'}
+              selected={form.secondary_color || '#EEC5C5'}
               onChange={handleSecondary}
             />
           </div>

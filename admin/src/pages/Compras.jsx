@@ -216,6 +216,7 @@ function PurchaseForm({ suppliers, products, categoryList, onSave, onClose }) {
         taxes: 0,
         notes: form.notes,
         is_credit: form.is_credit,
+        credit_days: form.credit_days || 0,
         items: form.items.map(it => ({
           product_id: it.product_id ? parseInt(it.product_id) : null,
           product_name: it.product_name,
@@ -257,11 +258,24 @@ function PurchaseForm({ suppliers, products, categoryList, onSave, onClose }) {
               <input className="input" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Notas opcionales..." />
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={form.is_credit} onChange={e => setForm(f => ({ ...f, is_credit: e.target.checked }))} className="w-4 h-4 accent-[#FFD100]" />
+              <input type="checkbox" checked={form.is_credit} onChange={e => setForm(f => ({ ...f, is_credit: e.target.checked }))} className="w-4 h-4 accent-[#C49A8A]" />
               <span className="text-sm text-gray-700">Compra a crédito</span>
             </label>
+            {form.is_credit && (
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">Días de crédito:</label>
+                <input
+                  className="input"
+                  type="number"
+                  min="1"
+                  style={{ width: 80 }}
+                  value={form.credit_days}
+                  onChange={e => setForm(f => ({ ...f, credit_days: parseInt(e.target.value) || 30 }))}
+                />
+              </div>
+            )}
           </div>
 
           {/* Items */}
@@ -290,11 +304,11 @@ function PurchaseForm({ suppliers, products, categoryList, onSave, onClose }) {
                     {/* Nuevo vs Existente toggle */}
                     <div className="flex gap-2">
                       <button
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${item.is_new ? 'bg-[#1E3A8A] text-white border-[#1E3A8A]' : 'bg-white text-gray-600 border-gray-200'}`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${item.is_new ? 'bg-[#1E1A1A] text-white border-[#1E1A1A]' : 'bg-white text-gray-600 border-gray-200'}`}
                         onClick={() => setItem(i, 'is_new', true)}
                       >Producto nuevo</button>
                       <button
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${!item.is_new ? 'bg-[#1E3A8A] text-white border-[#1E3A8A]' : 'bg-white text-gray-600 border-gray-200'}`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${!item.is_new ? 'bg-[#1E1A1A] text-white border-[#1E1A1A]' : 'bg-white text-gray-600 border-gray-200'}`}
                         onClick={() => setItem(i, 'is_new', false)}
                       >Producto existente</button>
                     </div>
@@ -367,7 +381,7 @@ function PurchaseForm({ suppliers, products, categoryList, onSave, onClose }) {
                       </div>
                       <div className="flex justify-between pt-1 border-t border-gray-200 text-sm">
                         <span className="text-gray-500">Costo total: <span className="font-semibold text-gray-800">S/ {fmtN((parseFloat(item.costo_base)||0)+(parseFloat(item.flete)||0)+(parseFloat(item.impuestos)||0)+(parseFloat(item.otros)||0))}</span></span>
-                        <span className="text-gray-500">Costo unitario: <span className="font-bold text-[#1E3A8A]">S/ {fmtN(unitCost)}</span></span>
+                        <span className="text-gray-500">Costo unitario: <span className="font-bold text-[#1E1A1A]">S/ {fmtN(unitCost)}</span></span>
                       </div>
                     </div>
 
@@ -375,7 +389,7 @@ function PurchaseForm({ suppliers, products, categoryList, onSave, onClose }) {
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <label className="label mb-0">Variantes de color</label>
-                        <button className="text-xs text-[#1E3A8A] hover:underline" onClick={() => addVariant(i)}>+ Agregar color</button>
+                        <button className="text-xs text-[#1E1A1A] hover:underline" onClick={() => addVariant(i)}>+ Agregar color</button>
                       </div>
                       {item.variants.length === 0 && (
                         <p className="text-xs text-gray-400">Sin variantes — todo el stock irá a "Estándar"</p>
@@ -415,8 +429,8 @@ function PurchaseForm({ suppliers, products, categoryList, onSave, onClose }) {
           </div>
 
           {/* Summary */}
-          <div className="bg-[#1E3A8A] text-white rounded-xl p-4">
-            <div className="flex justify-between font-bold text-[#FFD100] text-lg">
+          <div className="bg-[#1E1A1A] text-white rounded-xl p-4">
+            <div className="flex justify-between font-bold text-[#EEC5C5] text-lg">
               <span>Total compra:</span><span>S/ {fmtN(totalCost)}</span>
             </div>
           </div>
@@ -587,7 +601,7 @@ export default function Compras() {
             >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                  <Package size={18} className="text-[#1E3A8A]" />
+                  <Package size={18} className="text-[#1E1A1A]" />
                 </div>
                 <div>
                   <div className="font-semibold text-gray-900">Compra #{p.id}</div>
@@ -600,7 +614,7 @@ export default function Compras() {
               <div className="flex items-center gap-3">
                 <span className={`badge ${p.status === 'pagado' ? 'badge-green' : 'badge-yellow'}`}>{p.status}</span>
                 <div className="text-right">
-                  <div className="font-bold text-[#1E3A8A]">{fmt(p.total_cost)}</div>
+                  <div className="font-bold text-[#1E1A1A]">{fmt(p.total_cost)}</div>
                   <div className="text-xs text-gray-400">{p.items.length} ítem{p.items.length !== 1 ? 's' : ''}</div>
                 </div>
                 <button
@@ -647,8 +661,8 @@ export default function Compras() {
                     ))}
                     <tr className="border-t bg-gray-50">
                       <td colSpan={4} className="table-td text-right text-xs text-gray-500"></td>
-                      <td className="table-td text-right font-bold text-[#1E3A8A]">Total:</td>
-                      <td className="table-td text-right font-bold text-[#1E3A8A]">{fmt(p.total_cost)}</td>
+                      <td className="table-td text-right font-bold text-[#1E1A1A]">Total:</td>
+                      <td className="table-td text-right font-bold text-[#1E1A1A]">{fmt(p.total_cost)}</td>
                     </tr>
                   </tbody>
                 </table>

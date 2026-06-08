@@ -13,7 +13,7 @@ class CompanyConfig(Base):
     __tablename__ = "company_config"
 
     id = Column(Integer, primary_key=True, default=1)
-    company_name = Column(String, default="TodoTec")
+    company_name = Column(String, default="Glowi Skin")
     razon_social = Column(String, default="")
     ruc = Column(String, default="")
     address = Column(String, default="")
@@ -29,10 +29,10 @@ class CompanyConfig(Base):
     instagram = Column(String, default="")
     facebook = Column(String, default="")
     tiktok = Column(String, default="")
-    primary_color = Column(String, default="#1E3A8A")
-    secondary_color = Column(String, default="#FFD100")
-    banner_title = Column(String, default="Todo lo que necesitas,\nen un solo lugar.")
-    banner_subtitle = Column(String, default="Importamos directamente los mejores productos tecnológicos. Precios justos, calidad garantizada.")
+    primary_color = Column(String, default="#1E1A1A")
+    secondary_color = Column(String, default="#EEC5C5")
+    banner_title = Column(String, default="Tu rutina coreana,\nen un solo lugar.")
+    banner_subtitle = Column(String, default="Korean skincare importado directamente desde Corea del Sur. Rutinas reales, resultados visibles.")
 
 
 class Supplier(Base):
@@ -123,13 +123,15 @@ class Purchase(Base):
     total_cost = Column(Float, default=0.0)
     notes = Column(Text, default="")
     is_credit = Column(Boolean, default=False)
+    credit_days = Column(Integer, default=0)
     credit_due_date = Column(DateTime, nullable=True)
-    status = Column(String, default="pagado")  # pagado, credito
+    status = Column(String, default="pagado")  # pagado, credito, parcial
     created_at = Column(DateTime, server_default=func.now())
 
     supplier = relationship("Supplier", back_populates="purchases")
     items = relationship("PurchaseItem", back_populates="purchase", cascade="all, delete-orphan")
     accounting_entries = relationship("AccountingEntry", back_populates="purchase")
+    payments = relationship("Payment", back_populates="purchase", cascade="all, delete-orphan")
 
 
 class PurchaseItem(Base):
@@ -160,8 +162,9 @@ class Sale(Base):
     tax_amount = Column(Float, default=0.0)
     total = Column(Float, default=0.0)
     is_credit = Column(Boolean, default=False)
+    credit_days = Column(Integer, default=0)
     credit_due_date = Column(DateTime, nullable=True)
-    status = Column(String, default="cobrado")  # cobrado, credito
+    status = Column(String, default="cobrado")  # cobrado, credito, parcial
     invoice_number = Column(String, default="")
     notes = Column(Text, default="")
     sale_type = Column(String, default="retail")  # retail, wholesale
@@ -169,6 +172,7 @@ class Sale(Base):
 
     items = relationship("SaleItem", back_populates="sale", cascade="all, delete-orphan")
     accounting_entries = relationship("AccountingEntry", back_populates="sale")
+    payments = relationship("Payment", back_populates="sale", cascade="all, delete-orphan")
 
 
 class SaleItem(Base):
@@ -230,3 +234,19 @@ class CapitalContribution(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     accounting_entries = relationship("AccountingEntry", back_populates="capital")
+
+
+class Payment(Base):
+    """Registro de abonos sobre compras o ventas a crédito."""
+    __tablename__ = "payments"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    payment_date = Column(DateTime, server_default=func.now())
+    amount = Column(Float, nullable=False)
+    notes = Column(String, default="")
+    purchase_id = Column(Integer, ForeignKey("purchases.id"), nullable=True)
+    sale_id = Column(Integer, ForeignKey("sales.id"), nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+
+    purchase = relationship("Purchase", back_populates="payments")
+    sale = relationship("Sale", back_populates="payments")

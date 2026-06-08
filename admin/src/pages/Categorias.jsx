@@ -92,7 +92,7 @@ export default function Categorias() {
       </div>
 
       {/* Info banner */}
-      <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-sm text-[#1E3A8A] flex items-center gap-2">
+      <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-sm text-[#1E1A1A] flex items-center gap-2">
         <span className="font-bold">💡</span>
         Las categorías activas aparecen automáticamente en la tienda online, el buscador y el panel de navegación.
       </div>

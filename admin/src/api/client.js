@@ -63,3 +63,9 @@ export const addCapital = (data) => api.post('/accounting/capital', data).then(r
 export const deleteCapital = (id) => api.delete(`/accounting/capital/${id}`).then(r => r.data)
 export const getIncomeStatement = () => api.get('/accounting/income-statement').then(r => r.data)
 export const getBalanceSheet = () => api.get('/accounting/balance-sheet').then(r => r.data)
+
+// ── Cobranzas ─────────────────────────────────────────────────────────
+export const getPayables = () => api.get('/cobranzas/payables').then(r => r.data)
+export const payPurchase = (id, data) => api.post(`/cobranzas/payables/${id}/pay`, data).then(r => r.data)
+export const getReceivables = () => api.get('/cobranzas/receivables').then(r => r.data)
+export const collectSale = (id, data) => api.post(`/cobranzas/receivables/${id}/collect`, data).then(r => r.data)

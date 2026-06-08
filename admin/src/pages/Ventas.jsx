@@ -10,10 +10,10 @@ function InvoiceModal({ sale, onClose }) {
     const w = window.open('', '_blank')
     w.document.write(`<html><head><title>Factura ${sale.invoice_number}</title>
     <style>body{font-family:sans-serif;padding:20px;max-width:600px;margin:0 auto}
-    .header{text-align:center;border-bottom:2px solid #1E3A8A;padding-bottom:16px;margin-bottom:16px}
-    .logo{font-size:28px;font-weight:900;color:#1E3A8A}table{width:100%;border-collapse:collapse}
-    th{background:#1E3A8A;color:white;padding:8px;text-align:left;font-size:12px}
-    td{padding:8px;border-bottom:1px solid #eee;font-size:13px}.total{font-weight:bold;font-size:16px;color:#1E3A8A}
+    .header{text-align:center;border-bottom:2px solid #1E1A1A;padding-bottom:16px;margin-bottom:16px}
+    .logo{font-size:28px;font-weight:900;color:#1E1A1A}table{width:100%;border-collapse:collapse}
+    th{background:#1E1A1A;color:white;padding:8px;text-align:left;font-size:12px}
+    td{padding:8px;border-bottom:1px solid #eee;font-size:13px}.total{font-weight:bold;font-size:16px;color:#1E1A1A}
     .totals td{border-bottom:none}</style></head><body>`)
     w.document.write(ref.current.innerHTML)
     w.document.write('</body></html>')
@@ -34,9 +34,9 @@ function InvoiceModal({ sale, onClose }) {
           </div>
         </div>
         <div ref={ref} className="p-8">
-          <div className="header text-center border-b-2 border-[#1E3A8A] pb-4 mb-6">
-            <div className="text-3xl font-black text-[#1E3A8A]">TodoTec</div>
-            <div className="text-sm text-gray-500">Tecnología para todos</div>
+          <div className="header text-center border-b-2 border-[#1E1A1A] pb-4 mb-6">
+            <div className="text-3xl font-black text-[#1E1A1A]">Glowi Skin</div>
+            <div className="text-sm text-gray-500">Korean Skincare · Lima, Perú</div>
           </div>
           <div className="grid grid-cols-2 gap-6 mb-6 text-sm">
             <div>
@@ -55,7 +55,7 @@ function InvoiceModal({ sale, onClose }) {
           </div>
           <table className="w-full mb-4">
             <thead>
-              <tr className="bg-[#1E3A8A] text-white text-xs">
+              <tr className="bg-[#1E1A1A] text-white text-xs">
                 <th className="text-left p-2">Producto</th>
                 <th className="text-center p-2">Qty</th>
                 <th className="text-right p-2">P. Unit.</th>
@@ -80,13 +80,13 @@ function InvoiceModal({ sale, onClose }) {
             <div className="w-56 space-y-1 text-sm">
               <div className="flex justify-between"><span className="text-gray-500">Subtotal:</span><span>{fmt(sale.subtotal)}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">IGV (18%):</span><span>{fmt(sale.tax_amount)}</span></div>
-              <div className="flex justify-between font-bold text-[#1E3A8A] text-lg border-t pt-1">
+              <div className="flex justify-between font-bold text-[#1E1A1A] text-lg border-t pt-1">
                 <span>Total:</span><span>{fmt(sale.total)}</span>
               </div>
             </div>
           </div>
           {sale.notes && <p className="text-xs text-gray-500 mt-4">Nota: {sale.notes}</p>}
-          <div className="text-center text-xs text-gray-400 mt-6 pt-4 border-t">¡Gracias por tu compra en TodoTec!</div>
+          <div className="text-center text-xs text-gray-400 mt-6 pt-4 border-t">¡Gracias por tu compra en Glowi Skin!</div>
         </div>
       </div>
     </div>
@@ -95,7 +95,7 @@ function InvoiceModal({ sale, onClose }) {
 
 function SaleForm({ products, onSave, onClose }) {
   const [cart, setCart] = useState([])
-  const [customer, setCustomer] = useState({ name: 'Cliente', email: '', phone: '', address: '', sale_type: 'retail', is_credit: false, notes: '' })
+  const [customer, setCustomer] = useState({ name: 'Cliente', email: '', phone: '', address: '', sale_type: 'retail', is_credit: false, credit_days: 30, notes: '' })
   const [selProduct, setSelProduct] = useState(null)
   const [selVariant, setSelVariant] = useState('')
   const [qty, setQty] = useState(1)
@@ -151,6 +151,7 @@ function SaleForm({ products, onSave, onClose }) {
         customer_phone: customer.phone,
         customer_address: customer.address,
         is_credit: customer.is_credit,
+        credit_days: customer.credit_days || 0,
         notes: customer.notes,
         sale_type: customer.sale_type,
         items: cart.map(c => ({
@@ -208,11 +209,24 @@ function SaleForm({ products, onSave, onClose }) {
                 <input className="input" value={customer.address} onChange={e => setCustomer(c => ({ ...c, address: e.target.value }))} />
               </div>
             </div>
-            <div className="flex items-center gap-6 mt-3">
+            <div className="flex items-center gap-4 mt-3 flex-wrap">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={customer.is_credit} onChange={e => setCustomer(c => ({ ...c, is_credit: e.target.checked }))} className="w-4 h-4 accent-[#FFD100]" />
+                <input type="checkbox" checked={customer.is_credit} onChange={e => setCustomer(c => ({ ...c, is_credit: e.target.checked }))} className="w-4 h-4 accent-[#C49A8A]" />
                 <span className="text-sm text-gray-700">Venta a crédito</span>
               </label>
+              {customer.is_credit && (
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-600">Días de crédito:</label>
+                  <input
+                    className="input"
+                    type="number"
+                    min="1"
+                    style={{ width: 80 }}
+                    value={customer.credit_days}
+                    onChange={e => setCustomer(c => ({ ...c, credit_days: parseInt(e.target.value) || 30 }))}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -288,10 +302,10 @@ function SaleForm({ products, onSave, onClose }) {
               </table>
 
               {/* Totals */}
-              <div className="bg-[#1E3A8A] text-white rounded-xl p-4 mt-4 space-y-1">
+              <div className="bg-[#1E1A1A] text-white rounded-xl p-4 mt-4 space-y-1">
                 <div className="flex justify-between text-sm"><span>Subtotal:</span><span>S/ {subtotal.toFixed(2)}</span></div>
                 <div className="flex justify-between text-sm"><span>IGV (18%):</span><span>S/ {tax.toFixed(2)}</span></div>
-                <div className="flex justify-between font-bold text-[#FFD100] text-lg pt-2 border-t border-blue-600">
+                <div className="flex justify-between font-bold text-[#EEC5C5] text-lg pt-2 border-t border-blue-600">
                   <span>Total:</span><span>S/ {total.toFixed(2)}</span>
                 </div>
               </div>
@@ -372,7 +386,7 @@ export default function Ventas() {
               <div className="flex items-center gap-4">
                 <span className={`badge ${s.status === 'cobrado' ? 'badge-green' : 'badge-yellow'}`}>{s.status}</span>
                 <div className="text-right">
-                  <div className="font-bold text-[#1E3A8A]">{fmt(s.total)}</div>
+                  <div className="font-bold text-[#1E1A1A]">{fmt(s.total)}</div>
                   <div className="text-xs text-gray-400">{s.items.length} ítem{s.items.length !== 1 ? 's' : ''}</div>
                 </div>
                 <button onClick={e => { e.stopPropagation(); setInvoice(s) }} className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-500" title="Ver comprobante">

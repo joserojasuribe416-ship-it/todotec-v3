@@ -66,8 +66,15 @@ def create_sale(data: SaleCreate, db: Session = Depends(get_db)):
     invoice_number = f"{config.invoice_series}-{str(config.invoice_correlativo).zfill(8)}"
     config.invoice_correlativo += 1
 
+    sale_date = datetime.now()
+    credit_days = data.credit_days or 0
+    credit_due = data.credit_due_date
+    if data.is_credit and credit_days > 0 and not credit_due:
+        from datetime import timedelta
+        credit_due = sale_date + timedelta(days=credit_days)
+
     sale = Sale(
-        sale_date=datetime.now(),
+        sale_date=sale_date,
         customer_name=data.customer_name or "Cliente",
         customer_email=data.customer_email or "",
         customer_phone=data.customer_phone or "",
@@ -76,7 +83,8 @@ def create_sale(data: SaleCreate, db: Session = Depends(get_db)):
         tax_amount=tax_amount,
         total=total,
         is_credit=data.is_credit,
-        credit_due_date=data.credit_due_date,
+        credit_days=credit_days,
+        credit_due_date=credit_due,
         status="credito" if data.is_credit else "cobrado",
         invoice_number=invoice_number,
         notes=data.notes or "",

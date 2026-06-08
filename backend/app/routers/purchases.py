@@ -56,14 +56,22 @@ def create_purchase(data: PurchaseCreate, db: Session = Depends(get_db)):
                 detail=f"Efectivo insuficiente. Disponible: S/ {available_cash:.2f} — Requerido: S/ {estimated_total:.2f}. Registra un aporte de capital o usa compra a crédito."
             )
 
+    purchase_date = data.purchase_date or datetime.now()
+    credit_due = data.credit_due_date
+    credit_days = data.credit_days or 0
+    if data.is_credit and credit_days > 0 and not credit_due:
+        from datetime import timedelta
+        credit_due = purchase_date + timedelta(days=credit_days)
+
     purchase = Purchase(
         supplier_id=data.supplier_id,
-        purchase_date=data.purchase_date or datetime.now(),
+        purchase_date=purchase_date,
         shipping_cost=data.shipping_cost,
         taxes=data.taxes,
         notes=data.notes or "",
         is_credit=data.is_credit,
-        credit_due_date=data.credit_due_date,
+        credit_days=credit_days,
+        credit_due_date=credit_due,
         status="credito" if data.is_credit else "pagado",
     )
     db.add(purchase)

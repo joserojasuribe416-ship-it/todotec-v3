@@ -8,6 +8,7 @@ import Compras from './pages/Compras'
 import Ventas from './pages/Ventas'
 import Contabilidad from './pages/Contabilidad'
 import Configuracion from './pages/Configuracion'
+import Cobranzas from './pages/Cobranzas'
 import Categorias from './pages/Categorias'
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="inventario" element={<Inventario />} />
         <Route path="compras" element={<Compras />} />
         <Route path="ventas" element={<Ventas />} />
+        <Route path="cobranzas" element={<Cobranzas />} />
         <Route path="contabilidad" element={<Contabilidad />} />
         <Route path="categorias" element={<Categorias />} />
         <Route path="configuracion" element={<Configuracion />} />

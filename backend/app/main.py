@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from .database import engine, Base
-from .routers import config, suppliers, products, purchases, sales, accounting, dashboard, categories
+from .routers import config, suppliers, products, purchases, sales, accounting, dashboard, categories, cobranzas
 import os
 
 # Create tables
@@ -18,6 +18,9 @@ def _run_migrations():
         "ALTER TABLE company_config ADD COLUMN IF NOT EXISTS banner_subtitle VARCHAR DEFAULT 'Importamos directamente los mejores productos tecnológicos.'",
         "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS email2 VARCHAR DEFAULT ''",
         "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS phone2 VARCHAR DEFAULT ''",
+        "ALTER TABLE purchases ADD COLUMN IF NOT EXISTS credit_days INTEGER DEFAULT 0",
+        "ALTER TABLE sales ADD COLUMN IF NOT EXISTS credit_days INTEGER DEFAULT 0",
+        "CREATE TABLE IF NOT EXISTS payments (id SERIAL PRIMARY KEY, payment_date TIMESTAMP DEFAULT NOW(), amount FLOAT NOT NULL, notes VARCHAR DEFAULT '', purchase_id INTEGER REFERENCES purchases(id) ON DELETE CASCADE, sale_id INTEGER REFERENCES sales(id) ON DELETE CASCADE, created_at TIMESTAMP DEFAULT NOW())",
     ]
     with engine.connect() as conn:
         for sql in migrations:
@@ -78,6 +81,7 @@ app.include_router(sales.router)
 app.include_router(accounting.router)
 app.include_router(dashboard.router)
 app.include_router(categories.router)
+app.include_router(cobranzas.router)
 
 
 @app.get("/")

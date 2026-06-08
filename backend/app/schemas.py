@@ -161,6 +161,7 @@ class PurchaseCreate(BaseModel):
     taxes: float = 0.0
     notes: Optional[str] = ""
     is_credit: bool = False
+    credit_days: Optional[int] = 0
     credit_due_date: Optional[datetime] = None
     items: List[PurchaseItemCreate]
 
@@ -184,6 +185,8 @@ class PurchaseOut(BaseModel):
     total_cost: float
     notes: str
     is_credit: bool
+    credit_days: Optional[int] = 0
+    credit_due_date: Optional[datetime] = None
     status: str
     items: List[PurchaseItemOut] = []
     supplier: Optional[SupplierOut] = None
@@ -206,6 +209,7 @@ class SaleCreate(BaseModel):
     customer_phone: Optional[str] = ""
     customer_address: Optional[str] = ""
     is_credit: bool = False
+    credit_days: Optional[int] = 0
     credit_due_date: Optional[datetime] = None
     notes: Optional[str] = ""
     sale_type: Optional[str] = "retail"
@@ -236,6 +240,8 @@ class SaleOut(BaseModel):
     tax_amount: float
     total: float
     is_credit: bool
+    credit_days: Optional[int] = 0
+    credit_due_date: Optional[datetime] = None
     status: str
     invoice_number: str
     notes: str
@@ -274,6 +280,56 @@ class RectifyItem(BaseModel):
 class PurchaseRectify(BaseModel):
     items: List[RectifyItem]
     notes: Optional[str] = None
+
+
+# ── Payments / Cobranzas ─────────────────────────────────────────────
+class PaymentCreate(BaseModel):
+    amount: float
+    notes: Optional[str] = ""
+
+class PaymentOut(BaseModel):
+    id: int
+    payment_date: Optional[datetime]
+    amount: float
+    notes: str
+    purchase_id: Optional[int]
+    sale_id: Optional[int]
+    class Config:
+        from_attributes = True
+
+class PayableOut(BaseModel):
+    """Compra a crédito con su estado de pago."""
+    id: int
+    purchase_date: Optional[datetime]
+    credit_days: Optional[int]
+    credit_due_date: Optional[datetime]
+    total_cost: float
+    amount_paid: float
+    balance: float
+    status: str
+    notes: str
+    supplier: Optional[SupplierOut] = None
+    payments: List[PaymentOut] = []
+    class Config:
+        from_attributes = True
+
+class ReceivableOut(BaseModel):
+    """Venta a crédito con su estado de cobro."""
+    id: int
+    sale_date: Optional[datetime]
+    credit_days: Optional[int]
+    credit_due_date: Optional[datetime]
+    invoice_number: str
+    customer_name: str
+    customer_phone: str
+    total: float
+    amount_paid: float
+    balance: float
+    status: str
+    notes: str
+    payments: List[PaymentOut] = []
+    class Config:
+        from_attributes = True
 
 
 # ── Accounting ───────────────────────────────────────────────────────

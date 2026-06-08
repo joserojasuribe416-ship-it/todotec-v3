@@ -35,7 +35,7 @@ function CapitalModal({ onClose, onSaved }) {
             <label className="label">Descripción</label>
             <input className="input" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descripción opcional..." />
           </div>
-          <div className="bg-blue-50 rounded-lg p-3 text-sm text-[#1E3A8A]">
+          <div className="bg-blue-50 rounded-lg p-3 text-sm text-[#1E1A1A]">
             <strong>Asiento automático:</strong><br />
             Débito: Efectivo | Crédito: Capital Social
           </div>
@@ -124,7 +124,7 @@ export default function Contabilidad() {
             key={id}
             onClick={() => setTab(id)}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              tab === id ? 'border-[#FFD100] text-[#1E3A8A]' : 'border-transparent text-gray-500 hover:text-gray-700'
+              tab === id ? 'border-[#EEC5C5] text-[#1E1A1A]' : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
             <Icon size={15} /> {label}
@@ -136,7 +136,7 @@ export default function Contabilidad() {
       {tab === 'pyl' && pyl && (
         <div className="max-w-xl">
           <div className="card">
-            <h2 className="font-bold text-[#1E3A8A] text-lg mb-6 text-center">Estado de Ganancias y Pérdidas</h2>
+            <h2 className="font-bold text-[#1E1A1A] text-lg mb-6 text-center">Estado de Ganancias y Pérdidas</h2>
             <div className="space-y-3">
               <div className="flex justify-between py-2">
                 <span className="text-gray-700 font-medium">Ventas totales</span>
@@ -147,8 +147,8 @@ export default function Contabilidad() {
                 <span className="text-red-600">({fmt(pyl.costo_ventas)})</span>
               </div>
               <div className="flex justify-between py-3 border-t bg-blue-50 px-3 rounded-lg">
-                <span className="font-bold text-[#1E3A8A]">Utilidad Bruta</span>
-                <span className="font-bold text-[#1E3A8A] text-lg">{fmt(pyl.utilidad_bruta)}</span>
+                <span className="font-bold text-[#1E1A1A]">Utilidad Bruta</span>
+                <span className="font-bold text-[#1E1A1A] text-lg">{fmt(pyl.utilidad_bruta)}</span>
               </div>
               <div className="flex justify-between py-2 border-t">
                 <span className="text-gray-700">(-) Gastos operativos</span>
@@ -169,7 +169,7 @@ export default function Contabilidad() {
       {tab === 'balance' && balance && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl">
           <div className="card">
-            <h3 className="font-bold text-[#1E3A8A] mb-4">ACTIVOS</h3>
+            <h3 className="font-bold text-[#1E1A1A] mb-4">ACTIVOS</h3>
             <div className="space-y-3">
               <div className="flex justify-between py-2">
                 <span className="text-gray-600">Efectivo</span>
@@ -183,7 +183,7 @@ export default function Contabilidad() {
                 <span className="text-gray-600">Cuentas por Cobrar</span>
                 <span className="font-semibold">{fmt(balance.activos.cuentas_por_cobrar)}</span>
               </div>
-              <div className="flex justify-between py-3 border-t bg-[#1E3A8A] text-white px-3 rounded-lg">
+              <div className="flex justify-between py-3 border-t bg-[#1E1A1A] text-white px-3 rounded-lg">
                 <span className="font-bold">Total Activos</span>
                 <span className="font-bold">{fmt(balance.activos.total)}</span>
               </div>
@@ -191,14 +191,14 @@ export default function Contabilidad() {
           </div>
           <div className="space-y-6">
             <div className="card">
-              <h3 className="font-bold text-[#1E3A8A] mb-4">PASIVOS</h3>
+              <h3 className="font-bold text-[#1E1A1A] mb-4">PASIVOS</h3>
               <div className="flex justify-between py-2">
                 <span className="text-gray-600">Cuentas por Pagar</span>
                 <span className="font-semibold">{fmt(balance.pasivos.cuentas_por_pagar)}</span>
               </div>
             </div>
             <div className="card">
-              <h3 className="font-bold text-[#1E3A8A] mb-4">PATRIMONIO</h3>
+              <h3 className="font-bold text-[#1E1A1A] mb-4">PATRIMONIO</h3>
               <div className="space-y-3">
                 <div className="flex justify-between py-2">
                   <span className="text-gray-600">Capital Social</span>
@@ -209,8 +209,8 @@ export default function Contabilidad() {
                   <span className="font-semibold">{fmt(balance.patrimonio.utilidades_acumuladas)}</span>
                 </div>
                 <div className="flex justify-between py-3 border-t bg-yellow-50 px-3 rounded-lg">
-                  <span className="font-bold text-[#1E3A8A]">Total Patrimonio</span>
-                  <span className="font-bold text-[#1E3A8A]">{fmt(balance.patrimonio.total)}</span>
+                  <span className="font-bold text-[#1E1A1A]">Total Patrimonio</span>
+                  <span className="font-bold text-[#1E1A1A]">{fmt(balance.patrimonio.total)}</span>
                 </div>
               </div>
             </div>
@@ -223,7 +223,7 @@ export default function Contabilidad() {
         <div className="max-w-2xl space-y-4">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500">
-              Total aportado: <strong className="text-[#1E3A8A]">{fmt(capital.reduce((s, c) => s + c.amount, 0))}</strong>
+              Total aportado: <strong className="text-[#1E1A1A]">{fmt(capital.reduce((s, c) => s + c.amount, 0))}</strong>
             </div>
           </div>
           <div className="card p-0 overflow-hidden">
@@ -246,7 +246,7 @@ export default function Contabilidad() {
                     <td className="table-td">{new Date(c.contribution_date).toLocaleDateString('es-PE')}</td>
                     <td className="table-td font-medium">{c.contributor}</td>
                     <td className="table-td text-gray-500">{c.description || '—'}</td>
-                    <td className="table-td text-right font-bold text-[#1E3A8A]">{fmt(c.amount)}</td>
+                    <td className="table-td text-right font-bold text-[#1E1A1A]">{fmt(c.amount)}</td>
                     <td className="table-td">
                       <button onClick={() => delCapital(c.id)} className="text-red-400 hover:text-red-600">
                         <Trash2 size={14} />

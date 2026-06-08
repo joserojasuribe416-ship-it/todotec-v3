@@ -73,7 +73,7 @@ function EditModal({ product, onClose, onSaved }) {
             <textarea className="input" rows={3} value={data.description} onChange={e => setData(d => ({ ...d, description: e.target.value }))} />
           </div>
           <div className="flex items-center gap-3">
-            <input type="checkbox" id="store" checked={data.show_in_store} onChange={e => setData(d => ({ ...d, show_in_store: e.target.checked }))} className="w-4 h-4 accent-[#FFD100]" />
+            <input type="checkbox" id="store" checked={data.show_in_store} onChange={e => setData(d => ({ ...d, show_in_store: e.target.checked }))} className="w-4 h-4 accent-[#C49A8A]" />
             <label htmlFor="store" className="text-sm text-gray-700">Mostrar en tienda online</label>
           </div>
 
@@ -116,9 +116,9 @@ function EditModal({ product, onClose, onSaved }) {
                             finally { setVariantUploading(u => ({ ...u, [v.id]: false })) }
                           }}
                         />
-                        <div className="w-12 h-12 border-2 border-dashed border-gray-300 hover:border-[#FFD100] rounded-lg flex flex-col items-center justify-center transition-colors">
+                        <div className="w-12 h-12 border-2 border-dashed border-gray-300 hover:border-[#EEC5C5] rounded-lg flex flex-col items-center justify-center transition-colors">
                           {variantUploading[v.id]
-                            ? <div className="w-4 h-4 border-2 border-[#1E3A8A] border-t-transparent rounded-full animate-spin" />
+                            ? <div className="w-4 h-4 border-2 border-[#1E1A1A] border-t-transparent rounded-full animate-spin" />
                             : <Camera size={16} className="text-gray-400" />
                           }
                         </div>
@@ -162,7 +162,7 @@ function EditModal({ product, onClose, onSaved }) {
             </div>
             <label className="cursor-pointer">
               <input type="file" accept="image/*" className="hidden" onChange={uploadImg} disabled={uploading} />
-              <div className="border-2 border-dashed border-gray-300 hover:border-[#FFD100] rounded-lg p-4 text-center transition-colors">
+              <div className="border-2 border-dashed border-gray-300 hover:border-[#EEC5C5] rounded-lg p-4 text-center transition-colors">
                 <Image size={20} className="mx-auto mb-1 text-gray-400" />
                 <span className="text-sm text-gray-500">{uploading ? 'Subiendo...' : 'Haz clic para subir imagen'}</span>
               </div>
@@ -272,7 +272,7 @@ export default function Inventario() {
 
                 <div className="flex justify-between items-center text-sm">
                   <div>
-                    <div className="font-bold text-[#1E3A8A]">{fmt(p.sale_price)}</div>
+                    <div className="font-bold text-[#1E1A1A]">{fmt(p.sale_price)}</div>
                     <div className="text-xs text-gray-400">Costo: {fmt(p.unit_cost)}</div>
                   </div>
                   <div className={`text-sm font-semibold ${margin >= 0 ? 'text-green-600' : 'text-red-500'}`}>
