@@ -298,3 +298,37 @@ class Payment(Base):
 
     purchase = relationship("Purchase", back_populates="payments")
     sale = relationship("Sale", back_populates="payments")
+
+
+class Order(Base):
+    __tablename__ = "orders"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    status = Column(String, default="pending_payment")
+    # pending_payment | paid | shipped | cancelled
+
+    # Customer
+    customer_nombre = Column(String, default="")
+    customer_apellido = Column(String, default="")
+    customer_email = Column(String, default="")
+    customer_dni = Column(String, default="")
+    customer_celular = Column(String, default="")
+
+    # Delivery
+    delivery_type = Column(String, default="pickup")  # pickup | delivery
+    delivery_data = Column(JSON, default=dict)
+
+    # Items [{"product_id", "name", "quantity", "price", "variant_color", "image"}]
+    items = Column(JSON, default=list)
+
+    # Amounts
+    subtotal = Column(Float, default=0.0)
+    shipping_cost = Column(Float, default=0.0)
+    total = Column(Float, default=0.0)
+
+    # MercadoPago
+    mp_preference_id = Column(String, default="")
+    mp_payment_id = Column(String, default="")
+
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())

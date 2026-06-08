@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from .database import engine, Base
-from .routers import config, suppliers, products, purchases, sales, accounting, dashboard, categories, cobranzas, brands, appearance, revalidate
+from .routers import config, suppliers, products, purchases, sales, accounting, dashboard, categories, cobranzas, brands, appearance, revalidate, orders
 import os
 
 # Create tables
@@ -28,6 +28,7 @@ def _run_migrations():
         "CREATE TABLE IF NOT EXISTS homepage_sections (id SERIAL PRIMARY KEY, key VARCHAR UNIQUE NOT NULL, title VARCHAR DEFAULT '', subtitle VARCHAR DEFAULT '', product_ids JSON DEFAULT '[]', max_items INTEGER DEFAULT 10, is_active BOOLEAN DEFAULT TRUE)",
         "ALTER TABLE company_config ADD COLUMN IF NOT EXISTS announcement_text VARCHAR DEFAULT 'Envío gratis por compras desde S/200'",
         "ALTER TABLE products ADD COLUMN IF NOT EXISTS ref_cost FLOAT DEFAULT 0",
+        "CREATE TABLE IF NOT EXISTS orders (id SERIAL PRIMARY KEY, status VARCHAR DEFAULT 'pending_payment', customer_nombre VARCHAR DEFAULT '', customer_apellido VARCHAR DEFAULT '', customer_email VARCHAR DEFAULT '', customer_dni VARCHAR DEFAULT '', customer_celular VARCHAR DEFAULT '', delivery_type VARCHAR DEFAULT 'pickup', delivery_data JSON DEFAULT '{}', items JSON DEFAULT '[]', subtotal FLOAT DEFAULT 0, shipping_cost FLOAT DEFAULT 0, total FLOAT DEFAULT 0, mp_preference_id VARCHAR DEFAULT '', mp_payment_id VARCHAR DEFAULT '', created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP)",
     ]
     with engine.connect() as conn:
         for sql in migrations:
@@ -92,6 +93,7 @@ app.include_router(brands.router)
 app.include_router(appearance.router)
 app.include_router(cobranzas.router)
 app.include_router(revalidate.router)
+app.include_router(orders.router)
 
 
 @app.get("/")

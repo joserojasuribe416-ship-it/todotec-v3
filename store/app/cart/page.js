@@ -1,10 +1,12 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Trash2, ArrowLeft, MessageCircle, Plus, Minus, ShoppingBag } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Trash2, ArrowLeft, CreditCard, MessageCircle, Plus, Minus, ShoppingBag } from 'lucide-react'
 import { getImageUrl } from '../../lib/api'
 
 export default function CartPage() {
+  const router = useRouter()
   const [cart, setCart] = useState([])
 
   useEffect(() => {
@@ -24,6 +26,8 @@ export default function CartPage() {
   const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
   const igv = subtotal * 0.18
   const total = subtotal + igv
+
+  const goCheckout = () => router.push('/checkout')
 
   const whatsappMsg = () => {
     if (!cart.length) return
@@ -119,7 +123,7 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                <button onClick={whatsappMsg} style={{
+                <button onClick={goCheckout} style={{
                   width: '100%', marginTop: 24, background: '#1E1A1A', color: '#EEC5C5',
                   border: 'none', borderRadius: 10, padding: '14px 0',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -130,7 +134,17 @@ export default function CartPage() {
                   onMouseEnter={e => e.currentTarget.style.background = '#3A3434'}
                   onMouseLeave={e => e.currentTarget.style.background = '#1E1A1A'}
                 >
-                  <MessageCircle size={15} /> Pedir por WhatsApp
+                  <CreditCard size={15} /> Proceder al pago
+                </button>
+                <button onClick={whatsappMsg} style={{
+                  width: '100%', marginTop: 10, background: 'none', color: '#9CA3AF',
+                  border: '1px solid #EDE8E4', borderRadius: 10, padding: '11px 0',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 400,
+                  letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer',
+                  transition: 'background 0.2s'
+                }}>
+                  <MessageCircle size={13} /> Pedir por WhatsApp
                 </button>
 
                 <Link href="/catalog" style={{
