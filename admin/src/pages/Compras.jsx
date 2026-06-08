@@ -576,6 +576,12 @@ export default function Compras() {
   const [showForm, setShowForm] = useState(false)
   const [rectify, setRectify] = useState(null)
   const [expanded, setExpanded] = useState(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [supplierFilter, setSupplierFilter] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [sortBy, setSortBy] = useState('date_desc')
 
   const load = () => getPurchases().then(setPurchases)
 
@@ -594,23 +600,79 @@ export default function Compras() {
     load()
   }
 
+  const displayPurchases = purchases
+    .filter(p => {
+      if (statusFilter && p.status !== statusFilter) return false
+      if (supplierFilter && String(p.supplier_id) !== supplierFilter) return false
+      if (dateFrom && new Date(p.purchase_date) < new Date(dateFrom)) return false
+      if (dateTo && new Date(p.purchase_date) > new Date(dateTo + 'T23:59:59')) return false
+      if (search) {
+        const q = search.toLowerCase()
+        const matchSupplier = p.supplier?.name?.toLowerCase().includes(q)
+        const matchId = String(p.id).includes(q)
+        const matchItem = p.items.some(it => it.product?.name?.toLowerCase().includes(q))
+        if (!matchSupplier && !matchId && !matchItem) return false
+      }
+      return true
+    })
+    .sort((a, b) => {
+      if (sortBy === 'date_asc')   return new Date(a.purchase_date) - new Date(b.purchase_date)
+      if (sortBy === 'date_desc')  return new Date(b.purchase_date) - new Date(a.purchase_date)
+      if (sortBy === 'total_asc')  return a.total_cost - b.total_cost
+      if (sortBy === 'total_desc') return b.total_cost - a.total_cost
+      return 0
+    })
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Compras</h1>
-          <p className="text-sm text-gray-500">{purchases.length} compra{purchases.length !== 1 ? 's' : ''} registrada{purchases.length !== 1 ? 's' : ''}</p>
+          <p className="text-sm text-gray-500">{displayPurchases.length} compra{displayPurchases.length !== 1 ? 's' : ''} registrada{displayPurchases.length !== 1 ? 's' : ''}</p>
         </div>
         <button className="btn-blue flex items-center gap-2" onClick={() => setShowForm(true)}>
           <Plus size={18} /> Nueva Compra
         </button>
       </div>
 
+      <div className="flex gap-3 flex-wrap">
+        <div className="relative">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input className="input pl-9 w-52" placeholder="Buscar proveedor o producto..." value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        <select className="input w-44" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+          <option value="">Todos los estados</option>
+          <option value="pagado">Pagado</option>
+          <option value="credito">Crédito</option>
+          <option value="parcial">Parcial</option>
+        </select>
+        <select className="input w-44" value={supplierFilter} onChange={e => setSupplierFilter(e.target.value)}>
+          <option value="">Todos los proveedores</option>
+          {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-gray-500 whitespace-nowrap">Desde</label>
+          <input className="input w-36" type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-gray-500 whitespace-nowrap">Hasta</label>
+          <input className="input w-36" type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} />
+        </div>
+        <select className="input w-44" value={sortBy} onChange={e => setSortBy(e.target.value)}>
+          <option value="date_desc">Más reciente</option>
+          <option value="date_asc">Más antiguo</option>
+          <option value="total_desc">Mayor total</option>
+          <option value="total_asc">Menor total</option>
+        </select>
+      </div>
+
       <div className="space-y-3">
-        {purchases.length === 0 && (
-          <div className="card text-center py-12 text-gray-400">Sin compras registradas. Agrega tu primera compra.</div>
+        {displayPurchases.length === 0 && (
+          <div className="card text-center py-12 text-gray-400">
+            {purchases.length === 0 ? 'Sin compras registradas. Agrega tu primera compra.' : 'Sin resultados con los filtros aplicados.'}
+          </div>
         )}
-        {purchases.map(p => (
+        {displayPurchases.map(p => (
           <div key={p.id} className="card p-0 overflow-hidden">
             <div
               className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50"

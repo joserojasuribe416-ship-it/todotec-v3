@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { getSales, createSale, deleteSale, getProducts } from '../api/client'
-import { Plus, Trash2, X, ShoppingBag, ChevronDown, ChevronUp, Printer } from 'lucide-react'
+import { Plus, Trash2, X, ShoppingBag, ChevronDown, ChevronUp, Printer, Search } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 function InvoiceModal({ sale, onClose }) {
@@ -332,6 +332,12 @@ export default function Ventas() {
   const [showForm, setShowForm] = useState(false)
   const [invoice, setInvoice] = useState(null)
   const [expanded, setExpanded] = useState(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [typeFilter, setTypeFilter] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [sortBy, setSortBy] = useState('date_desc')
 
   const load = () => getSales().then(setSales)
 
@@ -349,23 +355,77 @@ export default function Ventas() {
 
   const fmt = (n) => `S/ ${(n || 0).toFixed(2)}`
 
+  const displaySales = sales
+    .filter(s => {
+      if (statusFilter && s.status !== statusFilter) return false
+      if (typeFilter && s.sale_type !== typeFilter) return false
+      if (dateFrom && new Date(s.sale_date) < new Date(dateFrom)) return false
+      if (dateTo && new Date(s.sale_date) > new Date(dateTo + 'T23:59:59')) return false
+      if (search) {
+        const q = search.toLowerCase()
+        if (!s.customer_name?.toLowerCase().includes(q) && !s.invoice_number?.toLowerCase().includes(q)) return false
+      }
+      return true
+    })
+    .sort((a, b) => {
+      if (sortBy === 'date_asc')   return new Date(a.sale_date) - new Date(b.sale_date)
+      if (sortBy === 'date_desc')  return new Date(b.sale_date) - new Date(a.sale_date)
+      if (sortBy === 'total_asc')  return a.total - b.total
+      if (sortBy === 'total_desc') return b.total - a.total
+      return 0
+    })
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Ventas</h1>
-          <p className="text-sm text-gray-500">{sales.length} venta{sales.length !== 1 ? 's' : ''} registrada{sales.length !== 1 ? 's' : ''}</p>
+          <p className="text-sm text-gray-500">{displaySales.length} venta{displaySales.length !== 1 ? 's' : ''} registrada{displaySales.length !== 1 ? 's' : ''}</p>
         </div>
         <button className="btn-blue flex items-center gap-2" onClick={() => setShowForm(true)}>
           <Plus size={18} /> Nueva Venta
         </button>
       </div>
 
+      <div className="flex gap-3 flex-wrap">
+        <div className="relative">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input className="input pl-9 w-52" placeholder="Buscar cliente o comprobante..." value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        <select className="input w-40" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+          <option value="">Todos los estados</option>
+          <option value="cobrado">Cobrado</option>
+          <option value="credito">Crédito</option>
+          <option value="parcial">Parcial</option>
+        </select>
+        <select className="input w-44" value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
+          <option value="">Todos los tipos</option>
+          <option value="retail">Retail</option>
+          <option value="wholesale">Wholesale</option>
+        </select>
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-gray-500 whitespace-nowrap">Desde</label>
+          <input className="input w-36" type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-gray-500 whitespace-nowrap">Hasta</label>
+          <input className="input w-36" type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} />
+        </div>
+        <select className="input w-44" value={sortBy} onChange={e => setSortBy(e.target.value)}>
+          <option value="date_desc">Más reciente</option>
+          <option value="date_asc">Más antiguo</option>
+          <option value="total_desc">Mayor total</option>
+          <option value="total_asc">Menor total</option>
+        </select>
+      </div>
+
       <div className="space-y-3">
-        {sales.length === 0 && (
-          <div className="card text-center py-12 text-gray-400">Sin ventas registradas.</div>
+        {displaySales.length === 0 && (
+          <div className="card text-center py-12 text-gray-400">
+            {sales.length === 0 ? 'Sin ventas registradas.' : 'Sin resultados con los filtros aplicados.'}
+          </div>
         )}
-        {sales.map(s => (
+        {displaySales.map(s => (
           <div key={s.id} className="card p-0 overflow-hidden">
             <div
               className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50"

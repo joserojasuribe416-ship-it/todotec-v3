@@ -336,6 +336,11 @@ export default function Inventario() {
   const [categories, setCategories] = useState([])
   const [search, setSearch] = useState('')
   const [cat, setCat] = useState('')
+  const [brandFilter, setBrandFilter] = useState('')
+  const [stockFilter, setStockFilter] = useState('')
+  const [activeFilter, setActiveFilter] = useState('')
+  const [storeFilter, setStoreFilter] = useState('')
+  const [sortBy, setSortBy] = useState('')
   const [editing, setEditing] = useState(null)
   const [creating, setCreating] = useState(false)
 
@@ -363,12 +368,40 @@ export default function Inventario() {
 
   const fmt = (n) => `S/ ${(n || 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}`
 
+  const brands = [...new Set(products.map(p => p.brand).filter(Boolean))].sort()
+  const displayProducts = products
+    .filter(p => {
+      if (brandFilter && p.brand !== brandFilter) return false
+      if (stockFilter === 'con_stock' && p.total_stock === 0) return false
+      if (stockFilter === 'sin_stock' && p.total_stock > 0) return false
+      if (activeFilter === 'active' && !p.is_active) return false
+      if (activeFilter === 'inactive' && p.is_active) return false
+      if (storeFilter === 'visible' && !p.show_in_store) return false
+      if (storeFilter === 'hidden' && p.show_in_store) return false
+      return true
+    })
+    .sort((a, b) => {
+      const ma = a.unit_cost > 0 ? (a.sale_price - a.unit_cost) / a.unit_cost : 0
+      const mb = b.unit_cost > 0 ? (b.sale_price - b.unit_cost) / b.unit_cost : 0
+      switch (sortBy) {
+        case 'name_asc':    return a.name.localeCompare(b.name, 'es')
+        case 'name_desc':   return b.name.localeCompare(a.name, 'es')
+        case 'price_asc':   return a.sale_price - b.sale_price
+        case 'price_desc':  return b.sale_price - a.sale_price
+        case 'stock_asc':   return a.total_stock - b.total_stock
+        case 'stock_desc':  return b.total_stock - a.total_stock
+        case 'margin_asc':  return ma - mb
+        case 'margin_desc': return mb - ma
+        default: return 0
+      }
+    })
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Inventario</h1>
-          <p className="text-sm text-gray-500">{products.length} producto{products.length !== 1 ? 's' : ''}</p>
+          <p className="text-sm text-gray-500">{displayProducts.length} producto{displayProducts.length !== 1 ? 's' : ''}</p>
         </div>
         <button className="btn-blue flex items-center gap-2" onClick={() => setCreating(true)}>
           <Plus size={15} /> Nuevo producto
@@ -385,16 +418,50 @@ export default function Inventario() {
           <option value="">Todas las categorías</option>
           {categories.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
+        {brands.length > 0 && (
+          <select className="input w-40" value={brandFilter} onChange={e => setBrandFilter(e.target.value)}>
+            <option value="">Todas las marcas</option>
+            {brands.map(b => <option key={b} value={b}>{b}</option>)}
+          </select>
+        )}
+        <select className="input w-40" value={stockFilter} onChange={e => setStockFilter(e.target.value)}>
+          <option value="">Todo el stock</option>
+          <option value="con_stock">Con stock</option>
+          <option value="sin_stock">Sin stock</option>
+        </select>
+        <select className="input w-36" value={activeFilter} onChange={e => setActiveFilter(e.target.value)}>
+          <option value="">Activo / Inactivo</option>
+          <option value="active">Solo activos</option>
+          <option value="inactive">Solo inactivos</option>
+        </select>
+        <select className="input w-40" value={storeFilter} onChange={e => setStoreFilter(e.target.value)}>
+          <option value="">Visibilidad tienda</option>
+          <option value="visible">Visible en tienda</option>
+          <option value="hidden">Ocultos</option>
+        </select>
+        <select className="input w-44" value={sortBy} onChange={e => setSortBy(e.target.value)}>
+          <option value="">Ordenar por...</option>
+          <option value="name_asc">Nombre A→Z</option>
+          <option value="name_desc">Nombre Z→A</option>
+          <option value="price_desc">Precio mayor</option>
+          <option value="price_asc">Precio menor</option>
+          <option value="stock_desc">Mayor stock</option>
+          <option value="stock_asc">Menor stock</option>
+          <option value="margin_desc">Mayor margen</option>
+          <option value="margin_asc">Menor margen</option>
+        </select>
       </div>
 
       {/* Cards grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {products.length === 0 && (
+        {displayProducts.length === 0 && (
           <div className="col-span-full text-center py-16 text-gray-400">
-            Sin productos. Usa "Nuevo producto" para agregar o registra una compra.
+            {products.length === 0
+              ? 'Sin productos. Usa "Nuevo producto" para agregar o registra una compra.'
+              : 'Sin resultados con los filtros aplicados.'}
           </div>
         )}
-        {products.map(p => {
+        {displayProducts.map(p => {
           const margin = p.unit_cost > 0 ? ((p.sale_price - p.unit_cost) / p.unit_cost * 100) : 0
           const primaryImg = p.images.find(i => i.is_primary) || p.images[0]
           return (

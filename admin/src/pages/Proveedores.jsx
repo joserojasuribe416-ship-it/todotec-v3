@@ -68,6 +68,10 @@ function Modal({ title, data, onChange, onSave, onClose }) {
 export default function Proveedores() {
   const [suppliers, setSuppliers] = useState([])
   const [search, setSearch] = useState('')
+  const [cityFilter, setCityFilter] = useState('')
+  const [ratingFilter, setRatingFilter] = useState('')
+  const [sortCol, setSortCol] = useState('name')
+  const [sortDir, setSortDir] = useState('asc')
   const [modal, setModal] = useState(null) // null | { mode: 'create'|'edit', data, id? }
 
   const load = (s) => getSuppliers(s || undefined).then(setSuppliers)
@@ -100,35 +104,74 @@ export default function Proveedores() {
   }
 
   const remove = async (id, name) => {
-    if (!confirm(`¿Eliminar a ${name}?`)) return
-    await deleteSupplier(id)
-    toast.success('Proveedor eliminado')
-    load(search)
+    if (!confirm(`¿Eliminar a "${name}"? Las compras históricas quedarán sin proveedor asociado.`)) return
+    try {
+      await deleteSupplier(id)
+      toast.success('Proveedor eliminado')
+      load(search)
+    } catch {
+      toast.error('Error al eliminar proveedor')
+    }
   }
 
   const stars = (n) => '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n))
+
+  const toggleSort = (col) => {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('asc') }
+  }
+  const sortIcon = (col) => sortCol === col
+    ? <span className="ml-1">{sortDir === 'asc' ? '↑' : '↓'}</span>
+    : <span className="ml-1 text-gray-300">↕</span>
+
+  const cities = [...new Set(suppliers.map(s => s.city).filter(Boolean))].sort()
+  const displaySuppliers = suppliers
+    .filter(s => !cityFilter || s.city === cityFilter)
+    .filter(s => !ratingFilter || s.rating >= parseFloat(ratingFilter))
+    .sort((a, b) => {
+      let va = a[sortCol] ?? ''
+      let vb = b[sortCol] ?? ''
+      if (typeof va === 'string') { va = va.toLowerCase(); vb = (vb || '').toLowerCase() }
+      if (va < vb) return sortDir === 'asc' ? -1 : 1
+      if (va > vb) return sortDir === 'asc' ? 1 : -1
+      return 0
+    })
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Proveedores</h1>
-          <p className="text-sm text-gray-500">{suppliers.length} proveedor{suppliers.length !== 1 ? 'es' : ''} registrado{suppliers.length !== 1 ? 's' : ''}</p>
+          <p className="text-sm text-gray-500">{displaySuppliers.length} proveedor{displaySuppliers.length !== 1 ? 'es' : ''} registrado{displaySuppliers.length !== 1 ? 's' : ''}</p>
         </div>
         <button className="btn-blue flex items-center gap-2" onClick={openCreate}>
           <Plus size={18} /> Agregar Proveedor
         </button>
       </div>
 
-      {/* Search */}
-      <div className="relative w-full max-w-sm">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input
-          className="input pl-9"
-          placeholder="Buscar proveedor..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
+      {/* Search & Filters */}
+      <div className="flex gap-3 flex-wrap">
+        <div className="relative">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            className="input pl-9 w-56"
+            placeholder="Buscar proveedor..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+        {cities.length > 0 && (
+          <select className="input w-44" value={cityFilter} onChange={e => setCityFilter(e.target.value)}>
+            <option value="">Todas las ciudades</option>
+            {cities.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        )}
+        <select className="input w-40" value={ratingFilter} onChange={e => setRatingFilter(e.target.value)}>
+          <option value="">Cualquier rating</option>
+          <option value="5">★★★★★ Solo 5</option>
+          <option value="4">★★★★☆ 4 o más</option>
+          <option value="3">★★★☆☆ 3 o más</option>
+        </select>
       </div>
 
       {/* Table */}
@@ -136,19 +179,21 @@ export default function Proveedores() {
         <table className="w-full">
           <thead className="bg-gray-50 border-b">
             <tr>
-              <th className="table-th">Proveedor</th>
-              <th className="table-th">Ciudad</th>
+              <th className="table-th cursor-pointer hover:bg-gray-100 select-none" onClick={() => toggleSort('name')}>Proveedor{sortIcon('name')}</th>
+              <th className="table-th cursor-pointer hover:bg-gray-100 select-none" onClick={() => toggleSort('city')}>Ciudad{sortIcon('city')}</th>
               <th className="table-th">Contacto</th>
-              <th className="table-th">Rating</th>
+              <th className="table-th cursor-pointer hover:bg-gray-100 select-none" onClick={() => toggleSort('rating')}>Rating{sortIcon('rating')}</th>
               <th className="table-th">Descripción</th>
               <th className="table-th text-right">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {suppliers.length === 0 && (
-              <tr><td colSpan={6} className="text-center py-12 text-gray-400">Sin proveedores. Agrega el primero.</td></tr>
+            {displaySuppliers.length === 0 && (
+              <tr><td colSpan={6} className="text-center py-12 text-gray-400">
+                {suppliers.length === 0 ? 'Sin proveedores. Agrega el primero.' : 'Sin resultados con los filtros aplicados.'}
+              </td></tr>
             )}
-            {suppliers.map(s => (
+            {displaySuppliers.map(s => (
               <tr key={s.id} className="hover:bg-gray-50 transition-colors">
                 <td className="table-td">
                   <div className="font-medium text-gray-900">{s.name}</div>
