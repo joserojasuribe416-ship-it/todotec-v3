@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from ..database import get_db
 from ..models import Order, Sale, SaleItem, Product, ProductVariant, AccountingEntry, CompanyConfig
+from ..utils import create_reversal_entries
 
 router = APIRouter(prefix="/api/orders", tags=["orders"])
 
@@ -456,8 +457,9 @@ def delete_order(order_id: int, db: Session = Depends(get_db)):
                     for v in item.product.variants:
                         v.stock += item.quantity
                         break
-            # Eliminar asientos contables primero (FK constraint)
-            db.query(AccountingEntry).filter(AccountingEntry.sale_id == sale.id).delete()
+            # Asientos de reversión (historial contable)
+            entries = db.query(AccountingEntry).filter(AccountingEntry.sale_id == sale.id).all()
+            create_reversal_entries(entries, db, label=f"Pedido #{10000 + order.id}")
             db.delete(sale)
 
     db.delete(order)

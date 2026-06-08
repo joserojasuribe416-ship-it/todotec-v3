@@ -4,6 +4,7 @@ from typing import List
 from ..database import get_db
 from ..models import Sale, SaleItem, Product, ProductVariant, AccountingEntry, CompanyConfig
 from ..schemas import SaleCreate, SaleOut
+from ..utils import create_reversal_entries
 from datetime import datetime
 
 router = APIRouter(prefix="/api/sales", tags=["sales"])
@@ -161,7 +162,7 @@ def delete_sale(sale_id: int, db: Session = Depends(get_db)):
     s = db.query(Sale).filter(Sale.id == sale_id).first()
     if not s:
         raise HTTPException(status_code=404, detail="Venta no encontrada")
-    # Reverse stock
+    # Revertir stock
     for item in s.items:
         if item.variant_id:
             variant = db.query(ProductVariant).filter(ProductVariant.id == item.variant_id).first()
@@ -171,6 +172,9 @@ def delete_sale(sale_id: int, db: Session = Depends(get_db)):
             for v in item.product.variants:
                 v.stock += item.quantity
                 break
+    # Asientos de reversión (historial contable)
+    entries = db.query(AccountingEntry).filter(AccountingEntry.sale_id == s.id).all()
+    create_reversal_entries(entries, db, label=s.invoice_number)
     db.delete(s)
     db.commit()
     return {"ok": True}

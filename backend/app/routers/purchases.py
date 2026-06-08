@@ -5,6 +5,7 @@ from typing import List
 from ..database import get_db
 from ..models import Purchase, PurchaseItem, Product, ProductVariant, AccountingEntry
 from ..schemas import PurchaseCreate, PurchaseOut, PurchaseRectify
+from ..utils import create_reversal_entries
 import random, string
 from datetime import datetime
 
@@ -264,7 +265,7 @@ def delete_purchase(purchase_id: int, db: Session = Depends(get_db)):
     p = db.query(Purchase).filter(Purchase.id == purchase_id).first()
     if not p:
         raise HTTPException(status_code=404, detail="Compra no encontrada")
-    # Reverse stock
+    # Revertir stock
     for item in p.items:
         product = db.query(Product).filter(Product.id == item.product_id).first()
         if product and item.variants_data:
@@ -281,6 +282,9 @@ def delete_purchase(purchase_id: int, db: Session = Depends(get_db)):
             ).first()
             if default:
                 default.stock = max(0, default.stock - item.quantity)
+    # Asientos de reversión (historial contable)
+    entries = db.query(AccountingEntry).filter(AccountingEntry.purchase_id == p.id).all()
+    create_reversal_entries(entries, db, label=p.invoice_number or f"Compra #{p.id}")
     db.delete(p)
     db.commit()
     return {"ok": True}

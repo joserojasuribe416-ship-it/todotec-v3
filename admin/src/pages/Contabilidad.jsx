@@ -278,20 +278,31 @@ export default function Contabilidad() {
               {entries.length === 0 && (
                 <tr><td colSpan={6} className="text-center py-8 text-gray-400">Sin asientos contables</td></tr>
               )}
-              {entries.map(e => (
-                <tr key={e.id} className="hover:bg-gray-50 text-sm">
-                  <td className="table-td">{new Date(e.entry_date).toLocaleDateString('es-PE')}</td>
-                  <td className="table-td">
-                    <span className={`badge ${e.entry_type === 'venta' ? 'badge-green' : e.entry_type === 'capital' ? 'badge-blue' : e.entry_type === 'cogs' ? 'badge-red' : 'badge-yellow'}`}>
-                      {e.entry_type}
-                    </span>
-                  </td>
-                  <td className="table-td text-gray-600">{e.description}</td>
-                  <td className="table-td text-green-700 font-medium">{e.debit_account}</td>
-                  <td className="table-td text-red-600 font-medium">{e.credit_account}</td>
-                  <td className="table-td text-right font-semibold">{fmt(e.amount)}</td>
-                </tr>
-              ))}
+              {entries.map(e => {
+                const isReversal = e.entry_type?.startsWith('anulacion_')
+                const typeBadge = isReversal ? 'badge-red'
+                  : e.entry_type === 'venta'   ? 'badge-green'
+                  : e.entry_type === 'capital' ? 'badge-blue'
+                  : e.entry_type === 'cogs'    ? 'badge-red'
+                  : 'badge-yellow'
+                const typeLabel = isReversal ? '✕ ANULACIÓN' : e.entry_type
+                return (
+                  <tr key={e.id} className="hover:bg-gray-50 text-sm" style={isReversal ? { background: '#FFF5F5' } : {}}>
+                    <td className="table-td">{new Date(e.entry_date).toLocaleDateString('es-PE')}</td>
+                    <td className="table-td">
+                      <span className={`badge ${typeBadge}`} style={isReversal ? { fontWeight: 700 } : {}}>
+                        {typeLabel}
+                      </span>
+                    </td>
+                    <td className="table-td" style={{ color: isReversal ? '#DC2626' : '#4B5563' }}>{e.description}</td>
+                    <td className="table-td text-green-700 font-medium">{e.debit_account}</td>
+                    <td className="table-td text-red-600 font-medium">{e.credit_account}</td>
+                    <td className="table-td text-right font-semibold" style={{ color: isReversal ? '#DC2626' : undefined }}>
+                      {isReversal ? '−' : ''}{fmt(e.amount)}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
