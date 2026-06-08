@@ -1,10 +1,12 @@
 import { Link, useLocation, Outlet } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Package, ShoppingCart, DollarSign,
-  TrendingUp, Settings, Store, Menu, X, ChevronRight, Tag, Wallet, Bookmark, Palette
+  TrendingUp, Settings, Store, Menu, X, ChevronRight, Tag, Wallet, Bookmark, Palette, RefreshCw
 } from 'lucide-react'
 import { useState } from 'react'
 import { useTheme } from '../context/ThemeContext'
+import toast from 'react-hot-toast'
+import api from '../api/client'
 
 const NAV = [
   { to: '/',              icon: LayoutDashboard, label: 'Dashboard' },
@@ -23,7 +25,20 @@ const NAV = [
 export default function Layout() {
   const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
+  const [publishing, setPublishing] = useState(false)
   const { companyName, logoUrl } = useTheme()
+
+  const publishStore = async () => {
+    setPublishing(true)
+    try {
+      await api.post('/revalidate-store')
+      toast.success('¡Tienda actualizada!')
+    } catch {
+      toast.error('Error al actualizar la tienda')
+    } finally {
+      setPublishing(false)
+    }
+  }
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: '#F7F8FA', overflow: 'hidden' }}>
@@ -129,6 +144,23 @@ export default function Layout() {
           <div style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 500 }}>
             {new Date().toLocaleDateString('es-PE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </div>
+          {/* Publish button */}
+          <button
+            onClick={publishStore}
+            disabled={publishing}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: publishing ? '#F3F4F6' : '#1E1A1A',
+              color: publishing ? '#9CA3AF' : '#EEC5C5',
+              border: 'none', borderRadius: 7, padding: '6px 14px',
+              fontSize: 12, fontWeight: 600, cursor: publishing ? 'not-allowed' : 'pointer',
+              letterSpacing: '0.02em', transition: 'all 0.15s',
+            }}
+          >
+            <RefreshCw size={13} className={publishing ? 'spin' : ''} />
+            {publishing ? 'Actualizando...' : 'Actualizar Tienda'}
+          </button>
+
           {/* Status dot */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#DCFCE7', padding: '4px 10px', borderRadius: 6 }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a' }} />

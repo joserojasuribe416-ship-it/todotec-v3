@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from .database import engine, Base
-from .routers import config, suppliers, products, purchases, sales, accounting, dashboard, categories, cobranzas, brands, appearance
+from .routers import config, suppliers, products, purchases, sales, accounting, dashboard, categories, cobranzas, brands, appearance, revalidate
 import os
 
 # Create tables
@@ -91,6 +91,7 @@ app.include_router(categories.router)
 app.include_router(brands.router)
 app.include_router(appearance.router)
 app.include_router(cobranzas.router)
+app.include_router(revalidate.router)
 
 
 @app.get("/")
