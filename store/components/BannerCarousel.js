@@ -3,13 +3,20 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
 
-const VISIBLE = 3
-
 export default function BannerCarousel({ banners = [] }) {
   const [offset, setOffset] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
   const intervalRef = useRef(null)
   const touchStartX = useRef(null)
 
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  const VISIBLE = isMobile ? 1 : 3
   const total = banners.length
   const maxOffset = Math.max(0, total - VISIBLE)
 

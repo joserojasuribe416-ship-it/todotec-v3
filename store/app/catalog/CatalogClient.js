@@ -64,13 +64,13 @@ export default function CatalogClient({ products, categories, activeCategory, ac
 
       {/* Breadcrumb + title strip */}
       <div style={{ background: '#fff', borderBottom: '1px solid #EDE8E4', padding: '14px 0' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px' }}>
+        <div className="catalog-header-inner" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px' }}>
           <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4, fontFamily: "'Inter', sans-serif" }}>
             <Link href="/" style={{ color: '#9CA3AF', textDecoration: 'none' }}>Inicio</Link>
             {' / '}
             <span style={{ color: '#1E1A1A', fontWeight: 500 }}>{activeCategory || 'Catálogo'}</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+          <div className="catalog-title-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
             <div>
               <h1 style={{
                 fontFamily: "'Josefin Sans', sans-serif",
@@ -101,10 +101,50 @@ export default function CatalogClient({ products, categories, activeCategory, ac
         </div>
       </div>
 
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px', display: 'grid', gridTemplateColumns: '220px 1fr', gap: 24, alignItems: 'start' }}>
+      {/* ── Mobile filters (chips) ── */}
+      <div className="mob-filters-chips">
+        <button
+          onClick={() => router.push('/catalog')}
+          style={{
+            padding: '6px 14px', borderRadius: 20, fontSize: 10, whiteSpace: 'nowrap',
+            border: '1px solid', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+            background: !activeCategory ? '#1E1A1A' : '#fff',
+            color: !activeCategory ? '#EEC5C5' : '#1E1A1A',
+            borderColor: !activeCategory ? '#1E1A1A' : '#EDE8E4',
+          }}
+        >Todos</button>
+        {categories.map(cat => (
+          <button
+            key={cat}
+            onClick={() => router.push(`/catalog?category=${encodeURIComponent(cat)}`)}
+            style={{
+              padding: '6px 14px', borderRadius: 20, fontSize: 10, whiteSpace: 'nowrap',
+              border: '1px solid', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+              background: activeCategory === cat ? '#1E1A1A' : '#fff',
+              color: activeCategory === cat ? '#EEC5C5' : '#1E1A1A',
+              borderColor: activeCategory === cat ? '#1E1A1A' : '#EDE8E4',
+            }}
+          >{cat}</button>
+        ))}
+        {PRICE_RANGES.map(r => (
+          <button
+            key={r.label}
+            onClick={() => setPriceRange(priceRange?.label === r.label ? null : r)}
+            style={{
+              padding: '6px 14px', borderRadius: 20, fontSize: 10, whiteSpace: 'nowrap',
+              border: '1px solid', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+              background: priceRange?.label === r.label ? '#1E1A1A' : '#fff',
+              color: priceRange?.label === r.label ? '#EEC5C5' : '#6B7280',
+              borderColor: priceRange?.label === r.label ? '#1E1A1A' : '#EDE8E4',
+            }}
+          >{r.label}</button>
+        ))}
+      </div>
+
+      <div className="catalog-layout" style={{ maxWidth: 1280, margin: '0 auto', padding: '24px', display: 'grid', gridTemplateColumns: '220px 1fr', gap: 24, alignItems: 'start' }}>
 
         {/* ── SIDEBAR ── */}
-        <aside>
+        <aside className="catalog-sidebar">
           <div style={{ background: '#fff', border: '1px solid #EDE8E4', borderRadius: 12, padding: '18px 16px' }}>
             <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9CA3AF', marginBottom: 16, fontFamily: "'Inter', sans-serif" }}>
               Filtrar por
@@ -172,7 +212,7 @@ export default function CatalogClient({ products, categories, activeCategory, ac
               >Ver todo el catálogo</button>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+            <div className="catalog-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
               {sorted.map(p => <ProductCard key={p.id} product={p} />)}
             </div>
           )}

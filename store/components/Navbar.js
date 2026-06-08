@@ -57,7 +57,7 @@ function NavbarInner() {
 
       {/* ── Main header ── */}
       <div style={{ background: '#fff', borderBottom: '1px solid #EDE8E4' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', gap: 24, height: 64 }}>
+        <div className="nb-header-inner" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', gap: 24, height: 64 }}>
 
           {/* Logo */}
           <Link href="/" style={{ textDecoration: 'none', flexShrink: 0, lineHeight: 1 }}>
@@ -65,15 +65,13 @@ function NavbarInner() {
             <div style={{ fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300, fontSize: 7, color: '#C49A8A', letterSpacing: '4px', textTransform: 'uppercase', textIndent: '4px', marginTop: 1 }}>SKIN</div>
           </Link>
 
-          {/* Search */}
-          <form onSubmit={handleSearch} style={{ flex: 1 }}>
+          {/* Search — desktop */}
+          <form className="nb-search-desktop" onSubmit={handleSearch} style={{ flex: 1 }}>
             <div style={{
               display: 'flex', alignItems: 'center',
               border: '1.5px solid #EDE8E4', borderRadius: 50, background: '#FAF7F4',
-              overflow: 'hidden', height: 40, transition: 'border-color 0.2s'
-            }}
-              onFocus={() => {}}
-            >
+              overflow: 'hidden', height: 40,
+            }}>
               <div style={{ padding: '0 14px', color: '#C49A8A', display: 'flex', flexShrink: 0 }}>
                 <Search size={15} />
               </div>
@@ -98,9 +96,27 @@ function NavbarInner() {
             </div>
           </form>
 
+          {/* Search — mobile pill */}
+          <form className="nb-search-mobile" onSubmit={handleSearch} style={{ alignItems: 'center' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: '#FAF7F4', border: '1px solid #EDE8E4',
+              borderRadius: 50, padding: '6px 14px', height: 36,
+            }}>
+              <Search size={13} color="#C49A8A" />
+              <input
+                className="tt-input"
+                style={{ width: 110, fontSize: 12, fontFamily: "'Inter', sans-serif" }}
+                placeholder="Buscar..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+          </form>
+
           {/* Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0 }}>
-            <Link href="/contact" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
+            <Link href="/contact" className="nb-contact" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
               <User size={18} color="#374151" strokeWidth={1.5} />
               <span style={{ fontSize: 9, color: '#6B7280', fontFamily: "'Inter', sans-serif", letterSpacing: '0.03em' }}>Contacto</span>
             </Link>
@@ -116,7 +132,7 @@ function NavbarInner() {
                   }}>{cartCount}</span>
                 )}
               </div>
-              <span style={{ fontSize: 9, color: '#6B7280', fontFamily: "'Inter', sans-serif", letterSpacing: '0.03em' }}>Carrito</span>
+              <span className="nb-contact" style={{ fontSize: 9, color: '#6B7280', fontFamily: "'Inter', sans-serif", letterSpacing: '0.03em' }}>Carrito</span>
             </Link>
           </div>
 
@@ -124,8 +140,8 @@ function NavbarInner() {
       </div>
 
       {/* ── Category bar ── */}
-      <div style={{ background: '#1E1A1A' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', height: 40, overflowX: 'auto', gap: 0 }}>
+      <div className="nb-cat-bar" style={{ background: '#1E1A1A' }}>
+        <div className="nb-cat-bar-inner" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', height: 40, overflowX: 'auto', gap: 0, scrollbarWidth: 'none' }}>
           <Link href="/" style={{
             padding: '0 14px', height: 40, display: 'flex', alignItems: 'center',
             fontWeight: isHome ? 600 : 400, fontSize: 11,
@@ -136,8 +152,7 @@ function NavbarInner() {
           }}>Inicio</Link>
           <Link href="/catalog" style={{
             padding: '0 14px', height: 40, display: 'flex', alignItems: 'center',
-            fontWeight: isCatalog && !activeCategory ? 600 : 400,
-            fontSize: 11,
+            fontWeight: isCatalog && !activeCategory ? 600 : 400, fontSize: 11,
             color: isCatalog && !activeCategory ? '#EEC5C5' : 'rgba(255,255,255,0.55)',
             textDecoration: 'none', whiteSpace: 'nowrap', fontFamily: "'Inter', sans-serif",
             borderBottom: isCatalog && !activeCategory ? '2px solid #EEC5C5' : '2px solid transparent',
@@ -146,8 +161,7 @@ function NavbarInner() {
           {categories.map(cat => (
             <Link key={cat} href={`/catalog?category=${encodeURIComponent(cat)}`} style={{
               padding: '0 14px', height: 40, display: 'flex', alignItems: 'center',
-              fontWeight: activeCategory === cat ? 600 : 400,
-              fontSize: 11,
+              fontWeight: activeCategory === cat ? 600 : 400, fontSize: 11,
               color: activeCategory === cat ? '#EEC5C5' : 'rgba(255,255,255,0.55)',
               textDecoration: 'none', whiteSpace: 'nowrap', fontFamily: "'Inter', sans-serif",
               borderBottom: activeCategory === cat ? '2px solid #EEC5C5' : '2px solid transparent',

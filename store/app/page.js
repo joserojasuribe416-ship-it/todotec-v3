@@ -41,13 +41,13 @@ export default async function HomePage() {
     <div style={{ background: '#FAF7F4', minHeight: '100vh' }}>
 
       {/* ── Banner Carousel ── */}
-      <section style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 24px 0' }}>
+      <section className="banner-section" style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 24px 0' }}>
         <BannerCarousel banners={banners} />
       </section>
 
       {/* ── Promo strip 2 cols ── */}
       <section style={{ maxWidth: 1280, margin: '14px auto 0', padding: '0 24px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div className="promo-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           <div style={{
             background: '#1E1A1A', borderRadius: 14, padding: '22px 28px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16
@@ -90,7 +90,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── Top Sellers ── */}
-      <section style={{ maxWidth: 1280, margin: '0 auto', padding: '40px 24px 0' }}>
+      <section className="sec-pad-top" style={{ maxWidth: 1280, margin: '0 auto', padding: '40px 24px 0' }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 18 }}>
           <div>
             <div style={{ fontSize: 9, fontWeight: 500, color: '#C49A8A', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: 6, fontFamily: "'Inter', sans-serif" }}>{favSubtitle}</div>
@@ -100,7 +100,7 @@ export default async function HomePage() {
         </div>
 
         {topSellers.length === 0 ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+          <div className="products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} style={{ border: '1.5px dashed #EDE8E4', borderRadius: 12, aspectRatio: '3/4', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#fff' }}>
                 <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#EEC5C5', color: '#1E1A1A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 500 }}>{i + 1}</div>
@@ -109,14 +109,14 @@ export default async function HomePage() {
             ))}
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+          <div className="products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
             {topSellers.map(p => <ProductCard key={p.id} product={p} />)}
           </div>
         )}
       </section>
 
       {/* ── Lo más nuevo ── */}
-      <section style={{ maxWidth: 1280, margin: '0 auto', padding: '36px 24px 48px' }}>
+      <section className="sec-pad-bottom" style={{ maxWidth: 1280, margin: '0 auto', padding: '36px 24px 48px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 18 }}>
           <div>
             <div style={{ fontSize: 9, fontWeight: 500, color: '#C49A8A', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: 6, fontFamily: "'Inter', sans-serif" }}>{newSubtitle}</div>
@@ -128,7 +128,7 @@ export default async function HomePage() {
         {newArrivals.length === 0 ? (
           <p style={{ color: '#9CA3AF', fontSize: 13, fontFamily: "'Inter', sans-serif" }}>Agrega productos desde el panel de administración</p>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+          <div className="products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
             {newArrivals.map(p => <ProductCard key={p.id} product={p} />)}
           </div>
         )}
