@@ -6,7 +6,7 @@ import { ShoppingCart, Search, ChevronDown, X } from 'lucide-react'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
-export default function Navbar({ companyName = 'TodoTec', logoUrl = '' }) {
+export default function Navbar({ companyName = 'Glowi Skin', logoUrl = '' }) {
   const router = useRouter()
   const [cartCount, setCartCount] = useState(0)
   const [search, setSearch] = useState('')
@@ -24,13 +24,10 @@ export default function Navbar({ companyName = 'TodoTec', logoUrl = '' }) {
     }
     updateCart()
     window.addEventListener('cartUpdated', updateCart)
-
-    // Load categories from API
     fetch(`${API_BASE}/api/categories`)
       .then(r => r.ok ? r.json() : [])
       .then(data => setCategories(data.map(c => c.name)))
       .catch(() => setCategories([]))
-
     return () => window.removeEventListener('cartUpdated', updateCart)
   }, [])
 
@@ -58,153 +55,151 @@ export default function Navbar({ companyName = 'TodoTec', logoUrl = '' }) {
   }
 
   return (
-    <header style={{ position: 'sticky', top: 0, zIndex: 50, background: '#fff', borderBottom: '1px solid #E5E7EB' }}>
+    <header style={{ position: 'sticky', top: 0, zIndex: 50, background: '#FAF7F4', borderBottom: '1px solid #EDE8E4' }}>
 
-      {/* ── Top bar: Logo + Search + Cart ── */}
+      {/* ── Top bar ── */}
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 24, height: 68 }}>
 
           {/* Logo */}
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 }}>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', flexShrink: 0 }}>
             {logoUrl ? (
-              <img src={logoUrl} alt={companyName} style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 8 }} />
+              <img src={logoUrl} alt={companyName} style={{ width: 38, height: 38, objectFit: 'contain', borderRadius: 8 }} />
             ) : (
               <div style={{
-                width: 40, height: 40, background: 'var(--brand-primary, #1E3A8A)', borderRadius: 10,
+                width: 38, height: 38, background: '#1E1A1A', borderRadius: 10,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: '2px solid var(--brand-secondary, #FFD100)'
+                border: '1.5px solid #EEC5C5', flexShrink: 0
               }}>
-                <span style={{ color: 'var(--brand-secondary, #FFD100)', fontWeight: 900, fontSize: 15, letterSpacing: '-1px' }}>
-                  {companyName.slice(0, 2).toUpperCase()}
+                <span style={{ color: '#EEC5C5', fontWeight: 300, fontSize: 12, letterSpacing: '2px', fontFamily: "'Josefin Sans', sans-serif" }}>
+                  GS
                 </span>
               </div>
             )}
-            <span style={{ fontWeight: 900, fontSize: 20, color: 'var(--brand-primary, #1E3A8A)', letterSpacing: '-0.5px' }}>{companyName}</span>
+            <div>
+              <div style={{ fontFamily: "'Josefin Sans', sans-serif", fontWeight: 100, fontSize: 18, color: '#1E1A1A', letterSpacing: '6px', textTransform: 'uppercase', lineHeight: 1 }}>
+                {companyName.split(' ')[0] || 'GLOWI'}
+              </div>
+              {companyName.split(' ')[1] && (
+                <div style={{ fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300, fontSize: 9, color: '#C49A8A', letterSpacing: '4px', textTransform: 'uppercase' }}>
+                  {companyName.split(' ').slice(1).join(' ')}
+                </div>
+              )}
+            </div>
           </Link>
 
           {/* Search bar */}
-          <form onSubmit={handleSearch} style={{ flex: 1, maxWidth: 640 }}>
+          <form onSubmit={handleSearch} style={{ flex: 1, maxWidth: 600 }}>
             <div style={{
-              display: 'flex', alignItems: 'center', gap: 0,
-              border: '1.5px solid #1E3A8A', borderRadius: 8, overflow: 'hidden',
-              background: '#F7F8FA'
-            }}>
-              <div style={{ padding: '0 14px', color: '#6B7280' }}>
-                <Search size={17} />
+              display: 'flex', alignItems: 'center',
+              border: '1.5px solid #EDE8E4', borderRadius: 8, overflow: 'hidden',
+              background: '#fff', transition: 'border-color 0.2s'
+            }}
+              onFocus={() => {}}
+            >
+              <div style={{ padding: '0 14px', color: '#C49A8A' }}>
+                <Search size={16} />
               </div>
               <input
                 className="tt-input"
-                style={{ flex: 1, height: 44, fontSize: 14 }}
-                placeholder="Buscar productos..."
+                style={{ flex: 1, height: 42, fontSize: 13, fontFamily: "'Inter', sans-serif" }}
+                placeholder="Buscar serum, toner, moisturizer..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
               {search && (
                 <button type="button" onClick={() => setSearch('')} style={{ padding: '0 10px', color: '#9CA3AF', background: 'none', border: 'none', cursor: 'pointer' }}>
-                  <X size={15} />
+                  <X size={14} />
                 </button>
               )}
-
-              {/* Category dropdown */}
-              <div ref={catRef} style={{ position: 'relative', borderLeft: '1.5px solid #1E3A8A' }}>
+              <div ref={catRef} style={{ position: 'relative', borderLeft: '1px solid #EDE8E4' }}>
                 <button
                   type="button"
                   onClick={() => setCatOpen(o => !o)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '0 16px', height: 44, background: 'none', border: 'none',
-                    cursor: 'pointer', fontWeight: 600, fontSize: 13, color: 'var(--brand-primary, #1E3A8A)',
-                    whiteSpace: 'nowrap'
+                    padding: '0 14px', height: 42, background: 'none', border: 'none',
+                    cursor: 'pointer', fontWeight: 500, fontSize: 12, color: '#1E1A1A',
+                    whiteSpace: 'nowrap', fontFamily: "'Inter', sans-serif", letterSpacing: '0.03em'
                   }}
                 >
-                  {activeCat || 'Categoría'} <ChevronDown size={14} />
+                  {activeCat || 'Categoría'} <ChevronDown size={13} />
                 </button>
                 {catOpen && (
                   <div style={{
-                    position: 'absolute', top: '110%', right: 0, width: 180,
-                    background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8,
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.10)', zIndex: 100, overflow: 'hidden'
+                    position: 'absolute', top: '110%', right: 0, width: 190,
+                    background: '#fff', border: '1px solid #EDE8E4', borderRadius: 10,
+                    boxShadow: '0 8px 24px rgba(30,26,26,0.10)', zIndex: 100, overflow: 'hidden'
                   }}>
-                    <button
-                      onClick={() => selectCat('')}
-                      style={{
-                        display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left',
-                        background: !activeCat ? '#EEF4FF' : 'none', border: 'none', cursor: 'pointer',
-                        fontSize: 13, fontWeight: !activeCat ? 700 : 400, color: 'var(--brand-primary, #1E3A8A)'
-                      }}
-                    >Todas las categorías</button>
+                    <button onClick={() => selectCat('')} style={{
+                      display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left',
+                      background: !activeCat ? '#FDF0F0' : 'none', border: 'none', cursor: 'pointer',
+                      fontSize: 12, fontWeight: !activeCat ? 600 : 400, color: '#1E1A1A', fontFamily: "'Inter', sans-serif"
+                    }}>Todos los productos</button>
                     {categories.map(cat => (
-                      <button
-                        key={cat}
-                        onClick={() => selectCat(cat)}
-                        style={{
-                          display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left',
-                          background: activeCat === cat ? '#EEF4FF' : 'none', border: 'none', cursor: 'pointer',
-                          fontSize: 13, fontWeight: activeCat === cat ? 700 : 400, color: '#374151'
-                        }}
-                      >{cat}</button>
+                      <button key={cat} onClick={() => selectCat(cat)} style={{
+                        display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left',
+                        background: activeCat === cat ? '#FDF0F0' : 'none', border: 'none', cursor: 'pointer',
+                        fontSize: 12, fontWeight: activeCat === cat ? 600 : 400, color: '#374151', fontFamily: "'Inter', sans-serif"
+                      }}>{cat}</button>
                     ))}
                   </div>
                 )}
               </div>
-
-              <button
-                type="submit"
-                style={{
-                  height: 44, padding: '0 20px', background: 'var(--brand-primary, #1E3A8A)', color: 'var(--brand-secondary, #FFD100)',
-                  border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13,
-                  transition: 'background 0.15s'
-                }}
-                onMouseEnter={e => e.target.style.background = '#0067B1'}
-                onMouseLeave={e => e.target.style.background = 'var(--brand-primary, #1E3A8A)'}
+              <button type="submit" style={{
+                height: 42, padding: '0 18px', background: '#1E1A1A', color: '#EEC5C5',
+                border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: 12,
+                letterSpacing: '0.05em', fontFamily: "'Inter', sans-serif",
+                transition: 'background 0.15s'
+              }}
+                onMouseEnter={e => e.target.style.background = '#3A3434'}
+                onMouseLeave={e => e.target.style.background = '#1E1A1A'}
               >Buscar</button>
             </div>
           </form>
 
           {/* Cart */}
-          <Link href="/cart" className="cart-icon" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', color: '#0A0A0A', padding: '8px 0' }}>
+          <Link href="/cart" className="cart-icon" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', padding: '8px 0' }}>
             <div style={{ position: 'relative' }}>
-              <ShoppingCart size={22} color="#1E3A8A" />
+              <ShoppingCart size={20} color="#1E1A1A" />
               {cartCount > 0 && (
                 <span style={{
-                  position: 'absolute', top: -8, right: -8, width: 18, height: 18,
-                  background: 'var(--brand-secondary, #FFD100)', color: 'var(--brand-primary, #1E3A8A)', fontSize: 10, fontWeight: 900,
+                  position: 'absolute', top: -7, right: -7, width: 17, height: 17,
+                  background: '#EEC5C5', color: '#1E1A1A', fontSize: 9, fontWeight: 700,
                   borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>{cartCount}</span>
               )}
             </div>
-            <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--brand-primary, #1E3A8A)', display: 'none' }} className="lg:block">
+            <span style={{ fontWeight: 500, fontSize: 12, color: '#1E1A1A', letterSpacing: '0.05em', fontFamily: "'Inter', sans-serif" }}>
               Carrito
             </span>
           </Link>
         </div>
       </div>
 
-      {/* ── Category nav bar ── */}
-      <div style={{ borderTop: '1px solid #E5E7EB', background: '#F7F8FA' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', gap: 4, height: 42, overflowX: 'auto' }}>
+      {/* ── Category nav ── */}
+      <div style={{ borderTop: '1px solid #EDE8E4', background: '#fff' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', gap: 2, height: 40, overflowX: 'auto' }}>
           <Link href="/catalog" style={{
-            padding: '4px 14px', borderRadius: 6, fontWeight: 700, fontSize: 12,
-            textDecoration: 'none', color: 'var(--brand-primary, #1E3A8A)', background: 'var(--brand-primary, #1E3A8A)', color: 'var(--brand-secondary, #FFD100)',
-            whiteSpace: 'nowrap', transition: 'all 0.15s'
-          }}>Todos</Link>
+            padding: '3px 12px', borderRadius: 6, fontWeight: 600, fontSize: 11,
+            textDecoration: 'none', background: '#1E1A1A', color: '#EEC5C5',
+            whiteSpace: 'nowrap', letterSpacing: '0.08em', textTransform: 'uppercase',
+            fontFamily: "'Inter', sans-serif"
+          }}>Todo</Link>
           {categories.map(cat => (
-            <Link
-              key={cat}
-              href={`/catalog?category=${encodeURIComponent(cat)}`}
-              style={{
-                padding: '4px 14px', borderRadius: 6, fontWeight: 600, fontSize: 12,
-                textDecoration: 'none', color: '#374151', whiteSpace: 'nowrap',
-                transition: 'all 0.15s'
-              }}
-              onMouseEnter={e => { e.target.style.background = '#E5E7EB'; e.target.style.color = 'var(--brand-primary, #1E3A8A)' }}
-              onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = '#374151' }}
+            <Link key={cat} href={`/catalog?category=${encodeURIComponent(cat)}`} style={{
+              padding: '3px 12px', borderRadius: 6, fontWeight: 500, fontSize: 11,
+              textDecoration: 'none', color: '#6B7280', whiteSpace: 'nowrap',
+              letterSpacing: '0.05em', fontFamily: "'Inter', sans-serif", transition: 'all 0.15s'
+            }}
+              onMouseEnter={e => { e.target.style.color = '#1E1A1A'; e.target.style.background = '#FDF0F0' }}
+              onMouseLeave={e => { e.target.style.color = '#6B7280'; e.target.style.background = 'transparent' }}
             >{cat}</Link>
           ))}
           <div style={{ flex: 1 }} />
           <Link href="/contact" style={{
-            padding: '4px 14px', fontSize: 12, fontWeight: 600,
-            textDecoration: 'none', color: '#6B7280', whiteSpace: 'nowrap'
+            padding: '3px 12px', fontSize: 11, fontWeight: 500, fontFamily: "'Inter', sans-serif",
+            textDecoration: 'none', color: '#C49A8A', whiteSpace: 'nowrap', letterSpacing: '0.04em'
           }}>Contacto</Link>
         </div>
       </div>

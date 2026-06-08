@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { fetchProducts, fetchConfig } from '../lib/api'
 import ProductCard from '../components/ProductCard'
-import { ArrowRight, ChevronRight } from 'lucide-react'
+import { ArrowRight, ChevronRight, Sparkles } from 'lucide-react'
 
 export default async function HomePage() {
   const [products, config] = await Promise.all([
@@ -9,74 +9,77 @@ export default async function HomePage() {
     fetchConfig().catch(() => null),
   ])
   const topSellers = products.slice(0, 8)
-  const bannerTitle    = config?.banner_title    || 'Todo lo que necesitas,\nen un solo lugar.'
-  const bannerSubtitle = config?.banner_subtitle || 'Importamos directamente los mejores productos tecnológicos. Precios justos, calidad garantizada.'
+  const bannerTitle    = config?.banner_title    || 'Tu rutina coreana,\nen un solo lugar.'
+  const bannerSubtitle = config?.banner_subtitle || 'Korean skincare importado directamente desde Corea del Sur. Rutinas reales, resultados visibles.'
 
   return (
     <>
-      {/* ── Hero Banner ─────────────────────────────────── */}
+      {/* ── Hero ── */}
       <section style={{
-        background: 'var(--brand-primary, #1E3A8A)',
-        minHeight: 480,
+        background: '#1E1A1A',
+        minHeight: 500,
         display: 'flex',
         alignItems: 'center',
         position: 'relative',
         overflow: 'hidden'
       }}>
-        {/* Decorative shapes */}
-        <div style={{
-          position: 'absolute', right: -60, top: -60,
-          width: 480, height: 480, borderRadius: '50%',
-          background: 'rgba(255,209,0,0.06)'
-        }} />
-        <div style={{
-          position: 'absolute', right: 80, bottom: -80,
-          width: 320, height: 320, borderRadius: '50%',
-          background: 'rgba(255,209,0,0.04)'
-        }} />
+        {/* Decorative circles — blush tone */}
+        <div style={{ position: 'absolute', right: -80, top: -80, width: 520, height: 520, borderRadius: '50%', background: 'rgba(238,197,197,0.05)' }} />
+        <div style={{ position: 'absolute', right: 120, bottom: -100, width: 340, height: 340, borderRadius: '50%', background: 'rgba(196,154,138,0.06)' }} />
+        <div style={{ position: 'absolute', left: -60, bottom: -60, width: 300, height: 300, borderRadius: '50%', background: 'rgba(181,196,177,0.04)' }} />
 
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '80px 24px', width: '100%' }}>
-          <div style={{ maxWidth: 600 }}>
+          <div style={{ maxWidth: 560 }}>
             <span className="fade-up fade-up-1" style={{
-              display: 'inline-block', background: 'var(--brand-secondary, #FFD100)', color: 'var(--brand-primary, #1E3A8A)',
-              fontWeight: 800, fontSize: 11, letterSpacing: '1.5px',
-              padding: '4px 12px', borderRadius: 4, marginBottom: 24
-            }}>TECNOLOGÍA DE VANGUARDIA</span>
+              display: 'inline-block', background: 'rgba(238,197,197,0.12)',
+              color: '#EEC5C5', fontWeight: 400, fontSize: 10,
+              letterSpacing: '4px', padding: '5px 14px', borderRadius: 4, marginBottom: 28,
+              textTransform: 'uppercase', fontFamily: "'Inter', sans-serif",
+              border: '1px solid rgba(238,197,197,0.2)'
+            }}>Korean Skincare · Lima, Perú</span>
 
             <h1 className="fade-up fade-up-2" style={{
-              fontSize: 'clamp(2.5rem, 6vw, 4.5rem)',
-              fontWeight: 900, color: '#FFFFFF',
-              lineHeight: 1.0, marginBottom: 24, letterSpacing: '-1px',
+              fontFamily: "'Josefin Sans', sans-serif",
+              fontSize: 'clamp(2.8rem, 7vw, 5rem)',
+              fontWeight: 100, color: '#FAF7F4',
+              lineHeight: 1.05, marginBottom: 24,
+              letterSpacing: '0.04em', textTransform: 'uppercase',
               whiteSpace: 'pre-line'
             }}>
               {bannerTitle.includes('\n') ? (
                 <>
                   {bannerTitle.split('\n')[0]}<br />
-                  <span style={{ color: 'var(--brand-secondary, #FFD100)' }}>{bannerTitle.split('\n')[1]}</span>
+                  <span style={{ color: '#EEC5C5' }}>{bannerTitle.split('\n')[1]}</span>
                 </>
               ) : (
-                <span style={{ color: 'var(--brand-secondary, #FFD100)' }}>{bannerTitle}</span>
+                <span style={{ color: '#EEC5C5' }}>{bannerTitle}</span>
               )}
             </h1>
 
-            <p className="fade-up fade-up-3" style={{ color: '#93C5FD', fontSize: 17, lineHeight: 1.7, marginBottom: 36, maxWidth: 480 }}>
+            <p className="fade-up fade-up-3" style={{
+              color: '#9CA3AF', fontSize: 15, lineHeight: 1.8,
+              marginBottom: 40, maxWidth: 460, fontWeight: 300,
+              fontFamily: "'Inter', sans-serif"
+            }}>
               {bannerSubtitle}
             </p>
 
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <Link href="/catalog" className="hero-cta-yellow fade-up fade-up-3" style={{
                 display: 'inline-flex', alignItems: 'center', gap: 8,
-                background: 'var(--brand-secondary, #FFD100)', color: 'var(--brand-primary, #1E3A8A)',
-                fontWeight: 800, fontSize: 15, padding: '14px 28px',
+                background: '#EEC5C5', color: '#1E1A1A',
+                fontWeight: 500, fontSize: 13, padding: '14px 28px',
                 borderRadius: 8, textDecoration: 'none',
+                letterSpacing: '0.06em', fontFamily: "'Inter', sans-serif"
               }}>
-                Ver catálogo completo <ArrowRight size={18} />
+                Ver catálogo <ArrowRight size={16} />
               </Link>
               <Link href="/contact" className="hero-cta-outline fade-up fade-up-4" style={{
                 display: 'inline-flex', alignItems: 'center', gap: 8,
-                border: '2px solid rgba(255,255,255,0.3)', color: '#fff',
-                fontWeight: 700, fontSize: 15, padding: '14px 28px',
+                border: '1px solid rgba(255,255,255,0.2)', color: '#FAF7F4',
+                fontWeight: 400, fontSize: 13, padding: '14px 28px',
                 borderRadius: 8, textDecoration: 'none',
+                letterSpacing: '0.06em', fontFamily: "'Inter', sans-serif"
               }}>
                 Precio mayorista
               </Link>
@@ -85,101 +88,99 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── Trust bar ───────────────────────────────────── */}
-      <section style={{ background: '#F7F8FA', borderBottom: '1px solid #E5E7EB' }}>
+      {/* ── Trust bar ── */}
+      <section style={{ background: '#fff', borderBottom: '1px solid #EDE8E4' }}>
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0 }}>
             {[
-              { label: 'Importación directa', sub: 'Sin intermediarios' },
-              { label: 'Garantía incluida', sub: 'En todos los productos' },
-              { label: 'Soporte dedicado', sub: 'Atención personalizada' },
+              { label: 'Importado desde Corea', sub: 'Productos auténticos K-beauty' },
+              { label: 'Rutinas verificadas', sub: 'Selección dermatológicamente probada' },
+              { label: 'Entrega en Lima', sub: 'Envío rápido a todo el país' },
             ].map((item, i) => (
-              <div key={i} style={{
+              <div key={i} className="trust-item" style={{
                 padding: '20px 24px', textAlign: 'center',
-                borderRight: i < 2 ? '1px solid #E5E7EB' : 'none'
+                borderRight: i < 2 ? '1px solid #EDE8E4' : 'none'
               }}>
-                <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--brand-primary, #1E3A8A)' }}>{item.label}</div>
-                <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>{item.sub}</div>
+                <div style={{ fontWeight: 500, fontSize: 13, color: '#1E1A1A', letterSpacing: '0.02em', fontFamily: "'Inter', sans-serif" }}>{item.label}</div>
+                <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 3, fontFamily: "'Inter', sans-serif" }}>{item.sub}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Top Sellers ─────────────────────────────────── */}
-      <section style={{ padding: '64px 24px', maxWidth: 1280, margin: '0 auto' }}>
-        {/* Section header */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 40 }}>
+      {/* ── Top Sellers ── */}
+      <section style={{ padding: '72px 24px', maxWidth: 1280, margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 44 }}>
           <div>
-            <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-secondary, #FFD100)', letterSpacing: '2px', marginBottom: 8 }}>
-              ★ TOP SELLERS
+            <p style={{
+              fontSize: 10, fontWeight: 500, color: '#C49A8A',
+              letterSpacing: '4px', marginBottom: 10, textTransform: 'uppercase',
+              fontFamily: "'Inter', sans-serif"
+            }}>
+              ✦ más vendidos
             </p>
-            <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 900, color: '#0A0A0A', lineHeight: 1.1 }}>
-              Los más vendidos
+            <h2 style={{
+              fontFamily: "'Josefin Sans', sans-serif",
+              fontSize: 'clamp(1.8rem, 4vw, 2.6rem)',
+              fontWeight: 100, color: '#1E1A1A', lineHeight: 1.1,
+              letterSpacing: '0.05em', textTransform: 'uppercase'
+            }}>
+              Los favoritos
             </h2>
           </div>
           <Link href="/catalog" style={{
             display: 'inline-flex', alignItems: 'center', gap: 4,
-            fontSize: 13, fontWeight: 700, color: 'var(--brand-primary, #1E3A8A)',
-            textDecoration: 'none', paddingBottom: 4, borderBottom: '2px solid #FFD100'
+            fontSize: 12, fontWeight: 500, color: '#1E1A1A',
+            textDecoration: 'none', paddingBottom: 4,
+            borderBottom: '1px solid #EEC5C5', letterSpacing: '0.05em',
+            fontFamily: "'Inter', sans-serif"
           }}>
-            Ver todos <ChevronRight size={15} />
+            Ver todos <ChevronRight size={14} />
           </Link>
         </div>
 
-        {/* 8 slots grid */}
         {topSellers.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '80px 0' }}>
-            {/* Empty state: 8 placeholder slots */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: 20, marginBottom: 32
-            }}>
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} style={{
-                  border: '2px dashed #E5E7EB', borderRadius: 12,
+                  border: '1.5px dashed #EDE8E4', borderRadius: 16,
                   aspectRatio: '3/4', display: 'flex', flexDirection: 'column',
                   alignItems: 'center', justifyContent: 'center', gap: 8,
-                  background: '#F7F8FA'
-                }}>
-                  <div style={{
-                    width: 32, height: 32, borderRadius: '50%',
-                    background: 'var(--brand-primary, #1E3A8A)', color: 'var(--brand-secondary, #FFD100)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontWeight: 900, fontSize: 13
-                  }}>{i + 1}</div>
-                  <span style={{ fontSize: 11, color: '#9CA3AF', fontWeight: 600 }}>Slot disponible</span>
-                </div>
-              ))}
-            </div>
-            <p style={{ color: '#9CA3AF', fontSize: 14 }}>Agrega productos desde el panel de administración</p>
-          </div>
-        ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-            gap: 20
-          }}>
-            {/* Fill up to 8 slots */}
-            {Array.from({ length: 8 }).map((_, i) => {
-              const product = topSellers[i]
-              if (product) return <ProductCard key={product.id} product={product} rank={i + 1} />
-              // Empty slot
-              return (
-                <div key={`empty-${i}`} style={{
-                  border: '2px dashed #E5E7EB', borderRadius: 12,
-                  aspectRatio: '3/4', display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center', gap: 8,
-                  background: '#F7F8FA'
+                  background: '#FAF7F4'
                 }}>
                   <div style={{
                     width: 28, height: 28, borderRadius: '50%',
-                    background: '#E5E7EB', color: '#9CA3AF',
+                    background: '#EEC5C5', color: '#1E1A1A',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontWeight: 900, fontSize: 12
+                    fontWeight: 500, fontSize: 12, fontFamily: "'Inter', sans-serif"
                   }}>{i + 1}</div>
-                  <span style={{ fontSize: 11, color: '#9CA3AF' }}>Próximamente</span>
+                  <span style={{ fontSize: 10, color: '#C49A8A', fontWeight: 400, letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: "'Inter', sans-serif" }}>Próximamente</span>
+                </div>
+              ))}
+            </div>
+            <p style={{ color: '#9CA3AF', fontSize: 13, fontFamily: "'Inter', sans-serif" }}>Agrega productos desde el panel de administración</p>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 20 }}>
+            {Array.from({ length: 8 }).map((_, i) => {
+              const product = topSellers[i]
+              if (product) return <ProductCard key={product.id} product={product} rank={i + 1} />
+              return (
+                <div key={`empty-${i}`} style={{
+                  border: '1.5px dashed #EDE8E4', borderRadius: 16,
+                  aspectRatio: '3/4', display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center', gap: 8,
+                  background: '#FAF7F4'
+                }}>
+                  <div style={{
+                    width: 24, height: 24, borderRadius: '50%',
+                    background: '#EDE8E4', color: '#9CA3AF',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 500, fontSize: 11
+                  }}>{i + 1}</div>
+                  <span style={{ fontSize: 10, color: '#C49A8A', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: "'Inter', sans-serif" }}>Próximamente</span>
                 </div>
               )
             })}
@@ -187,26 +188,35 @@ export default async function HomePage() {
         )}
       </section>
 
-      {/* ── Wholesale CTA ───────────────────────────────── */}
+      {/* ── Skincare CTA ── */}
       <section style={{
-        margin: '0 24px 64px', maxWidth: 1232, marginLeft: 'auto', marginRight: 'auto',
-        background: '#0A0A0A', borderRadius: 16, padding: '48px 56px',
+        margin: '0 24px 72px', maxWidth: 1232, marginLeft: 'auto', marginRight: 'auto',
+        background: '#EEC5C5', borderRadius: 20, padding: '52px 56px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         flexWrap: 'wrap', gap: 24
       }}>
         <div>
-          <p style={{ color: 'var(--brand-secondary, #FFD100)', fontWeight: 700, fontSize: 12, letterSpacing: '2px', marginBottom: 8 }}>DISTRIBUIDORES Y EMPRESAS</p>
-          <h3 style={{ color: '#fff', fontSize: 'clamp(1.4rem, 3vw, 2rem)', fontWeight: 900, lineHeight: 1.1 }}>
+          <p style={{
+            color: '#C49A8A', fontWeight: 500, fontSize: 10,
+            letterSpacing: '4px', marginBottom: 10, textTransform: 'uppercase',
+            fontFamily: "'Inter', sans-serif"
+          }}>SPAS · CLÍNICAS · DISTRIBUIDORES</p>
+          <h3 style={{
+            fontFamily: "'Josefin Sans', sans-serif",
+            color: '#1E1A1A', fontSize: 'clamp(1.6rem, 3vw, 2.2rem)',
+            fontWeight: 100, lineHeight: 1.15, letterSpacing: '0.04em', textTransform: 'uppercase'
+          }}>
             ¿Compras en volumen?<br />Tenemos precio mayorista.
           </h3>
         </div>
         <Link href="/contact" className="wholesale-cta" style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
-          background: 'var(--brand-secondary, #FFD100)', color: 'var(--brand-primary, #1E3A8A)',
-          fontWeight: 800, fontSize: 15, padding: '14px 28px',
-          borderRadius: 8, textDecoration: 'none', flexShrink: 0
+          background: '#1E1A1A', color: '#EEC5C5',
+          fontWeight: 500, fontSize: 13, padding: '14px 28px',
+          borderRadius: 10, textDecoration: 'none', flexShrink: 0,
+          letterSpacing: '0.06em', fontFamily: "'Inter', sans-serif"
         }}>
-          Consultar ahora <ArrowRight size={18} />
+          Consultar ahora <ArrowRight size={16} />
         </Link>
       </section>
     </>
