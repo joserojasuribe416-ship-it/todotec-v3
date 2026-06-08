@@ -196,6 +196,10 @@ export default function Contabilidad() {
                 <span className="text-gray-600">Cuentas por Pagar</span>
                 <span className="font-semibold">{fmt(balance.pasivos.cuentas_por_pagar)}</span>
               </div>
+              <div className="flex justify-between py-3 border-t bg-gray-50 px-3 rounded-lg">
+                <span className="font-bold text-[#1E1A1A]">Total Pasivos</span>
+                <span className="font-bold">{fmt(balance.pasivos.total)}</span>
+              </div>
             </div>
             <div className="card">
               <h3 className="font-bold text-[#1E1A1A] mb-4">PATRIMONIO</h3>
@@ -206,13 +210,20 @@ export default function Contabilidad() {
                 </div>
                 <div className="flex justify-between py-2">
                   <span className="text-gray-600">Utilidades Acumuladas</span>
-                  <span className="font-semibold">{fmt(balance.patrimonio.utilidades_acumuladas)}</span>
+                  <span className={`font-semibold ${balance.patrimonio.utilidades_acumuladas < 0 ? 'text-red-600' : ''}`}>
+                    {fmt(balance.patrimonio.utilidades_acumuladas)}
+                  </span>
                 </div>
                 <div className="flex justify-between py-3 border-t bg-yellow-50 px-3 rounded-lg">
                   <span className="font-bold text-[#1E1A1A]">Total Patrimonio</span>
                   <span className="font-bold text-[#1E1A1A]">{fmt(balance.patrimonio.total)}</span>
                 </div>
               </div>
+            </div>
+            {/* Verificación ecuación fundamental */}
+            <div className={`flex items-center justify-between px-4 py-3 rounded-xl border text-sm font-semibold ${balance.ecuacion_ok ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-600'}`}>
+              <span>{balance.ecuacion_ok ? '✓ Ecuación contable cuadra' : '✗ Ecuación contable no cuadra'}</span>
+              <span>Activo {fmt(balance.activos.total)} = Pasivo+Patrim. {fmt(balance.pasivo_mas_patrimonio)}</span>
             </div>
           </div>
         </div>

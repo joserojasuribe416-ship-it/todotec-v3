@@ -10,13 +10,7 @@ router = APIRouter(prefix="/api/accounting", tags=["accounting"])
 
 
 def get_available_cash(db: Session) -> float:
-    cash_in = db.query(func.sum(AccountingEntry.amount)).filter(
-        AccountingEntry.debit_account == "Efectivo"
-    ).scalar() or 0
-    cash_out = db.query(func.sum(AccountingEntry.amount)).filter(
-        AccountingEntry.credit_account == "Efectivo"
-    ).scalar() or 0
-    return round(cash_in - cash_out, 2)
+    return round(_account(db, "Efectivo"), 2)
 
 
 @router.get("/entries", response_model=List[AccountingEntryOut])
@@ -81,19 +75,36 @@ def reset_balance(db: Session = Depends(get_db)):
     return {"ok": True, "message": "Balance reseteado correctamente"}
 
 
+# ── Saldo neto de una cuenta contable (débitos − créditos) ───────────
+def _account(db, name: str) -> float:
+    """
+    Retorna el saldo neto de una cuenta.
+    Cuentas de activo/gasto: saldo deudor  (+débitos − créditos)
+    Cuentas de pasivo/patrimonio/ingreso: se usa con signo negativo en quien llama
+    Por construcción de partida doble, Activo = Pasivo + Patrimonio siempre.
+    """
+    deb = db.query(func.sum(AccountingEntry.amount)).filter(
+        AccountingEntry.debit_account == name
+    ).scalar() or 0
+    cre = db.query(func.sum(AccountingEntry.amount)).filter(
+        AccountingEntry.credit_account == name
+    ).scalar() or 0
+    return deb - cre
+
+
 # ── Financial Statements ──────────────────────────────────────────────
 @router.get("/income-statement")
 def income_statement(db: Session = Depends(get_db)):
-    sales_total = db.query(func.sum(Sale.total)).scalar() or 0
-    cogs = db.query(func.sum(AccountingEntry.amount)).filter(
-        AccountingEntry.entry_type == "cogs"
-    ).scalar() or 0
+    # Ingresos: cuenta "Ventas" es acreedora → saldo crédito = -_account
+    sales_total = -_account(db, "Ventas")
+    # COGS: cuenta deudora
+    cogs = _account(db, "Costo de Ventas")
     gross_profit = sales_total - cogs
     expenses = 0.0
     net_income = gross_profit - expenses
     return {
-        "ventas": round(sales_total, 2),
-        "costo_ventas": round(cogs, 2),
+        "ventas": round(max(sales_total, 0), 2),
+        "costo_ventas": round(max(cogs, 0), 2),
         "utilidad_bruta": round(gross_profit, 2),
         "gastos": round(expenses, 2),
         "utilidad_neta": round(net_income, 2),
@@ -102,51 +113,43 @@ def income_statement(db: Session = Depends(get_db)):
 
 @router.get("/balance-sheet")
 def balance_sheet(db: Session = Depends(get_db)):
-    cash = get_available_cash(db)
+    # ── Activos (cuentas deudoras) ──────────────────────────────────
+    efectivo          = _account(db, "Efectivo")
+    inventarios       = _account(db, "Inventarios")
+    cuentas_cobrar    = _account(db, "Cuentas por Cobrar")
+    total_activos     = max(efectivo, 0) + max(inventarios, 0) + max(cuentas_cobrar, 0)
 
-    inv_in = db.query(func.sum(AccountingEntry.amount)).filter(
-        AccountingEntry.debit_account == "Inventarios"
-    ).scalar() or 0
-    inv_out = db.query(func.sum(AccountingEntry.amount)).filter(
-        AccountingEntry.credit_account == "Inventarios"
-    ).scalar() or 0
-    inventory = inv_in - inv_out
+    # ── Pasivos (cuentas acreedoras → saldo crédito = -_account) ───
+    cuentas_pagar     = -_account(db, "Cuentas por Pagar")
+    total_pasivos     = max(cuentas_pagar, 0)
 
-    ar_in = db.query(func.sum(AccountingEntry.amount)).filter(
-        AccountingEntry.debit_account == "Cuentas por Cobrar"
-    ).scalar() or 0
-    ar_out = db.query(func.sum(AccountingEntry.amount)).filter(
-        AccountingEntry.credit_account == "Cuentas por Cobrar"
-    ).scalar() or 0
-    accounts_receivable = ar_in - ar_out
+    # ── Patrimonio ──────────────────────────────────────────────────
+    capital           = db.query(func.sum(CapitalContribution.amount)).scalar() or 0
+    # Utilidades = Ingresos − Gastos (desde saldos de cuentas)
+    ingresos          = -_account(db, "Ventas")          # cuenta acreedora
+    gastos            = _account(db, "Costo de Ventas")  # cuenta deudora
+    utilidades        = ingresos - gastos
+    total_patrimonio  = capital + utilidades
 
-    total_assets = max(cash, 0) + max(inventory, 0) + max(accounts_receivable, 0)
-
-    capital = db.query(func.sum(CapitalContribution.amount)).scalar() or 0
-
-    ap_in = db.query(func.sum(AccountingEntry.amount)).filter(
-        AccountingEntry.credit_account == "Cuentas por Pagar"
-    ).scalar() or 0
-
-    sales_total = db.query(func.sum(Sale.total)).scalar() or 0
-    cogs = db.query(func.sum(AccountingEntry.amount)).filter(
-        AccountingEntry.entry_type == "cogs"
-    ).scalar() or 0
-    retained_earnings = sales_total - cogs
+    # ── Verificación de ecuación fundamental ───────────────────────
+    ecuacion_ok = round(total_activos, 2) == round(total_pasivos + total_patrimonio, 2)
 
     return {
         "activos": {
-            "efectivo": round(max(cash, 0), 2),
-            "inventarios": round(max(inventory, 0), 2),
-            "cuentas_por_cobrar": round(max(accounts_receivable, 0), 2),
-            "total": round(total_assets, 2),
+            "efectivo":           round(max(efectivo, 0), 2),
+            "inventarios":        round(max(inventarios, 0), 2),
+            "cuentas_por_cobrar": round(max(cuentas_cobrar, 0), 2),
+            "total":              round(total_activos, 2),
         },
         "pasivos": {
-            "cuentas_por_pagar": round(ap_in, 2),
+            "cuentas_por_pagar": round(max(cuentas_pagar, 0), 2),
+            "total":             round(total_pasivos, 2),
         },
         "patrimonio": {
-            "capital_social": round(capital, 2),
-            "utilidades_acumuladas": round(retained_earnings, 2),
-            "total": round(capital + retained_earnings, 2),
+            "capital_social":        round(capital, 2),
+            "utilidades_acumuladas": round(utilidades, 2),
+            "total":                 round(total_patrimonio, 2),
         },
+        "ecuacion_ok":         ecuacion_ok,
+        "pasivo_mas_patrimonio": round(total_pasivos + total_patrimonio, 2),
     }
