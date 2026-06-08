@@ -157,7 +157,7 @@ function NavbarInner() {
             textDecoration: 'none', whiteSpace: 'nowrap', fontFamily: "'Inter', sans-serif",
             borderBottom: isCatalog && !activeCategory ? '2px solid #EEC5C5' : '2px solid transparent',
             transition: 'all 0.15s'
-          }}>Todo</Link>
+          }}>Catálogo</Link>
           {categories.map(cat => (
             <Link key={cat} href={`/catalog?category=${encodeURIComponent(cat)}`} style={{
               padding: '0 14px', height: 40, display: 'flex', alignItems: 'center',
