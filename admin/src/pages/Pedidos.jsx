@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
-import { Package, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react'
+import { Package, ChevronDown, ChevronUp, RefreshCw, ExternalLink } from 'lucide-react'
 
 const STATUS_CONFIG = {
   pending_payment: { label: 'Pendiente',  bg: '#F3F4F6', color: '#6B7280' },
@@ -27,6 +28,7 @@ function StatusBadge({ status }) {
 function OrderRow({ order, onStatusChange }) {
   const [expanded, setExpanded] = useState(false)
   const [updating, setUpdating] = useState(false)
+  const navigate = useNavigate()
 
   const changeStatus = async (newStatus) => {
     setUpdating(true)
@@ -138,6 +140,16 @@ function OrderRow({ order, onStatusChange }) {
                 {order.mp_payment_id && (
                   <div style={{ marginTop: 12, fontFamily: "'Inter', sans-serif", fontSize: 11, color: '#9CA3AF' }}>
                     MP Payment ID: {order.mp_payment_id}
+                  </div>
+                )}
+                {order.sale_id && (
+                  <div style={{ marginTop: 12 }}>
+                    <button
+                      onClick={() => navigate(`/ventas?highlight=${order.sale_id}`)}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontFamily: "'Inter', sans-serif", fontSize: 12, color: '#16A34A', fontWeight: 500 }}
+                    >
+                      <ExternalLink size={12} /> Ver venta generada
+                    </button>
                   </div>
                 )}
               </div>

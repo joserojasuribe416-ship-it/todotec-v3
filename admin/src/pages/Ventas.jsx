@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { getSales, createSale, deleteSale, getProducts } from '../api/client'
-import { Plus, Trash2, X, ShoppingBag, ChevronDown, ChevronUp, Printer, Search } from 'lucide-react'
+import { Plus, Trash2, X, ShoppingBag, ChevronDown, ChevronUp, Printer, Search, ArrowLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 function InvoiceModal({ sale, onClose }) {
@@ -338,6 +339,10 @@ export default function Ventas() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [sortBy, setSortBy] = useState('date_desc')
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const highlightId = searchParams.get('highlight') ? parseInt(searchParams.get('highlight')) : null
+  const highlightRef = useRef(null)
 
   const load = () => getSales().then(setSales)
 
@@ -345,6 +350,14 @@ export default function Ventas() {
     load()
     getProducts().then(setProducts)
   }, [])
+
+  // Auto-expandir y scroll a la venta resaltada
+  useEffect(() => {
+    if (highlightId && sales.length > 0) {
+      setExpanded(highlightId)
+      setTimeout(() => highlightRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 200)
+    }
+  }, [highlightId, sales])
 
   const del = async (id) => {
     if (!confirm('¿Eliminar esta venta? Se revertirá el stock.')) return
@@ -387,6 +400,15 @@ export default function Ventas() {
         </button>
       </div>
 
+      {highlightId && (
+        <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+          <span className="text-sm text-green-700 font-medium">Venta generada automáticamente desde un pedido web</span>
+          <button onClick={() => navigate('/pedidos')} className="flex items-center gap-1.5 text-xs text-green-600 hover:text-green-800 ml-auto">
+            <ArrowLeft size={13} /> Volver a Pedidos
+          </button>
+        </div>
+      )}
+
       <div className="flex gap-3 flex-wrap">
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -425,8 +447,15 @@ export default function Ventas() {
             {sales.length === 0 ? 'Sin ventas registradas.' : 'Sin resultados con los filtros aplicados.'}
           </div>
         )}
-        {displaySales.map(s => (
-          <div key={s.id} className="card p-0 overflow-hidden">
+        {displaySales.map(s => {
+          const isHighlighted = s.id === highlightId
+          const isWebOrder = s.notes?.includes('Pedido web #')
+          const pedidoNum = isWebOrder ? s.notes.match(/Pedido web #(\d+)/)?.[1] : null
+          return (
+          <div key={s.id} ref={isHighlighted ? highlightRef : null}
+            className="card p-0 overflow-hidden"
+            style={isHighlighted ? { outline: '2px solid #16A34A', outlineOffset: 2 } : {}}
+          >
             <div
               className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50"
               onClick={() => setExpanded(expanded === s.id ? null : s.id)}
@@ -436,7 +465,14 @@ export default function Ventas() {
                   <ShoppingBag size={18} className="text-yellow-600" />
                 </div>
                 <div>
-                  <div className="font-semibold">{s.invoice_number}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">{s.invoice_number}</span>
+                    {pedidoNum && (
+                      <span style={{ background: '#DCFCE7', color: '#16A34A', fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 20, letterSpacing: '0.04em' }}>
+                        PEDIDO WEB #{pedidoNum}
+                      </span>
+                    )}
+                  </div>
                   <div className="text-xs text-gray-500">
                     {new Date(s.sale_date).toLocaleDateString('es-PE')} · {s.customer_name}
                     · <span className="capitalize">{s.sale_type}</span>
@@ -488,7 +524,7 @@ export default function Ventas() {
               </div>
             )}
           </div>
-        ))}
+        )})}
       </div>
 
       {showForm && <SaleForm products={products} onSave={load} onClose={() => setShowForm(false)} />}

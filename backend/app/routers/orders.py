@@ -55,7 +55,7 @@ def _create_sale_from_order(order: Order, db: Session):
         })
 
     if not sale_items_data:
-        return  # Nada que registrar
+        return None  # Nada que registrar
 
     tax_rate = getattr(config, "tax_rate", 0.18) or 0.18
     tax_amount = round(subtotal * tax_rate, 2)
@@ -139,6 +139,8 @@ def _create_sale_from_order(order: Order, db: Session):
             credit_account="Inventarios",
             amount=round(cogs, 2),
         ))
+
+    return sale.id
 
 
 def get_mp_sdk():
@@ -299,7 +301,9 @@ async def mp_webhook(request: Request, db: Session = Depends(get_db)):
                         order.status = "paid"
                         order.mp_payment_id = str(resource_id)
                         db.flush()
-                        _create_sale_from_order(order, db)
+                        sale_id = _create_sale_from_order(order, db)
+                        if sale_id:
+                            order.sale_id = sale_id
                         db.commit()
         except Exception:
             pass
@@ -324,7 +328,9 @@ def verify_payment(order_id: int, payment_id: Optional[str] = None, db: Session 
                     order.status = "paid"
                     order.mp_payment_id = str(payment_id)
                     db.flush()
-                    _create_sale_from_order(order, db)
+                    sale_id = _create_sale_from_order(order, db)
+                    if sale_id:
+                        order.sale_id = sale_id
                     db.commit()
                     db.refresh(order)
         except Exception:
@@ -365,6 +371,7 @@ def list_orders(db: Session = Depends(get_db)):
             "total": o.total,
             "mp_preference_id": o.mp_preference_id,
             "mp_payment_id": o.mp_payment_id,
+            "sale_id": o.sale_id,
             "created_at": o.created_at.isoformat() if o.created_at else None,
         }
         for o in orders

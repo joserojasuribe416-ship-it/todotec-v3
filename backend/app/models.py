@@ -330,5 +330,8 @@ class Order(Base):
     mp_preference_id = Column(String, default="")
     mp_payment_id = Column(String, default="")
 
+    # Link a la venta generada automáticamente
+    sale_id = Column(Integer, nullable=True)
+
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
