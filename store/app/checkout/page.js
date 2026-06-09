@@ -1,8 +1,8 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Check, ShoppingBag, Loader2 } from 'lucide-react'
+import { ArrowLeft, Check, ShoppingBag, Loader2, QrCode, CreditCard, Upload, X } from 'lucide-react'
 import { getImageUrl } from '../../lib/api'
 
 // ── Puntos de recojo ──────────────────────────────────────────────────────────
@@ -109,10 +109,30 @@ export default function CheckoutPage() {
   const [province, setProvince] = useState('')
   const [district, setDistrict] = useState('')
   const [address, setAddress] = useState('')
+  const [paymentMethod, setPaymentMethod] = useState('mercadopago')
+  const [qrImageUrl, setQrImageUrl] = useState('')
+  const [screenshotFile, setScreenshotFile] = useState(null)
+  const [screenshotPreview, setScreenshotPreview] = useState('')
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     try { setCart(JSON.parse(sessionStorage.getItem('cart') || '[]')) } catch { setCart([]) }
   }, [])
+
+  useEffect(() => {
+    if (step === 4) {
+      fetch('/api/appearance/qr-image').then(r => r.json()).then(d => setQrImageUrl(d.qr_image_url || '')).catch(() => {})
+    }
+  }, [step])
+
+  const handleScreenshotChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setScreenshotFile(file)
+    const reader = new FileReader()
+    reader.onload = ev => setScreenshotPreview(ev.target.result)
+    reader.readAsDataURL(file)
+  }
 
   // Amounts
   const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
@@ -167,44 +187,65 @@ export default function CheckoutPage() {
 
   const back = () => { setError(''); setStep(s => s - 1) }
 
-  // ── Pay ───────────────────────────────────────────────────────────────────
+  // ── Build order body ──────────────────────────────────────────────────────
+  const buildOrderBody = () => {
+    const pickup = PICKUP_POINTS.find(p => p.id === pickupPoint) || PICKUP_POINTS[0]
+    const delivery = deliveryType === 'pickup'
+      ? { type: 'pickup', point_name: pickup.name, point_address: pickup.address }
+      : { type: 'delivery', department: dept, province, district, address }
+    return {
+      items: cart.map(i => ({ product_id: i.id || 0, name: i.name, quantity: i.quantity, price: i.price, variant_color: i.variant_color || '', image: i.image || '' })),
+      customer: { ...customer },
+      delivery,
+      subtotal: Math.round(subtotal * 100) / 100,
+      shipping_cost: shipping,
+      total: Math.round(total * 100) / 100,
+    }
+  }
+
+  // ── Pay MercadoPago ───────────────────────────────────────────────────────
   const pay = async () => {
     setLoading(true)
     setError('')
     try {
-      const pickup = PICKUP_POINTS.find(p => p.id === pickupPoint) || PICKUP_POINTS[0]
-      const delivery = deliveryType === 'pickup'
-        ? { type: 'pickup', point_name: pickup.name, point_address: pickup.address }
-        : { type: 'delivery', department: dept, province, district, address }
-
-      const body = {
-        items: cart.map(i => ({
-          product_id: i.id || 0,
-          name: i.name,
-          quantity: i.quantity,
-          price: i.price,
-          variant_color: i.variant_color || '',
-          image: i.image || '',
-        })),
-        customer: { ...customer },
-        delivery,
-        subtotal: Math.round(subtotal * 100) / 100,
-        shipping_cost: shipping,
-        total: Math.round(total * 100) / 100,
-      }
-
       const res = await fetch('/api/orders/create-preference', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildOrderBody()),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.detail || 'Error al procesar el pago')
-
-      // Limpiar carrito y redirigir a MercadoPago
       sessionStorage.setItem('cart', '[]')
       window.dispatchEvent(new Event('cartUpdated'))
       window.location.href = data.checkout_url
+    } catch (e) {
+      setError(e.message || 'Error inesperado')
+      setLoading(false)
+    }
+  }
+
+  // ── Pay QR ────────────────────────────────────────────────────────────────
+  const payQR = async () => {
+    if (!screenshotFile) { setError('Por favor sube la captura de tu pago'); return }
+    setLoading(true)
+    setError('')
+    try {
+      // 1. Crear pedido QR
+      const res = await fetch('/api/orders/create-qr', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildOrderBody()),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.detail || 'Error al crear el pedido')
+
+      // 2. Subir captura
+      const formData = new FormData()
+      formData.append('file', screenshotFile)
+      await fetch(`/api/orders/${data.order_id}/screenshot`, { method: 'POST', body: formData })
+
+      // 3. Limpiar carrito y redirigir
+      sessionStorage.setItem('cart', '[]')
+      window.dispatchEvent(new Event('cartUpdated'))
+      router.push(`/checkout/success?qr=1&order_id=${data.order_id}&order_number=${data.order_number}`)
     } catch (e) {
       setError(e.message || 'Error inesperado')
       setLoading(false)
@@ -436,7 +477,7 @@ export default function CheckoutPage() {
             <h2 style={sectionTitle}>Confirma y paga</h2>
 
             {/* Mini resumen */}
-            <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #EDE8E4', padding: '20px 22px', marginBottom: 16 }}>
+            <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #EDE8E4', padding: '20px 22px', marginBottom: 20 }}>
               <Row label="Cliente" value={`${customer.nombre} ${customer.apellido}`} />
               <Row label="Correo" value={customer.email} />
               <Row label="DNI" value={customer.dni} />
@@ -447,9 +488,7 @@ export default function CheckoutPage() {
                     ? `Recojo en ${PICKUP_POINTS.find(p => p.id === pickupPoint)?.name}`
                     : `Domicilio — ${dept}, ${province}${district ? ', ' + district : ''}`
                 } />
-                {deliveryType === 'delivery' && address && (
-                  <Row label="Dirección" value={address} />
-                )}
+                {deliveryType === 'delivery' && address && <Row label="Dirección" value={address} />}
               </div>
               <div style={{ borderTop: '1px solid #F3EEE9', marginTop: 12, paddingTop: 12 }}>
                 <Row label="Subtotal" value={fmt(subtotal)} />
@@ -461,18 +500,120 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {error && <p style={errorStyle}>{error}</p>}
-
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <button onClick={back} style={btnSecondary} disabled={loading}>← Volver</button>
-              <button onClick={pay} disabled={loading} style={{ ...btnPrimary, flex: 1, justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 8, opacity: loading ? 0.7 : 1 }}>
-                {loading ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Procesando...</> : '🔒 Pagar con MercadoPago'}
-              </button>
+            {/* Selector método de pago */}
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: '#9CA3AF', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>Método de pago</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+              {[
+                { id: 'mercadopago', icon: <CreditCard size={20} />, label: 'MercadoPago', sub: 'Tarjeta, Yape, billetera digital' },
+                { id: 'qr',          icon: <QrCode size={20} />,    label: 'QR / Transferencia', sub: 'Yape, Plin, banco' },
+              ].map(opt => (
+                <button key={opt.id} onClick={() => setPaymentMethod(opt.id)} style={{
+                  padding: '16px 14px', borderRadius: 12,
+                  border: `2px solid ${paymentMethod === opt.id ? '#1E1A1A' : '#EDE8E4'}`,
+                  background: paymentMethod === opt.id ? '#1E1A1A' : '#fff',
+                  color: paymentMethod === opt.id ? '#FAF7F4' : '#6B7280',
+                  cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
+                }}>
+                  <div style={{ marginBottom: 6, color: paymentMethod === opt.id ? '#EEC5C5' : '#9CA3AF' }}>{opt.icon}</div>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 600, marginBottom: 2 }}>{opt.label}</div>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, opacity: 0.7 }}>{opt.sub}</div>
+                </button>
+              ))}
             </div>
 
-            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: '#9CA3AF', textAlign: 'center', marginTop: 16 }}>
-              Serás redirigido a MercadoPago para completar el pago de forma segura.
-            </p>
+            {/* MercadoPago */}
+            {paymentMethod === 'mercadopago' && (
+              <div>
+                {error && <p style={errorStyle}>{error}</p>}
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <button onClick={back} style={btnSecondary} disabled={loading}>← Volver</button>
+                  <button onClick={pay} disabled={loading} style={{ ...btnPrimary, flex: 1, justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 8, opacity: loading ? 0.7 : 1 }}>
+                    {loading ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Procesando...</> : '🔒 Pagar con MercadoPago'}
+                  </button>
+                </div>
+                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: '#9CA3AF', textAlign: 'center', marginTop: 14 }}>
+                  Serás redirigido a MercadoPago para completar el pago de forma segura.
+                </p>
+              </div>
+            )}
+
+            {/* QR */}
+            {paymentMethod === 'qr' && (
+              <div>
+                <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #EDE8E4', padding: '24px 22px', marginBottom: 16 }}>
+                  <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: '#9CA3AF', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>Instrucciones de pago</p>
+
+                  <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                    {/* QR Image */}
+                    <div style={{ flexShrink: 0, textAlign: 'center' }}>
+                      {qrImageUrl ? (
+                        <img src={qrImageUrl} alt="QR de pago" style={{ width: 160, height: 160, objectFit: 'contain', borderRadius: 10, border: '1px solid #EDE8E4' }} />
+                      ) : (
+                        <div style={{ width: 160, height: 160, borderRadius: 10, border: '2px dashed #EDE8E4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8 }}>
+                          <QrCode size={40} color="#EEC5C5" />
+                          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: '#9CA3AF' }}>QR próximamente</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Instructions */}
+                    <div style={{ flex: 1, minWidth: 200 }}>
+                      <div style={{ background: '#FAF7F4', borderRadius: 10, padding: '14px 16px', marginBottom: 12 }}>
+                        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: '#1E1A1A', fontWeight: 600, marginBottom: 4 }}>
+                          Transferir a nombre de:
+                        </p>
+                        <p style={{ fontFamily: "'Josefin Sans', sans-serif", fontSize: 18, letterSpacing: '0.06em', color: '#C49A8A', fontWeight: 400 }}>
+                          Jose Rojas Uribe
+                        </p>
+                      </div>
+                      <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: '#6B7280', lineHeight: 1.6 }}>
+                        1. Escanea el QR con Yape, Plin u otro app de pago.<br />
+                        2. Transfiere el monto exacto: <strong style={{ color: '#1E1A1A' }}>{fmt(total)}</strong><br />
+                        3. Toma una captura de pantalla del pago confirmado.<br />
+                        4. Súbela abajo y haz clic en <strong>Enviar pedido</strong>.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Screenshot upload */}
+                  <div style={{ marginTop: 20 }}>
+                    <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: '#9CA3AF', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>Captura de pago *</p>
+                    {screenshotPreview ? (
+                      <div style={{ position: 'relative', display: 'inline-block' }}>
+                        <img src={screenshotPreview} alt="Captura" style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 10, border: '1px solid #EDE8E4', objectFit: 'contain' }} />
+                        <button onClick={() => { setScreenshotFile(null); setScreenshotPreview('') }} style={{ position: 'absolute', top: 6, right: 6, background: '#1E1A1A', border: 'none', borderRadius: '50%', width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                          <X size={12} color="#FAF7F4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        style={{ border: '2px dashed #EDE8E4', borderRadius: 10, padding: '24px', textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.15s' }}
+                        onMouseEnter={e => e.currentTarget.style.borderColor = '#C49A8A'}
+                        onMouseLeave={e => e.currentTarget.style.borderColor = '#EDE8E4'}
+                      >
+                        <Upload size={24} color="#EEC5C5" style={{ marginBottom: 8 }} />
+                        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: '#6B7280', marginBottom: 4 }}>Haz clic para subir la captura</p>
+                        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: '#9CA3AF' }}>PNG, JPG o screenshot</p>
+                      </div>
+                    )}
+                    <input ref={fileInputRef} type="file" accept="image/*" onChange={handleScreenshotChange} style={{ display: 'none' }} />
+                  </div>
+                </div>
+
+                {error && <p style={errorStyle}>{error}</p>}
+
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <button onClick={back} style={btnSecondary} disabled={loading}>← Volver</button>
+                  <button onClick={payQR} disabled={loading || !screenshotFile} style={{ ...btnPrimary, flex: 1, justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 8, opacity: (loading || !screenshotFile) ? 0.6 : 1 }}>
+                    {loading ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Enviando...</> : '✓ Enviar pedido'}
+                  </button>
+                </div>
+                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: '#9CA3AF', textAlign: 'center', marginTop: 14 }}>
+                  Tu pedido quedará pendiente hasta que confirmemos la recepción del pago.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

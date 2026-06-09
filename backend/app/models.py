@@ -33,6 +33,7 @@ class CompanyConfig(Base):
     secondary_color = Column(String, default="#EEC5C5")
     banner_title = Column(String, default="Tu rutina coreana,\nen un solo lugar.")
     banner_subtitle = Column(String, default="Korean skincare importado directamente desde Corea del Sur. Rutinas reales, resultados visibles.")
+    qr_image_url = Column(String, default="")
 
 
 class Supplier(Base):
@@ -328,6 +329,11 @@ class Order(Base):
 
     # Origen del pedido
     source = Column(String, default="web")  # web | manual
+
+    # Método de pago
+    payment_method = Column(String, default="mercadopago")  # mercadopago | qr
+    payment_screenshot_url = Column(String, default="")
+    whatsapp_notified = Column(Boolean, default=False)
 
     # MercadoPago
     mp_preference_id = Column(String, default="")

@@ -380,11 +380,99 @@ function HomepageSections() {
 }
 
 
+// ── QR de Pago ────────────────────────────────────────────────────────────────
+function QRPaymentSection() {
+  const [qrUrl, setQrUrl] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    api.get('/appearance/qr-image').then(r => { setQrUrl(r.data.qr_image_url || ''); setLoaded(true) })
+  }, [])
+
+  const uploadQR = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setUploading(true)
+    const fd = new FormData()
+    fd.append('file', file)
+    try {
+      const { data } = await api.post('/appearance/qr-image', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      setQrUrl(data.qr_image_url)
+      toast.success('QR actualizado')
+    } catch {
+      toast.error('Error al subir imagen')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  if (!loaded) return null
+
+  return (
+    <div className="card space-y-4">
+      <div>
+        <h2 className="font-bold text-[#1E1A1A]">QR de Pago</h2>
+        <p className="text-xs text-gray-400 mt-0.5">
+          Imagen del QR (Yape, Plin, banco) que verá el cliente en el checkout al elegir pago por QR.
+        </p>
+      </div>
+
+      <div className="flex gap-6 items-start">
+        {/* Preview */}
+        <div className="flex-shrink-0">
+          {qrUrl ? (
+            <div className="relative group">
+              <img src={qrUrl} alt="QR de pago" style={{ width: 160, height: 160, objectFit: 'contain', borderRadius: 10, border: '1px solid #EDE8E4' }} />
+              <div className="absolute inset-0 bg-black/30 rounded-[10px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <label className="cursor-pointer bg-white text-xs px-3 py-1.5 rounded-lg font-medium text-gray-700 hover:bg-gray-50">
+                  {uploading ? 'Subiendo...' : 'Cambiar'}
+                  <input type="file" accept="image/*" className="hidden" onChange={uploadQR} disabled={uploading} />
+                </label>
+              </div>
+            </div>
+          ) : (
+            <label className="cursor-pointer block">
+              <input type="file" accept="image/*" className="hidden" onChange={uploadQR} disabled={uploading} />
+              <div style={{ width: 160, height: 160, border: '2px dashed #EDE8E4', borderRadius: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer' }}>
+                <Image size={28} color="#EEC5C5" />
+                <span className="text-xs text-gray-400 text-center px-2">{uploading ? 'Subiendo...' : 'Subir QR'}</span>
+              </div>
+            </label>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 space-y-3">
+          <div className="bg-[#FAF7F4] rounded-xl p-4">
+            <p className="text-xs text-gray-500 mb-1">El cliente verá esta instrucción en el checkout:</p>
+            <p className="text-sm font-semibold text-[#1E1A1A]">Transferir a nombre de:</p>
+            <p className="text-base text-[#C49A8A] font-medium mt-0.5">Jose Rojas Uribe</p>
+          </div>
+          <p className="text-xs text-gray-400 leading-relaxed">
+            Sube tu QR de Yape, Plin o cuenta bancaria. La imagen aparece en el paso de pago de la tienda. Los pedidos pagados por QR quedan en estado <strong>Pendiente QR</strong> hasta que los confirmes manualmente desde el módulo Pedidos.
+          </p>
+          {qrUrl && (
+            <label className="cursor-pointer">
+              <input type="file" accept="image/*" className="hidden" onChange={uploadQR} disabled={uploading} />
+              <span className="btn-blue inline-flex items-center gap-2 text-sm cursor-pointer">
+                <Image size={14} /> {uploading ? 'Subiendo...' : 'Reemplazar imagen'}
+              </span>
+            </label>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 const TABS = [
   { key: 'announcement', label: 'Barra de anuncio' },
   { key: 'banners', label: 'Banners carrusel' },
   { key: 'homepage', label: 'Secciones homepage' },
+  { key: 'qr', label: 'QR de Pago' },
 ]
 
 export default function Apariencia() {
@@ -398,7 +486,7 @@ export default function Apariencia() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit flex-wrap">
         {TABS.map(t => (
           <button
             key={t.key}
@@ -413,6 +501,7 @@ export default function Apariencia() {
       {tab === 'announcement' && <AnnouncementSection />}
       {tab === 'banners' && <BannersSection />}
       {tab === 'homepage' && <HomepageSections />}
+      {tab === 'qr' && <QRPaymentSection />}
     </div>
   )
 }

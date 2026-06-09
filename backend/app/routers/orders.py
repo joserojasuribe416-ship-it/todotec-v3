@@ -1,6 +1,6 @@
 import os
 import mercadopago
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
@@ -197,6 +197,14 @@ class CreateManualOrderIn(BaseModel):
 class StatusUpdate(BaseModel):
     status: str
 
+class CreateQROrderIn(BaseModel):
+    items: List[OrderItemIn]
+    customer: CustomerIn
+    delivery: DeliveryIn
+    subtotal: float
+    shipping_cost: float
+    total: float
+
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
@@ -380,6 +388,9 @@ def list_orders(db: Session = Depends(get_db)):
             "shipping_cost": o.shipping_cost,
             "total": o.total,
             "source": o.source or "web",
+            "payment_method": o.payment_method or "mercadopago",
+            "payment_screenshot_url": o.payment_screenshot_url or "",
+            "whatsapp_notified": o.whatsapp_notified or False,
             "mp_preference_id": o.mp_preference_id,
             "mp_payment_id": o.mp_payment_id,
             "sale_id": o.sale_id,
@@ -387,6 +398,56 @@ def list_orders(db: Session = Depends(get_db)):
         }
         for o in orders
     ]
+
+
+@router.post("/create-qr")
+def create_qr_order(data: CreateQROrderIn, db: Session = Depends(get_db)):
+    """Crea un pedido con pago por QR (pendiente de confirmación por admin)."""
+    order = Order(
+        source="web",
+        payment_method="qr",
+        status="pending_confirmation",
+        customer_nombre=data.customer.nombre,
+        customer_apellido=data.customer.apellido,
+        customer_email=data.customer.email,
+        customer_dni=data.customer.dni,
+        customer_celular=data.customer.celular,
+        delivery_type=data.delivery.type,
+        delivery_data=data.delivery.model_dump(),
+        items=[i.model_dump() for i in data.items],
+        subtotal=data.subtotal,
+        shipping_cost=data.shipping_cost,
+        total=data.total,
+        mp_preference_id="",
+        mp_payment_id="",
+    )
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+    return {"order_id": order.id, "order_number": 10000 + order.id}
+
+
+@router.post("/{order_id}/screenshot")
+async def upload_payment_screenshot(order_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """Sube la captura de pago QR del cliente a Cloudinary."""
+    from ..cloudinary_client import upload_image as cloudinary_upload
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    url = await cloudinary_upload(file, folder="glowi-skin/payment-screenshots", public_id=f"screenshot-order-{order_id}")
+    order.payment_screenshot_url = url
+    db.commit()
+    return {"screenshot_url": url}
+
+
+@router.put("/{order_id}/whatsapp-notified")
+def mark_whatsapp_notified(order_id: int, db: Session = Depends(get_db)):
+    """Marca que el admin ya envió la notificación de WhatsApp."""
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if order:
+        order.whatsapp_notified = True
+        db.commit()
+    return {"ok": True}
 
 
 @router.post("/manual")

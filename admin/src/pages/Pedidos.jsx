@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
-import { Package, ChevronDown, ChevronUp, RefreshCw, ExternalLink, Trash2, Plus, X, MessageCircle } from 'lucide-react'
+import { Package, ChevronDown, ChevronUp, RefreshCw, ExternalLink, Trash2, Plus, X, MessageCircle, QrCode, Check, Phone } from 'lucide-react'
 
 const STATUS_CONFIG = {
-  pending_payment: { label: 'Pendiente',  bg: '#F3F4F6', color: '#6B7280' },
-  paid:            { label: 'Pagado',     bg: '#EFF6FF', color: '#2563EB' },
-  shipped:         { label: 'Enviado',    bg: '#F0FDF4', color: '#16A34A' },
-  cancelled:       { label: 'Cancelado', bg: '#FEF2F2', color: '#DC2626' },
+  pending_payment:      { label: 'Pendiente',     bg: '#F3F4F6', color: '#6B7280' },
+  pending_confirmation: { label: 'Pendiente QR',  bg: '#FFF7ED', color: '#C2410C' },
+  paid:                 { label: 'Pagado',         bg: '#EFF6FF', color: '#2563EB' },
+  shipped:              { label: 'Enviado',        bg: '#F0FDF4', color: '#16A34A' },
+  cancelled:            { label: 'Cancelado',      bg: '#FEF2F2', color: '#DC2626' },
 }
 
-const STATUS_OPTIONS = ['pending_payment', 'paid', 'shipped', 'cancelled']
+const STATUS_OPTIONS = ['pending_payment', 'pending_confirmation', 'paid', 'shipped', 'cancelled']
 
 const fmt = (n) => `S/ ${(n || 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}`
 
@@ -25,9 +26,10 @@ function StatusBadge({ status }) {
   )
 }
 
-function OrderRow({ order, onStatusChange, onDelete }) {
+function OrderRow({ order, onStatusChange, onDelete, onWhatsappNotified }) {
   const [expanded, setExpanded] = useState(false)
   const [updating, setUpdating] = useState(false)
+  const [screenshotOpen, setScreenshotOpen] = useState(false)
   const navigate = useNavigate()
 
   const changeStatus = async (newStatus) => {
@@ -50,6 +52,30 @@ function OrderRow({ order, onStatusChange, onDelete }) {
     } catch { /* ignore */ }
   }
 
+  const confirmQRPayment = async () => {
+    if (!confirm(`¿Confirmar pago por QR del pedido #${order.order_number || (10000 + order.id)}?\nEsto lo marcará como Pagado y generará la venta automáticamente.`)) return
+    setUpdating(true)
+    try {
+      await api.put(`/orders/${order.id}/status`, { status: 'paid' })
+      onStatusChange(order.id, 'paid')
+    } catch { /* ignore */ }
+    setUpdating(false)
+  }
+
+  const notifyWhatsApp = async () => {
+    const orderNum = order.order_number || (10000 + order.id)
+    const nombre = `${order.customer_nombre} ${order.customer_apellido}`.trim()
+    const celular = (order.customer_celular || '').replace(/\D/g, '')
+    const items = (order.items || []).map(i => `• ${i.name}${i.variant_color ? ` (${i.variant_color})` : ''} x${i.quantity} — S/ ${(i.price * i.quantity).toFixed(2)}`).join('\n')
+    const msg = `Estimado/a ${nombre},\n\n¡Muchas gracias por confiar en nosotros! 🛍️\n\nSu pedido ha sido *confirmado* con el número de orden *#${orderNum}*.\n\n*Detalle del pedido:*\n${items}\n\n*Total: S/ ${(order.total || 0).toFixed(2)}*\n\nNos pondremos en contacto para coordinar la entrega. ¡Que disfrute su compra!`
+    const url = `https://wa.me/51${celular}?text=${encodeURIComponent(msg)}`
+    window.open(url, '_blank')
+    try {
+      await api.put(`/orders/${order.id}/whatsapp-notified`)
+      onWhatsappNotified(order.id)
+    } catch { /* ignore */ }
+  }
+
   const createdAt = order.created_at
     ? new Date(order.created_at).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     : '—'
@@ -65,6 +91,13 @@ function OrderRow({ order, onStatusChange, onDelete }) {
           {order.source === 'manual' && (
             <div style={{ marginTop: 2 }}>
               <span style={{ background: '#F0FDF4', color: '#16A34A', fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 10, letterSpacing: '0.06em' }}>MANUAL</span>
+            </div>
+          )}
+          {order.payment_method === 'qr' && (
+            <div style={{ marginTop: 2 }}>
+              <span style={{ background: '#FFF7ED', color: '#C2410C', fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 10, letterSpacing: '0.06em', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                <QrCode size={9} /> PAGO QR
+              </span>
             </div>
           )}
         </td>
@@ -165,6 +198,68 @@ function OrderRow({ order, onStatusChange, onDelete }) {
                     MP Payment ID: {order.mp_payment_id}
                   </div>
                 )}
+
+                {/* ── QR: Captura + Confirmación ── */}
+                {order.payment_method === 'qr' && (
+                  <div style={{ marginTop: 16, background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 10, padding: '14px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                      <QrCode size={13} color="#C2410C" />
+                      <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 700, color: '#C2410C', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Pago por QR</span>
+                    </div>
+
+                    {/* Captura del cliente */}
+                    {order.payment_screenshot_url ? (
+                      <div style={{ marginBottom: 12 }}>
+                        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: '#9CA3AF', marginBottom: 6 }}>Captura de pago enviada por el cliente:</p>
+                        <img
+                          src={order.payment_screenshot_url}
+                          alt="Captura de pago"
+                          onClick={() => setScreenshotOpen(true)}
+                          style={{ maxWidth: '100%', maxHeight: 180, objectFit: 'contain', borderRadius: 8, border: '1px solid #EDE8E4', cursor: 'zoom-in', display: 'block' }}
+                        />
+                        {screenshotOpen && (
+                          <div
+                            onClick={() => setScreenshotOpen(false)}
+                            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}
+                          >
+                            <img src={order.payment_screenshot_url} alt="Captura" style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: 10 }} />
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: '#9CA3AF', marginBottom: 10, fontStyle: 'italic' }}>El cliente aún no ha enviado la captura.</p>
+                    )}
+
+                    {/* Botón confirmar (solo si pending_confirmation) */}
+                    {order.status === 'pending_confirmation' && (
+                      <button
+                        onClick={confirmQRPayment}
+                        disabled={updating}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1E1A1A', border: 'none', borderRadius: 8, padding: '9px 18px', cursor: 'pointer', fontFamily: "'Inter', sans-serif", fontSize: 12, color: '#EEC5C5', fontWeight: 600, opacity: updating ? 0.6 : 1 }}
+                      >
+                        <Check size={13} /> Confirmar pago recibido
+                      </button>
+                    )}
+
+                    {/* Botón WhatsApp (solo si ya está pagado) */}
+                    {order.status === 'paid' && (
+                      <button
+                        onClick={notifyWhatsApp}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: order.whatsapp_notified ? '#9CA3AF' : '#16A34A',
+                          border: 'none', borderRadius: 8, padding: '9px 18px',
+                          cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+                          fontSize: 12, color: '#fff', fontWeight: 600, transition: 'background 0.2s',
+                        }}
+                      >
+                        <Phone size={13} />
+                        {order.whatsapp_notified ? 'Reenviar notificación WA' : 'Notificar al cliente por WhatsApp'}
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 {order.sale_id && (
                   <div style={{ marginTop: 12 }}>
                     <button
@@ -425,6 +520,10 @@ export default function Pedidos() {
     setOrders(prev => prev.filter(o => o.id !== id))
   }
 
+  const handleWhatsappNotified = (id) => {
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, whatsapp_notified: true } : o))
+  }
+
   const handleNewManual = (data) => {
     // Recargar la lista para mostrar el nuevo pedido
     load()
@@ -456,7 +555,7 @@ export default function Pedidos() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14, marginBottom: 24 }}>
         {STATUS_OPTIONS.map(s => {
           const cfg = STATUS_CONFIG[s]
           return (
@@ -500,7 +599,7 @@ export default function Pedidos() {
             </thead>
             <tbody>
               {filtered.map(order => (
-                <OrderRow key={order.id} order={order} onStatusChange={handleStatusChange} onDelete={handleDelete} />
+                <OrderRow key={order.id} order={order} onStatusChange={handleStatusChange} onDelete={handleDelete} onWhatsappNotified={handleWhatsappNotified} />
               ))}
             </tbody>
           </table>

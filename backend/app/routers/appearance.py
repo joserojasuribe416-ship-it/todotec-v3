@@ -115,6 +115,23 @@ def update_announcement(data: AnnouncementUpdate, db: Session = Depends(get_db))
     return {"announcement_text": data.announcement_text}
 
 
+# ── QR de Pago ────────────────────────────────────────────────────────────────
+
+@router.get("/qr-image")
+def get_qr_image(db: Session = Depends(get_db)):
+    cfg = db.query(CompanyConfig).first()
+    return {"qr_image_url": getattr(cfg, "qr_image_url", "") or ""}
+
+@router.post("/qr-image")
+async def upload_qr_image(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    url = await upload_image(file, folder="glowi-skin/qr", public_id="payment-qr")
+    cfg = db.query(CompanyConfig).first()
+    if cfg:
+        cfg.qr_image_url = url
+        db.commit()
+    return {"qr_image_url": url}
+
+
 # ── Banners ───────────────────────────────────────────────────────────────────
 
 @router.get("/banners", response_model=List[BannerOut])

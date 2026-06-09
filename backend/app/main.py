@@ -31,6 +31,10 @@ def _run_migrations():
         "CREATE TABLE IF NOT EXISTS orders (id SERIAL PRIMARY KEY, status VARCHAR DEFAULT 'pending_payment', customer_nombre VARCHAR DEFAULT '', customer_apellido VARCHAR DEFAULT '', customer_email VARCHAR DEFAULT '', customer_dni VARCHAR DEFAULT '', customer_celular VARCHAR DEFAULT '', delivery_type VARCHAR DEFAULT 'pickup', delivery_data JSON DEFAULT '{}', items JSON DEFAULT '[]', subtotal FLOAT DEFAULT 0, shipping_cost FLOAT DEFAULT 0, total FLOAT DEFAULT 0, mp_preference_id VARCHAR DEFAULT '', mp_payment_id VARCHAR DEFAULT '', created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP)",
         "ALTER TABLE orders ADD COLUMN IF NOT EXISTS sale_id INTEGER",
         "ALTER TABLE orders ADD COLUMN IF NOT EXISTS source VARCHAR DEFAULT 'web'",
+        "ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method VARCHAR DEFAULT 'mercadopago'",
+        "ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_screenshot_url VARCHAR DEFAULT ''",
+        "ALTER TABLE orders ADD COLUMN IF NOT EXISTS whatsapp_notified BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE company_config ADD COLUMN IF NOT EXISTS qr_image_url VARCHAR DEFAULT ''",
     ]
     with engine.connect() as conn:
         for sql in migrations:
