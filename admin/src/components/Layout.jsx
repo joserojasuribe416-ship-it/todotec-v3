@@ -95,9 +95,10 @@ export default function Layout() {
                 style={{
                   display: 'flex', alignItems: 'center', gap: 10,
                   padding: '9px 12px', borderRadius: 8, textDecoration: 'none',
-                  fontSize: 13, fontWeight: active ? 700 : 500,
-                  background: active ? 'var(--brand-primary, #1E1A1A)' : 'transparent',
-                  color: active ? 'var(--brand-secondary, #EEC5C5)' : '#9CA3AF',
+                  fontSize: 13, fontWeight: active ? 600 : 500,
+                  background: active ? 'rgba(255,255,255,0.08)' : 'transparent',
+                  color: active ? '#ffffff' : '#9CA3AF',
+                  borderLeft: active ? '2px solid #EEC5C5' : '2px solid transparent',
                   transition: 'all 0.15s',
                 }}
                 onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#fff' } }}
