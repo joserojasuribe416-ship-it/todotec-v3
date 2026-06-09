@@ -5,6 +5,27 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+// ── Global loading overlay (anti-double-click) ────────────────────────
+// Sólo cuenta mutaciones (POST/PUT/PATCH/DELETE), no GETs.
+const MUTATIONS = new Set(['post', 'put', 'patch', 'delete'])
+let _pending = 0
+const _emit = () => window.dispatchEvent(new CustomEvent('api:loading', { detail: _pending }))
+
+api.interceptors.request.use(config => {
+  if (MUTATIONS.has(config.method)) { _pending++; _emit() }
+  return config
+})
+api.interceptors.response.use(
+  res => {
+    if (MUTATIONS.has(res.config?.method)) { _pending = Math.max(0, _pending - 1); _emit() }
+    return res
+  },
+  err => {
+    if (MUTATIONS.has(err.config?.method)) { _pending = Math.max(0, _pending - 1); _emit() }
+    return Promise.reject(err)
+  }
+)
+
 export default api
 
 // ── Config ────────────────────────────────────────────────────────────
