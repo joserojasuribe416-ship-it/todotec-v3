@@ -1,14 +1,16 @@
-import { Link, useLocation, Outlet } from 'react-router-dom'
+import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Package, ShoppingCart, DollarSign,
-  TrendingUp, Settings, Store, Menu, X, ChevronRight, Tag, Wallet, Bookmark, Palette, RefreshCw, ClipboardList
+  TrendingUp, Settings, Store, Menu, X, ChevronRight, Tag, Wallet, Bookmark, Palette, RefreshCw, ClipboardList,
+  LogOut, Shield, UserCircle
 } from 'lucide-react'
 import { useState } from 'react'
 import { useTheme } from '../context/ThemeContext'
+import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 import api from '../api/client'
 
-const NAV = [
+const NAV_BASE = [
   { to: '/',              icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/proveedores',   icon: Users,           label: 'Proveedores' },
   { to: '/inventario',    icon: Package,         label: 'Inventario' },
@@ -22,12 +24,17 @@ const NAV = [
   { to: '/pedidos',       icon: ClipboardList,   label: 'Pedidos' },
   { to: '/configuracion', icon: Settings,        label: 'Configuración' },
 ]
+const NAV_MASTER = { to: '/usuarios', icon: Shield, label: 'Usuarios' }
 
 export default function Layout() {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const { companyName, logoUrl } = useTheme()
+  const { user, logout } = useAuth()
+
+  const NAV = user?.role === 'master' ? [...NAV_BASE, NAV_MASTER] : NAV_BASE
 
   const publishStore = async () => {
     setPublishing(true)
@@ -41,6 +48,11 @@ export default function Layout() {
     }
   }
 
+  const handleLogout = () => {
+    logout()
+    navigate('/login', { replace: true })
+  }
+
   return (
     <div style={{ display: 'flex', height: '100vh', background: '#F7F8FA', overflow: 'hidden' }}>
 
@@ -51,7 +63,6 @@ export default function Layout() {
         position: open ? 'fixed' : 'relative',
         inset: open ? '0 auto 0 0' : 'auto',
         zIndex: open ? 40 : 'auto',
-        transform: `translateX(${open ? '0' : '0'})`,
         transition: 'transform 0.2s',
       }} className={`${open ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
 
@@ -100,10 +111,11 @@ export default function Layout() {
           })}
         </nav>
 
-        {/* Store link */}
+        {/* User info + logout */}
         <div style={{ padding: '12px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          {/* Store link */}
           <a
-            href="https://todotec-v3-jtnk.vercel.app"
+            href="https://glowi-skin.vercel.app"
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -117,6 +129,33 @@ export default function Layout() {
             <Store size={16} />
             Ver tienda online
           </a>
+
+          {/* Divider */}
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '8px 0' }} />
+
+          {/* Current user row */}
+          {user && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, marginBottom: 2 }}>
+              <div style={{ width: 30, height: 30, borderRadius: '50%', background: user.role === 'master' ? '#1E1A1A' : '#1F2937', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {user.role === 'master' ? <Shield size={13} color="#EEC5C5" /> : <UserCircle size={13} color="#9CA3AF" />}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#E5E7EB', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.full_name || user.username}</div>
+                <div style={{ fontSize: 10, color: user.role === 'master' ? '#EEC5C5' : '#6B7280', marginTop: 1 }}>
+                  {user.role === 'master' ? 'Master' : 'Standard'}
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                title="Cerrar sesión"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', padding: 4, borderRadius: 6, display: 'flex', alignItems: 'center', flexShrink: 0 }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#EF4444'; e.currentTarget.style.background = 'rgba(239,68,68,0.1)' }}
+                onMouseLeave={e => { e.currentTarget.style.color = '#6B7280'; e.currentTarget.style.background = 'none' }}
+              >
+                <LogOut size={14} />
+              </button>
+            </div>
+          )}
         </div>
       </aside>
 

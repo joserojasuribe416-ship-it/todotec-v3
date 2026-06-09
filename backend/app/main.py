@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from .database import engine, Base
-from .routers import config, suppliers, products, purchases, sales, accounting, dashboard, categories, cobranzas, brands, appearance, revalidate, orders
+from .routers import config, suppliers, products, purchases, sales, accounting, dashboard, categories, cobranzas, brands, appearance, revalidate, orders, auth
 import os
 
 # Create tables
@@ -35,6 +35,7 @@ def _run_migrations():
         "ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_screenshot_url VARCHAR DEFAULT ''",
         "ALTER TABLE orders ADD COLUMN IF NOT EXISTS whatsapp_notified BOOLEAN DEFAULT FALSE",
         "ALTER TABLE company_config ADD COLUMN IF NOT EXISTS qr_image_url VARCHAR DEFAULT ''",
+        "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username VARCHAR UNIQUE NOT NULL, full_name VARCHAR DEFAULT '', password_hash VARCHAR NOT NULL, role VARCHAR DEFAULT 'standard', is_active BOOLEAN DEFAULT TRUE, created_at TIMESTAMP DEFAULT NOW())",
     ]
     with engine.connect() as conn:
         for sql in migrations:
@@ -100,6 +101,7 @@ app.include_router(appearance.router)
 app.include_router(cobranzas.router)
 app.include_router(revalidate.router)
 app.include_router(orders.router)
+app.include_router(auth.router)
 
 
 @app.get("/")

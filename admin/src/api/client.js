@@ -22,6 +22,12 @@ api.interceptors.response.use(
   },
   err => {
     if (MUTATIONS.has(err.config?.method)) { _pending = Math.max(0, _pending - 1); _emit() }
+    // Token expirado / inválido → redirigir al login
+    if (err.response?.status === 401 && !err.config?.url?.includes('/auth/login')) {
+      localStorage.removeItem('admin_token')
+      delete api.defaults.headers.common['Authorization']
+      window.location.href = '/login'
+    }
     return Promise.reject(err)
   }
 )

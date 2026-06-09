@@ -301,6 +301,18 @@ class Payment(Base):
     sale = relationship("Sale", back_populates="payments")
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String, unique=True, nullable=False)
+    full_name = Column(String, default="")
+    password_hash = Column(String, nullable=False)
+    role = Column(String, default="standard")  # master | standard
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, server_default=func.now())
+
+
 class Order(Base):
     __tablename__ = "orders"
 
