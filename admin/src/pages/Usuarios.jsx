@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import api from '../api/client'
 import { useAuth } from '../context/AuthContext'
-import { Plus, Trash2, Shield, User } from 'lucide-react'
+import { Plus, Trash2, Shield, User, KeyRound, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function Usuarios() {
@@ -10,6 +10,9 @@ export default function Usuarios() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ username: '', full_name: '', password: '', role: 'standard' })
   const [saving, setSaving] = useState(false)
+  const [pwdUserId, setPwdUserId] = useState(null)   // usuario al que se le cambia la contraseña
+  const [newPwd, setNewPwd] = useState('')
+  const [savingPwd, setSavingPwd] = useState(false)
 
   const load = () => api.get('/auth/users').then(r => setUsers(r.data)).catch(() => {})
   useEffect(() => { load() }, [])
@@ -36,6 +39,22 @@ export default function Usuarios() {
     await api.delete(`/auth/users/${id}`)
     toast.success('Cuenta eliminada')
     load()
+  }
+
+  const savePwd = async (e) => {
+    e.preventDefault()
+    if (newPwd.length < 6) return toast.error('La contraseña debe tener al menos 6 caracteres')
+    setSavingPwd(true)
+    try {
+      await api.put(`/auth/users/${pwdUserId}/password`, { new_password: newPwd })
+      toast.success('Contraseña actualizada')
+      setPwdUserId(null)
+      setNewPwd('')
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Error al cambiar contraseña')
+    } finally {
+      setSavingPwd(false)
+    }
   }
 
   const inp = { fontFamily: "'Inter', sans-serif", fontSize: 13, border: '1px solid #E5E7EB', borderRadius: 8, padding: '9px 12px', width: '100%', outline: 'none', background: '#fff', color: '#0A0A0A', boxSizing: 'border-box' }
@@ -93,37 +112,60 @@ export default function Usuarios() {
       {/* Lista de usuarios */}
       <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #F3F4F6', overflow: 'hidden' }}>
         {users.map((u, idx) => (
-          <div key={u.id} style={{
-            display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px',
-            borderBottom: idx < users.length - 1 ? '1px solid #F9FAFB' : 'none',
-          }}>
-            <div style={{ width: 38, height: 38, borderRadius: '50%', background: u.role === 'master' ? '#1E1A1A' : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              {u.role === 'master'
-                ? <Shield size={16} color="#EEC5C5" />
-                : <User size={16} color="#9CA3AF" />
-              }
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: '#0A0A0A' }}>{u.full_name || u.username}</span>
-                {u.id === me?.id && <span style={{ fontSize: 10, background: '#EFF6FF', color: '#2563EB', padding: '1px 7px', borderRadius: 10, fontWeight: 600 }}>Tú</span>}
+          <div key={u.id} style={{ borderBottom: idx < users.length - 1 ? '1px solid #F9FAFB' : 'none' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px' }}>
+              <div style={{ width: 38, height: 38, borderRadius: '50%', background: u.role === 'master' ? '#1E1A1A' : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {u.role === 'master'
+                  ? <Shield size={16} color="#EEC5C5" />
+                  : <User size={16} color="#9CA3AF" />
+                }
               </div>
-              <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 1 }}>@{u.username} · {u.role === 'master' ? 'Master' : 'Standard'}</div>
-            </div>
-            <span style={{
-              fontSize: 11, padding: '3px 10px', borderRadius: 20, fontWeight: 500,
-              background: u.role === 'master' ? '#1E1A1A' : '#F3F4F6',
-              color: u.role === 'master' ? '#EEC5C5' : '#6B7280',
-            }}>
-              {u.role === 'master' ? 'Master' : 'Standard'}
-            </span>
-            {u.id !== me?.id && (
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: '#0A0A0A' }}>{u.full_name || u.username}</span>
+                  {u.id === me?.id && <span style={{ fontSize: 10, background: '#EFF6FF', color: '#2563EB', padding: '1px 7px', borderRadius: 10, fontWeight: 600 }}>Tú</span>}
+                </div>
+                <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 1 }}>@{u.username} · {u.role === 'master' ? 'Master' : 'Standard'}</div>
+              </div>
+              <span style={{
+                fontSize: 11, padding: '3px 10px', borderRadius: 20, fontWeight: 500,
+                background: u.role === 'master' ? '#1E1A1A' : '#F3F4F6',
+                color: u.role === 'master' ? '#EEC5C5' : '#6B7280',
+              }}>
+                {u.role === 'master' ? 'Master' : 'Standard'}
+              </span>
               <button
-                onClick={() => del(u.id, u.full_name || u.username)}
-                style={{ background: 'none', border: '1px solid #FEE2E2', borderRadius: 7, padding: '6px 8px', cursor: 'pointer', color: '#DC2626', display: 'flex', alignItems: 'center' }}
+                title="Cambiar contraseña"
+                onClick={() => { setPwdUserId(pwdUserId === u.id ? null : u.id); setNewPwd('') }}
+                style={{ background: pwdUserId === u.id ? '#1E1A1A' : 'none', border: '1px solid #E5E7EB', borderRadius: 7, padding: '6px 8px', cursor: 'pointer', color: pwdUserId === u.id ? '#EEC5C5' : '#6B7280', display: 'flex', alignItems: 'center' }}
               >
-                <Trash2 size={13} />
+                {pwdUserId === u.id ? <X size={13} /> : <KeyRound size={13} />}
               </button>
+              {u.id !== me?.id && (
+                <button
+                  title="Eliminar cuenta"
+                  onClick={() => del(u.id, u.full_name || u.username)}
+                  style={{ background: 'none', border: '1px solid #FEE2E2', borderRadius: 7, padding: '6px 8px', cursor: 'pointer', color: '#DC2626', display: 'flex', alignItems: 'center' }}
+                >
+                  <Trash2 size={13} />
+                </button>
+              )}
+            </div>
+            {pwdUserId === u.id && (
+              <form onSubmit={savePwd} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '0 20px 16px 72px', background: '#FDFCFB' }}>
+                <input
+                  style={{ ...inp, maxWidth: 260 }}
+                  type="text"
+                  autoFocus
+                  value={newPwd}
+                  onChange={e => setNewPwd(e.target.value)}
+                  placeholder="Nueva contraseña (mínimo 6 caracteres)"
+                  required
+                />
+                <button type="submit" disabled={savingPwd} style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: '#1E1A1A', color: '#EEC5C5', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: savingPwd ? 0.6 : 1, whiteSpace: 'nowrap' }}>
+                  {savingPwd ? 'Guardando...' : 'Guardar'}
+                </button>
+              </form>
             )}
           </div>
         ))}

@@ -90,6 +90,9 @@ class ChangePasswordIn(BaseModel):
     current_password: str
     new_password: str
 
+class SetPasswordIn(BaseModel):
+    new_password: str
+
 
 # ── Seed inicial ──────────────────────────────────────────────────────────────
 # Sin contraseñas en el código. Si la tabla users está vacía (instalación nueva
@@ -164,6 +167,19 @@ def delete_user(user_id: int, current_user: User = Depends(require_master), db: 
     if user:
         db.delete(user)
         db.commit()
+    return {"ok": True}
+
+
+@router.put("/users/{user_id}/password")
+def set_user_password(user_id: int, data: SetPasswordIn, current_user: User = Depends(require_master), db: Session = Depends(get_db)):
+    """Permite a un master cambiar la contraseña de cualquier usuario (incluida la suya)."""
+    if len(data.new_password) < 6:
+        raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 6 caracteres")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    user.password_hash = hash_password(data.new_password)
+    db.commit()
     return {"ok": True}
 
 
