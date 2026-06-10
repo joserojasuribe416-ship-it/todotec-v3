@@ -59,9 +59,19 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_error
     return user
 
+# Jerarquía de roles: owner > master > standard
+ROLE_RANK = {"standard": 0, "master": 1, "owner": 2}
+
 def require_master(current_user: User = Depends(get_current_user)) -> User:
-    if current_user.role != "master":
+    """Acepta master u owner."""
+    if ROLE_RANK.get(current_user.role, 0) < ROLE_RANK["master"]:
         raise HTTPException(status_code=403, detail="Se requiere cuenta master para esta acción")
+    return current_user
+
+def require_owner(current_user: User = Depends(get_current_user)) -> User:
+    """Solo la cuenta owner."""
+    if current_user.role != "owner":
+        raise HTTPException(status_code=403, detail="Se requiere la cuenta owner para esta acción")
     return current_user
 
 
@@ -112,7 +122,7 @@ def seed_users(db: Session):
         username=username.lower(),
         full_name=username,
         password_hash=hash_password(password),
-        role="master",
+        role="owner",
     ))
     db.commit()
 
@@ -145,6 +155,8 @@ def list_users(current_user: User = Depends(require_master), db: Session = Depen
 
 @router.post("/users", response_model=UserOut, status_code=201)
 def create_user(data: CreateUserIn, current_user: User = Depends(require_master), db: Session = Depends(get_db)):
+    if data.role not in ("standard", "master"):
+        raise HTTPException(status_code=400, detail="Rol inválido: solo se pueden crear cuentas standard o master")
     if db.query(User).filter(User.username == data.username).first():
         raise HTTPException(status_code=400, detail="Ese nombre de usuario ya existe")
     user = User(
@@ -160,7 +172,7 @@ def create_user(data: CreateUserIn, current_user: User = Depends(require_master)
 
 
 @router.delete("/users/{user_id}")
-def delete_user(user_id: int, current_user: User = Depends(require_master), db: Session = Depends(get_db)):
+def delete_user(user_id: int, current_user: User = Depends(require_owner), db: Session = Depends(get_db)):
     if user_id == current_user.id:
         raise HTTPException(status_code=400, detail="No puedes eliminar tu propia cuenta")
     user = db.query(User).filter(User.id == user_id).first()
@@ -172,7 +184,10 @@ def delete_user(user_id: int, current_user: User = Depends(require_master), db: 
 
 @router.put("/users/{user_id}/password")
 def set_user_password(user_id: int, data: SetPasswordIn, current_user: User = Depends(require_master), db: Session = Depends(get_db)):
-    """Permite a un master cambiar la contraseña de cualquier usuario (incluida la suya)."""
+    """Owner: puede cambiar la contraseña de cualquier usuario.
+    Master: solo puede cambiar la suya propia."""
+    if current_user.role != "owner" and user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Solo el owner puede cambiar contraseñas de otros usuarios")
     if len(data.new_password) < 6:
         raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 6 caracteres")
     user = db.query(User).filter(User.id == user_id).first()

@@ -2,7 +2,7 @@ import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Package, ShoppingCart, DollarSign,
   TrendingUp, Settings, Store, Menu, X, ChevronRight, Tag, Wallet, Bookmark, Palette, RefreshCw, ClipboardList,
-  LogOut, Shield, UserCircle
+  LogOut, Shield, UserCircle, Crown
 } from 'lucide-react'
 import { useState } from 'react'
 import { useTheme } from '../context/ThemeContext'
@@ -34,7 +34,7 @@ export default function Layout() {
   const { companyName, logoUrl } = useTheme()
   const { user, logout } = useAuth()
 
-  const NAV = user?.role === 'master' ? [...NAV_BASE, NAV_MASTER] : NAV_BASE
+  const NAV = ['master', 'owner'].includes(user?.role) ? [...NAV_BASE, NAV_MASTER] : NAV_BASE
 
   const publishStore = async () => {
     setPublishing(true)
@@ -137,13 +137,15 @@ export default function Layout() {
           {/* Current user row */}
           {user && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, marginBottom: 2 }}>
-              <div style={{ width: 30, height: 30, borderRadius: '50%', background: user.role === 'master' ? '#1E1A1A' : '#1F2937', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                {user.role === 'master' ? <Shield size={13} color="#EEC5C5" /> : <UserCircle size={13} color="#9CA3AF" />}
+              <div style={{ width: 30, height: 30, borderRadius: '50%', background: ['master', 'owner'].includes(user.role) ? '#1E1A1A' : '#1F2937', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {user.role === 'owner' ? <Crown size={13} color="#EFC368" />
+                  : user.role === 'master' ? <Shield size={13} color="#EEC5C5" />
+                  : <UserCircle size={13} color="#9CA3AF" />}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: '#E5E7EB', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.full_name || user.username}</div>
-                <div style={{ fontSize: 10, color: user.role === 'master' ? '#EEC5C5' : '#6B7280', marginTop: 1 }}>
-                  {user.role === 'master' ? 'Master' : 'Standard'}
+                <div style={{ fontSize: 10, color: user.role === 'owner' ? '#EFC368' : user.role === 'master' ? '#EEC5C5' : '#6B7280', marginTop: 1 }}>
+                  {user.role === 'owner' ? 'Owner' : user.role === 'master' ? 'Master' : 'Standard'}
                 </div>
               </div>
               <button

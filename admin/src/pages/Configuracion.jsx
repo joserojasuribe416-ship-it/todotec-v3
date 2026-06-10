@@ -4,11 +4,13 @@ import api from '../api/client'
 import { Save, Upload, AlertTriangle, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useTheme } from '../context/ThemeContext'
+import { useAuth } from '../context/AuthContext'
 
 export default function Configuracion() {
   const [form, setForm] = useState(null)
   const [uploading, setUploading] = useState(false)
   const { updateBrand } = useTheme()
+  const { user: me } = useAuth()
 
   useEffect(() => { getConfig().then(setForm) }, [])
 
@@ -162,7 +164,8 @@ export default function Configuracion() {
         </div>
       </div>
 
-      {/* ── Zona de Peligro ── */}
+      {/* ── Zona de Peligro — solo visible para el owner ── */}
+      {me?.role === 'owner' && (
       <div className="card border-2 border-red-200 bg-red-50 space-y-4">
         <div className="flex items-center gap-2">
           <AlertTriangle size={20} className="text-red-600" />
@@ -184,6 +187,7 @@ export default function Configuracion() {
           </button>
         </div>
       </div>
+      )}
     </div>
   )
 }

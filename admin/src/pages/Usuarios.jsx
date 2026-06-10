@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import api from '../api/client'
 import { useAuth } from '../context/AuthContext'
-import { Plus, Trash2, Shield, User, KeyRound, X } from 'lucide-react'
+import { Plus, Trash2, Shield, User, KeyRound, X, Crown } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function Usuarios() {
@@ -95,8 +95,8 @@ export default function Usuarios() {
             <div>
               <label style={lbl}>Rol</label>
               <select style={{ ...inp, cursor: 'pointer' }} value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}>
-                <option value="standard">Standard — solo acceso</option>
-                <option value="master">Master — puede crear cuentas</option>
+                <option value="standard">Standard — usa los módulos, sin acceso a Usuarios</option>
+                <option value="master">Master — además crea cuentas y cambia su contraseña</option>
               </select>
             </div>
             <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
@@ -114,10 +114,12 @@ export default function Usuarios() {
         {users.map((u, idx) => (
           <div key={u.id} style={{ borderBottom: idx < users.length - 1 ? '1px solid #F9FAFB' : 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px' }}>
-              <div style={{ width: 38, height: 38, borderRadius: '50%', background: u.role === 'master' ? '#1E1A1A' : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                {u.role === 'master'
-                  ? <Shield size={16} color="#EEC5C5" />
-                  : <User size={16} color="#9CA3AF" />
+              <div style={{ width: 38, height: 38, borderRadius: '50%', background: ['master', 'owner'].includes(u.role) ? '#1E1A1A' : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {u.role === 'owner'
+                  ? <Crown size={16} color="#EFC368" />
+                  : u.role === 'master'
+                    ? <Shield size={16} color="#EEC5C5" />
+                    : <User size={16} color="#9CA3AF" />
                 }
               </div>
               <div style={{ flex: 1 }}>
@@ -125,23 +127,25 @@ export default function Usuarios() {
                   <span style={{ fontSize: 14, fontWeight: 600, color: '#0A0A0A' }}>{u.full_name || u.username}</span>
                   {u.id === me?.id && <span style={{ fontSize: 10, background: '#EFF6FF', color: '#2563EB', padding: '1px 7px', borderRadius: 10, fontWeight: 600 }}>Tú</span>}
                 </div>
-                <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 1 }}>@{u.username} · {u.role === 'master' ? 'Master' : 'Standard'}</div>
+                <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 1 }}>@{u.username} · {u.role === 'owner' ? 'Owner' : u.role === 'master' ? 'Master' : 'Standard'}</div>
               </div>
               <span style={{
                 fontSize: 11, padding: '3px 10px', borderRadius: 20, fontWeight: 500,
-                background: u.role === 'master' ? '#1E1A1A' : '#F3F4F6',
-                color: u.role === 'master' ? '#EEC5C5' : '#6B7280',
+                background: u.role === 'owner' ? '#3D3019' : u.role === 'master' ? '#1E1A1A' : '#F3F4F6',
+                color: u.role === 'owner' ? '#EFC368' : u.role === 'master' ? '#EEC5C5' : '#6B7280',
               }}>
-                {u.role === 'master' ? 'Master' : 'Standard'}
+                {u.role === 'owner' ? 'Owner' : u.role === 'master' ? 'Master' : 'Standard'}
               </span>
-              <button
-                title="Cambiar contraseña"
-                onClick={() => { setPwdUserId(pwdUserId === u.id ? null : u.id); setNewPwd('') }}
-                style={{ background: pwdUserId === u.id ? '#1E1A1A' : 'none', border: '1px solid #E5E7EB', borderRadius: 7, padding: '6px 8px', cursor: 'pointer', color: pwdUserId === u.id ? '#EEC5C5' : '#6B7280', display: 'flex', alignItems: 'center' }}
-              >
-                {pwdUserId === u.id ? <X size={13} /> : <KeyRound size={13} />}
-              </button>
-              {u.id !== me?.id && (
+              {(me?.role === 'owner' || u.id === me?.id) && (
+                <button
+                  title="Cambiar contraseña"
+                  onClick={() => { setPwdUserId(pwdUserId === u.id ? null : u.id); setNewPwd('') }}
+                  style={{ background: pwdUserId === u.id ? '#1E1A1A' : 'none', border: '1px solid #E5E7EB', borderRadius: 7, padding: '6px 8px', cursor: 'pointer', color: pwdUserId === u.id ? '#EEC5C5' : '#6B7280', display: 'flex', alignItems: 'center' }}
+                >
+                  {pwdUserId === u.id ? <X size={13} /> : <KeyRound size={13} />}
+                </button>
+              )}
+              {me?.role === 'owner' && u.id !== me?.id && (
                 <button
                   title="Eliminar cuenta"
                   onClick={() => del(u.id, u.full_name || u.username)}

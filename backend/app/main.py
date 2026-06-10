@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from .database import engine, Base
 from .routers import config, suppliers, products, purchases, sales, accounting, dashboard, categories, cobranzas, brands, appearance, revalidate, orders, auth
-from .routers.auth import get_current_user, require_master
+from .routers.auth import get_current_user, require_master, require_owner
 import os
 
 # Create tables
@@ -37,6 +37,8 @@ def _run_migrations():
         "ALTER TABLE orders ADD COLUMN IF NOT EXISTS whatsapp_notified BOOLEAN DEFAULT FALSE",
         "ALTER TABLE company_config ADD COLUMN IF NOT EXISTS qr_image_url VARCHAR DEFAULT ''",
         "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username VARCHAR UNIQUE NOT NULL, full_name VARCHAR DEFAULT '', password_hash VARCHAR NOT NULL, role VARCHAR DEFAULT 'standard', is_active BOOLEAN DEFAULT TRUE, created_at TIMESTAMP DEFAULT NOW())",
+        # Rol Owner: jose pasa a owner (solo si aún no existe ningún owner)
+        "UPDATE users SET role = 'owner' WHERE username = 'jose' AND NOT EXISTS (SELECT 1 FROM users WHERE role = 'owner')",
     ]
     with engine.connect() as conn:
         for sql in migrations:
@@ -119,10 +121,10 @@ def health():
     return {"status": "ok"}
 
 
-@app.post("/api/reset-total", dependencies=[Depends(require_master)])
+@app.post("/api/reset-total", dependencies=[Depends(require_owner)])
 def reset_total(db=None):
     """Elimina TODOS los registros operacionales. Mantiene config y categorías.
-    SOLO accesible para cuentas master autenticadas."""
+    SOLO accesible para la cuenta owner."""
     from .database import SessionLocal
     from .models import (
         Sale, SaleItem, Purchase, PurchaseItem,
