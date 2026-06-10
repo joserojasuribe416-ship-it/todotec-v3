@@ -265,7 +265,7 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 760, margin: '0 auto', padding: '40px 24px' }}>
+      <div className="page-pad" style={{ maxWidth: 760, margin: '0 auto', padding: '40px 24px' }}>
         <StepBar current={step} />
 
         {/* ── STEP 1: RESUMEN ── */}
@@ -351,7 +351,7 @@ export default function CheckoutPage() {
           <div>
             <h2 style={sectionTitle}>Datos personales</h2>
             <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #EDE8E4', padding: '24px 22px', marginBottom: 24 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 20px' }}>
+              <div className="co-grid2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 20px' }}>
                 {[
                   ['nombre', 'Nombre'],
                   ['apellido', 'Apellido'],
@@ -372,7 +372,7 @@ export default function CheckoutPage() {
                 <input style={inputStyle} type="email" value={customer.email}
                   onChange={e => setCustomer(c => ({ ...c, email: e.target.value }))} placeholder="correo@ejemplo.com" />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 20px', marginTop: 16 }}>
+              <div className="co-grid2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 20px', marginTop: 16 }}>
                 <div>
                   <label style={labelStyle}>DNI</label>
                   <input style={inputStyle} value={customer.dni} maxLength={8}
@@ -436,7 +436,7 @@ export default function CheckoutPage() {
             {/* Delivery */}
             {deliveryType === 'delivery' && (
               <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #EDE8E4', padding: '22px 22px', marginBottom: 22 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 20px', marginBottom: 16 }}>
+                <div className="co-grid2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 20px', marginBottom: 16 }}>
                   <div>
                     <label style={labelStyle}>Departamento</label>
                     <select style={{ ...inputStyle, cursor: 'pointer' }} value={dept} onChange={e => { setDept(e.target.value); setProvince('') }}>
@@ -502,7 +502,7 @@ export default function CheckoutPage() {
 
             {/* Selector método de pago */}
             <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: '#9CA3AF', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 10 }}>Método de pago</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+            <div className="co-grid2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
               {[
                 { id: 'mercadopago', icon: <CreditCard size={20} />, label: 'MercadoPago', sub: 'Tarjeta, Yape, billetera digital' },
                 { id: 'qr',          icon: <QrCode size={20} />,    label: 'QR / Transferencia', sub: 'Yape, Plin, banco' },

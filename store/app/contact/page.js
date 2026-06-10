@@ -19,8 +19,8 @@ export default function ContactPage() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '56px 24px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48 }}>
+      <div className="page-pad" style={{ maxWidth: 900, margin: '0 auto', padding: '56px 24px' }}>
+        <div className="contact-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48 }}>
 
           {/* Channels */}
           <div>

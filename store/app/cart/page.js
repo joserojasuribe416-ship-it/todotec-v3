@@ -48,7 +48,7 @@ export default function CartPage() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px' }}>
+      <div className="page-pad" style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px' }}>
         {cart.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
             <div style={{ fontFamily: "'Josefin Sans', sans-serif", fontSize: 52, fontWeight: 100, color: '#EEC5C5', letterSpacing: '0.1em', marginBottom: 16 }}>✦</div>
@@ -62,11 +62,11 @@ export default function CartPage() {
             }}>Ver catálogo</Link>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 32 }}>
+          <div className="cart-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 32 }}>
             {/* Items */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {cart.map(item => (
-                <div key={item.key} style={{
+                <div key={item.key} className="cart-item" style={{
                   display: 'flex', alignItems: 'center', gap: 16,
                   background: '#fff', borderRadius: 14, padding: '16px',
                   border: '1px solid #EDE8E4'

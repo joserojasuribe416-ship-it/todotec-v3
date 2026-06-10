@@ -35,7 +35,7 @@ export default function ProductDetail({ product }) {
 
   return (
     <div style={{ background: '#FAF7F4', minHeight: '100vh' }}>
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
+      <div className="page-pad" style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
         <Link href="/catalog" style={{
           display: 'inline-flex', alignItems: 'center', gap: 5, marginBottom: 32,
           fontFamily: "'Inter', sans-serif", fontSize: 11, color: '#9CA3AF',
@@ -44,7 +44,7 @@ export default function ProductDetail({ product }) {
           <ChevronLeft size={14} /> Volver al catálogo
         </Link>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56 }}>
+        <div className="pd-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 56 }}>
 
           {/* Images */}
           <div>

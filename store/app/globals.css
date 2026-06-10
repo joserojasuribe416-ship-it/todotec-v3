@@ -222,4 +222,20 @@
   .mob-filters-chips::-webkit-scrollbar { display: none; }
   .catalog-header-inner { padding: 0 12px !important; }
   .catalog-title-row  { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
+
+  /* Padding general de páginas en móvil */
+  .page-pad           { padding: 24px 14px !important; }
+
+  /* Detalle de producto: galería arriba, info abajo */
+  .pd-grid            { grid-template-columns: 1fr !important; gap: 24px !important; }
+
+  /* Carrito: items arriba, resumen abajo; filas que se acomodan */
+  .cart-layout        { grid-template-columns: 1fr !important; gap: 20px !important; }
+  .cart-item          { flex-wrap: wrap !important; row-gap: 10px !important; }
+
+  /* Checkout: formularios y métodos de pago a una columna */
+  .co-grid2           { grid-template-columns: 1fr !important; }
+
+  /* Contacto: canales y horario apilados */
+  .contact-grid       { grid-template-columns: 1fr !important; gap: 28px !important; }
 }

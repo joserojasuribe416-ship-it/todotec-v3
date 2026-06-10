@@ -38,7 +38,7 @@ function SuccessContent() {
             </h1>
           </div>
         </div>
-        <div style={{ maxWidth: 680, margin: '0 auto', padding: '48px 24px' }}>
+        <div className="page-pad" style={{ maxWidth: 680, margin: '0 auto', padding: '48px 24px' }}>
           <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #EDE8E4', padding: '40px 32px', textAlign: 'center', marginBottom: 28 }}>
             <div style={{ marginBottom: 20 }}><Clock size={52} color="#C49A8A" /></div>
             <h2 style={{ fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300, fontSize: 20, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#1E1A1A', marginBottom: 10 }}>
@@ -95,7 +95,7 @@ function SuccessContent() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 680, margin: '0 auto', padding: '48px 24px' }}>
+      <div className="page-pad" style={{ maxWidth: 680, margin: '0 auto', padding: '48px 24px' }}>
 
         {/* Status card */}
         <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #EDE8E4', padding: '40px 32px', textAlign: 'center', marginBottom: 28 }}>
