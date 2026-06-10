@@ -1,8 +1,10 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
+import { loadCart } from '../lib/cartStorage'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { ShoppingCart, Search, X, User } from 'lucide-react'
+import { ShoppingCart, Search, X, User, Phone } from 'lucide-react'
+import { isLoggedIn, getCustomer } from '../lib/customer'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -13,12 +15,27 @@ function NavbarInner() {
   const [cartCount, setCartCount] = useState(0)
   const [search, setSearch] = useState('')
   const [categories, setCategories] = useState([])
+  const [customerName, setCustomerName] = useState(null)
   const activeCategory = searchParams.get('category') || ''
+
+  useEffect(() => {
+    const updateCustomer = () => {
+      if (isLoggedIn()) {
+        const c = getCustomer()
+        setCustomerName(c?.nombre || 'Mi Perfil')
+      } else {
+        setCustomerName(null)
+      }
+    }
+    updateCustomer()
+    window.addEventListener('customerUpdated', updateCustomer)
+    return () => window.removeEventListener('customerUpdated', updateCustomer)
+  }, [])
 
   useEffect(() => {
     const updateCart = () => {
       try {
-        const cart = JSON.parse(sessionStorage.getItem('cart') || '[]')
+        const cart = loadCart()
         setCartCount(cart.reduce((s, i) => s + i.quantity, 0))
       } catch {}
     }
@@ -117,8 +134,14 @@ function NavbarInner() {
           {/* Actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
             <Link href="/contact" className="nb-contact" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-              <User size={18} color="#374151" strokeWidth={1.5} />
+              <Phone size={18} color="#374151" strokeWidth={1.5} />
               <span style={{ fontSize: 9, color: '#6B7280', fontFamily: "'Inter', sans-serif", letterSpacing: '0.03em' }}>Contacto</span>
+            </Link>
+            <Link href={customerName ? '/account' : '/login'} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+              <User size={18} color={customerName ? '#C49A8A' : '#374151'} strokeWidth={1.5} />
+              <span style={{ fontSize: 9, color: customerName ? '#C49A8A' : '#6B7280', fontFamily: "'Inter', sans-serif", letterSpacing: '0.03em', maxWidth: 64, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {customerName || 'Mi Perfil'}
+              </span>
             </Link>
             <Link href="/cart" style={{ textDecoration: 'none', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
               <div style={{ position: 'relative' }}>

@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from .database import engine, Base
-from .routers import config, suppliers, products, purchases, sales, accounting, dashboard, categories, cobranzas, brands, appearance, revalidate, orders, auth
+from .routers import config, suppliers, products, purchases, sales, accounting, dashboard, categories, cobranzas, brands, appearance, revalidate, orders, auth, customers, clients
 from .routers.auth import get_current_user, require_master, require_owner
 import os
 import logging
@@ -59,6 +59,15 @@ def _run_migrations():
         "ALTER TABLE payments ALTER COLUMN amount TYPE NUMERIC(12,2) USING ROUND(amount::numeric, 2)",
         "ALTER TABLE orders ALTER COLUMN subtotal TYPE NUMERIC(12,2) USING ROUND(subtotal::numeric, 2), ALTER COLUMN shipping_cost TYPE NUMERIC(12,2) USING ROUND(shipping_cost::numeric, 2), ALTER COLUMN total TYPE NUMERIC(12,2) USING ROUND(total::numeric, 2)",
         "ALTER TABLE company_config ALTER COLUMN exchange_rate TYPE NUMERIC(10,4) USING ROUND(exchange_rate::numeric, 4), ALTER COLUMN tax_rate TYPE NUMERIC(6,4) USING ROUND(tax_rate::numeric, 4)",
+        # ── Cuentas de clientes de la tienda + cupones ──
+        "CREATE TABLE IF NOT EXISTS customers (id SERIAL PRIMARY KEY, email VARCHAR UNIQUE NOT NULL, password_hash VARCHAR NOT NULL, nombre VARCHAR DEFAULT '', apellido VARCHAR DEFAULT '', dni VARCHAR DEFAULT '', celular VARCHAR DEFAULT '', delivery_data JSON DEFAULT '{}', cart JSON DEFAULT '[]', is_active BOOLEAN DEFAULT TRUE, created_at TIMESTAMP DEFAULT NOW())",
+        "CREATE TABLE IF NOT EXISTS coupons (id SERIAL PRIMARY KEY, code VARCHAR UNIQUE NOT NULL, customer_id INTEGER REFERENCES customers(id) ON DELETE CASCADE, percent NUMERIC(5,2) DEFAULT 30, description VARCHAR DEFAULT '30% de descuento por crear tu cuenta', is_used BOOLEAN DEFAULT FALSE, used_at TIMESTAMP, order_id INTEGER, created_at TIMESTAMP DEFAULT NOW())",
+        "ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_id INTEGER",
+        "ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_code VARCHAR DEFAULT ''",
+        "ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount NUMERIC(12,2) DEFAULT 0",
+        "ALTER TABLE products ADD COLUMN IF NOT EXISTS view_count INTEGER DEFAULT 0",
+        "CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders (customer_id)",
+        "CREATE INDEX IF NOT EXISTS idx_coupons_customer ON coupons (customer_id)",
         # ── Índices para acelerar las consultas frecuentes ──
         "CREATE INDEX IF NOT EXISTS idx_sales_date ON sales (sale_date)",
         "CREATE INDEX IF NOT EXISTS idx_sales_credit ON sales (is_credit)",
@@ -144,6 +153,7 @@ app.include_router(dashboard.router, dependencies=ADMIN_ONLY)
 app.include_router(cobranzas.router, dependencies=ADMIN_ONLY)
 app.include_router(brands.router, dependencies=ADMIN_ONLY)
 app.include_router(revalidate.router, dependencies=ADMIN_ONLY)
+app.include_router(clients.router, dependencies=ADMIN_ONLY)
 # Routers mixtos: la tienda usa los GET públicos; las mutaciones se
 # protegen endpoint por endpoint dentro de cada router
 app.include_router(config.router)
@@ -152,6 +162,8 @@ app.include_router(categories.router)
 app.include_router(appearance.router)
 app.include_router(orders.router)
 app.include_router(auth.router)
+# Cuentas de clientes de la tienda (auth propia, separada del admin)
+app.include_router(customers.router)
 
 
 @app.get("/")

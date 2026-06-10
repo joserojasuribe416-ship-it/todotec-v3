@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { Package } from 'lucide-react'
 import { getImageUrl } from '../lib/api'
+import { loadCart, storeCart } from '../lib/cartStorage'
 
 export default function ProductCard({ product }) {
   const firstVariantImg = product.variants?.find(v => v.image_url && v.stock > 0)?.image_url
@@ -19,7 +20,7 @@ export default function ProductCard({ product }) {
     e.preventDefault()
     e.stopPropagation()
     try {
-      const cart = JSON.parse(sessionStorage.getItem('cart') || '[]')
+      const cart = loadCart()
       const idx = cart.findIndex(i => i.id === product.id && !i.variant_id)
       if (idx >= 0) cart[idx].quantity += 1
       else cart.push({
@@ -32,7 +33,7 @@ export default function ProductCard({ product }) {
         variant_id: null,
         variant_color: null,
       })
-      sessionStorage.setItem('cart', JSON.stringify(cart))
+      storeCart(cart)
       window.dispatchEvent(new Event('cartUpdated'))
       const btn = e.currentTarget
       const original = btn.innerHTML

@@ -6,9 +6,11 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
 from ..database import get_db
-from ..models import Order, Sale, SaleItem, Product, ProductVariant, AccountingEntry, CompanyConfig
+from ..models import Order, Sale, SaleItem, Product, ProductVariant, AccountingEntry, CompanyConfig, Coupon
 from ..utils import create_reversal_entries
 from .auth import get_current_user
+from .customers import get_optional_customer
+from datetime import datetime
 
 router = APIRouter(prefix="/api/orders", tags=["orders"])
 logger = logging.getLogger("todotec.orders")
@@ -27,6 +29,14 @@ def _create_sale_from_order(order: Order, db: Session):
 
     subtotal = 0.0
     sale_items_data = []
+
+    # Si el pedido tiene descuento por cupón, se reparte proporcionalmente
+    # entre los ítems: catalog_price = precio original, sale_price = con descuento.
+    order_subtotal = float(order.subtotal or 0)
+    order_discount = float(order.discount or 0)
+    discount_factor = 1.0
+    if order_discount > 0 and order_subtotal > 0:
+        discount_factor = max(0.0, 1.0 - order_discount / order_subtotal)
 
     for item_json in (order.items or []):
         product_id = item_json.get("product_id")
@@ -48,13 +58,15 @@ def _create_sale_from_order(order: Order, db: Session):
         if not variant and product.variants:
             variant = product.variants[0]
 
-        item_subtotal = round(price * quantity, 2)
+        final_price = round(price * discount_factor, 2)
+        item_subtotal = round(final_price * quantity, 2)
         subtotal += item_subtotal
         sale_items_data.append({
             "product": product,
             "variant": variant,
             "quantity": quantity,
-            "price": price,
+            "price": final_price,
+            "catalog_price": price,
             "subtotal": item_subtotal,
         })
 
@@ -107,7 +119,7 @@ def _create_sale_from_order(order: Order, db: Session):
             product_id=product.id,
             variant_id=variant.id if variant else None,
             quantity=item_data["quantity"],
-            catalog_price=item_data["price"],
+            catalog_price=item_data.get("catalog_price", item_data["price"]),
             sale_price=item_data["price"],
             unit_cost=unit_cost,
             subtotal=item_data["subtotal"],
@@ -187,6 +199,7 @@ class CreatePreferenceIn(BaseModel):
     subtotal: float
     shipping_cost: float
     total: float
+    coupon_code: Optional[str] = ""
 
 class CreateManualOrderIn(BaseModel):
     items: List[OrderItemIn]
@@ -207,18 +220,50 @@ class CreateQROrderIn(BaseModel):
     subtotal: float
     shipping_cost: float
     total: float
+    coupon_code: Optional[str] = ""
+
+
+def _resolve_coupon_and_customer(data, request: Request, db: Session):
+    """Identifica al cliente (si hay sesión) y valida/consume el cupón.
+    Devuelve (customer_id, coupon, discount). El descuento se calcula
+    SIEMPRE en el servidor — nunca se confía en el monto del navegador."""
+    customer = get_optional_customer(request, db)
+    coupon = None
+    discount = 0.0
+    code = (data.coupon_code or "").strip().upper()
+    if code:
+        coupon = db.query(Coupon).filter(Coupon.code == code, Coupon.is_used == False).first()
+        if not coupon:
+            raise HTTPException(status_code=400, detail="Cupón inválido o ya utilizado")
+        if not customer or coupon.customer_id != customer.id:
+            raise HTTPException(status_code=400, detail="Inicia sesión con la cuenta dueña del cupón")
+        discount = round(data.subtotal * float(coupon.percent) / 100, 2)
+    return (customer.id if customer else None), coupon, discount
+
+
+def _consume_coupon(coupon, order_id: int):
+    if coupon:
+        coupon.is_used = True
+        coupon.used_at = datetime.now()
+        coupon.order_id = order_id
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.post("/create-preference")
-def create_preference(data: CreatePreferenceIn, db: Session = Depends(get_db)):
+def create_preference(data: CreatePreferenceIn, request: Request, db: Session = Depends(get_db)):
     sdk = get_mp_sdk()
     store_url = os.getenv("STORE_URL", "http://localhost:3000").rstrip("/")
     backend_url = os.getenv("BACKEND_URL", os.getenv("RAILWAY_PUBLIC_DOMAIN", "http://localhost:8000")).rstrip("/")
     if backend_url and not backend_url.startswith("http"):
         backend_url = f"https://{backend_url}"
     sandbox = os.getenv("MP_SANDBOX", "true").lower() == "true"
+
+    # Cliente registrado + cupón (validado y calculado en el servidor)
+    customer_id, coupon, discount = _resolve_coupon_and_customer(data, request, db)
+    discounted_subtotal = round(data.subtotal - discount, 2)
+    total = round(discounted_subtotal * 1.18 + data.shipping_cost, 2)
+    factor = (discounted_subtotal / data.subtotal) if data.subtotal > 0 else 1.0
 
     # Guardar orden en DB (pending)
     order = Order(
@@ -233,25 +278,30 @@ def create_preference(data: CreatePreferenceIn, db: Session = Depends(get_db)):
         items=[i.model_dump() for i in data.items],
         subtotal=data.subtotal,
         shipping_cost=data.shipping_cost,
-        total=data.total,
+        total=total,
+        customer_id=customer_id,
+        coupon_code=coupon.code if coupon else "",
+        discount=discount,
     )
     db.add(order)
+    db.flush()
+    _consume_coupon(coupon, order.id)
     db.commit()
     db.refresh(order)
 
-    # Construir items para MP
+    # Construir items para MP (precios con descuento proporcional si hay cupón)
     mp_items = [
         {
             "id": str(item.product_id),
             "title": item.name + (f" – {item.variant_color}" if item.variant_color else ""),
             "quantity": item.quantity,
-            "unit_price": round(item.price, 2),
+            "unit_price": round(item.price * factor, 2),
             "currency_id": "PEN",
         }
         for item in data.items
     ]
 
-    igv = round(data.subtotal * 0.18, 2)
+    igv = round(discounted_subtotal * 0.18, 2)
     if igv > 0:
         mp_items.append({"id": "igv", "title": "IGV 18%", "quantity": 1, "unit_price": igv, "currency_id": "PEN"})
     if data.shipping_cost > 0:
@@ -406,6 +456,9 @@ def list_orders(db: Session = Depends(get_db)):
             "mp_preference_id": o.mp_preference_id,
             "mp_payment_id": o.mp_payment_id,
             "sale_id": o.sale_id,
+            "customer_id": o.customer_id,
+            "coupon_code": o.coupon_code or "",
+            "discount": float(o.discount or 0),
             "created_at": o.created_at.isoformat() if o.created_at else None,
         }
         for o in orders
@@ -413,8 +466,12 @@ def list_orders(db: Session = Depends(get_db)):
 
 
 @router.post("/create-qr")
-def create_qr_order(data: CreateQROrderIn, db: Session = Depends(get_db)):
+def create_qr_order(data: CreateQROrderIn, request: Request, db: Session = Depends(get_db)):
     """Crea un pedido con pago por QR (pendiente de confirmación por admin)."""
+    customer_id, coupon, discount = _resolve_coupon_and_customer(data, request, db)
+    discounted_subtotal = round(data.subtotal - discount, 2)
+    total = round(discounted_subtotal * 1.18 + data.shipping_cost, 2)
+
     order = Order(
         source="web",
         payment_method="qr",
@@ -429,14 +486,19 @@ def create_qr_order(data: CreateQROrderIn, db: Session = Depends(get_db)):
         items=[i.model_dump() for i in data.items],
         subtotal=data.subtotal,
         shipping_cost=data.shipping_cost,
-        total=data.total,
+        total=total,
         mp_preference_id="",
         mp_payment_id="",
+        customer_id=customer_id,
+        coupon_code=coupon.code if coupon else "",
+        discount=discount,
     )
     db.add(order)
+    db.flush()
+    _consume_coupon(coupon, order.id)
     db.commit()
     db.refresh(order)
-    return {"order_id": order.id, "order_number": 10000 + order.id}
+    return {"order_id": order.id, "order_number": 10000 + order.id, "total": float(order.total), "discount": float(order.discount or 0)}
 
 
 @router.post("/{order_id}/screenshot")

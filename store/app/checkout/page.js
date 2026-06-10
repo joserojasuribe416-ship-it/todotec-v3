@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Check, ShoppingBag, Loader2, QrCode, CreditCard, Upload, X } from 'lucide-react'
 import { getImageUrl } from '../../lib/api'
+import { loadCart, clearCart } from '../../lib/cartStorage'
+import { isLoggedIn, getCustomer as getStoredCustomer, apiMe, getAppliedCoupon, clearAppliedCoupon, getToken } from '../../lib/customer'
 
 // ── Puntos de recojo ──────────────────────────────────────────────────────────
 const PICKUP_POINTS = [
@@ -115,8 +117,32 @@ export default function CheckoutPage() {
   const [screenshotPreview, setScreenshotPreview] = useState('')
   const fileInputRef = useRef(null)
 
+  const [coupon, setCoupon] = useState(null)
+
   useEffect(() => {
-    try { setCart(JSON.parse(sessionStorage.getItem('cart') || '[]')) } catch { setCart([]) }
+    setCart(loadCart())
+    setCoupon(getAppliedCoupon())
+    // Cliente con sesión: precargar sus datos guardados (editables)
+    if (isLoggedIn()) {
+      const fill = (p) => {
+        setCustomer(c => ({
+          ...c,
+          nombre: p.nombre || c.nombre, apellido: p.apellido || c.apellido,
+          email: p.email || c.email, dni: p.dni || c.dni, celular: p.celular || c.celular,
+        }))
+        const dd = p.delivery_data || {}
+        if (dd.address) {
+          setDeliveryType('delivery')
+          if (dd.department) setDept(dd.department)
+          if (dd.province) setProvince(dd.province)
+          if (dd.district) setDistrict(dd.district)
+          setAddress(dd.address)
+        }
+      }
+      const stored = getStoredCustomer()
+      if (stored) fill(stored)
+      apiMe().then(fill).catch(() => {})
+    }
   }, [])
 
   useEffect(() => {
@@ -134,11 +160,12 @@ export default function CheckoutPage() {
     reader.readAsDataURL(file)
   }
 
-  // Amounts
+  // Amounts — el cupón descuenta el subtotal; el IGV se calcula sobre lo descontado
   const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
-  const igv = subtotal * 0.18
+  const discount = coupon ? Math.round(subtotal * coupon.percent) / 100 : 0
+  const igv = (subtotal - discount) * 0.18
   const shipping = subtotal >= 200 ? 0 : 10
-  const total = subtotal + igv + shipping
+  const total = subtotal - discount + igv + shipping
 
   if (cart.length === 0 && step < 4) {
     return (
@@ -200,7 +227,16 @@ export default function CheckoutPage() {
       subtotal: Math.round(subtotal * 100) / 100,
       shipping_cost: shipping,
       total: Math.round(total * 100) / 100,
+      coupon_code: coupon?.code || '',
     }
+  }
+
+  // Cabeceras del pedido: incluye la sesión del cliente si existe
+  const orderHeaders = () => {
+    const h = { 'Content-Type': 'application/json' }
+    const t = getToken()
+    if (t) h['Authorization'] = `Bearer ${t}`
+    return h
   }
 
   // ── Pay MercadoPago ───────────────────────────────────────────────────────
@@ -209,12 +245,13 @@ export default function CheckoutPage() {
     setError('')
     try {
       const res = await fetch('/api/orders/create-preference', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: orderHeaders(),
         body: JSON.stringify(buildOrderBody()),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.detail || 'Error al procesar el pago')
-      sessionStorage.setItem('cart', '[]')
+      clearCart()
+      clearAppliedCoupon()
       window.dispatchEvent(new Event('cartUpdated'))
       window.location.href = data.checkout_url
     } catch (e) {
@@ -231,7 +268,7 @@ export default function CheckoutPage() {
     try {
       // 1. Crear pedido QR
       const res = await fetch('/api/orders/create-qr', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: orderHeaders(),
         body: JSON.stringify(buildOrderBody()),
       })
       const data = await res.json()
@@ -242,8 +279,9 @@ export default function CheckoutPage() {
       formData.append('file', screenshotFile)
       await fetch(`/api/orders/${data.order_id}/screenshot`, { method: 'POST', body: formData })
 
-      // 3. Limpiar carrito y redirigir
-      sessionStorage.setItem('cart', '[]')
+      // 3. Limpiar carrito + cupón y redirigir
+      clearCart()
+      clearAppliedCoupon()
       window.dispatchEvent(new Event('cartUpdated'))
       router.push(`/checkout/success?qr=1&order_id=${data.order_id}&order_number=${data.order_number}`)
     } catch (e) {
@@ -297,14 +335,17 @@ export default function CheckoutPage() {
 
             {/* Totals */}
             <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #EDE8E4', padding: '20px 22px', marginBottom: 20 }}>
-              {[
-                ['Subtotal', subtotal],
-                ['IGV (18%)', igv],
-              ].map(([label, val]) => (
-                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Inter', sans-serif", fontSize: 13, color: '#6B7280', marginBottom: 10 }}>
-                  <span>{label}</span><span>{fmt(val)}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Inter', sans-serif", fontSize: 13, color: '#6B7280', marginBottom: 10 }}>
+                <span>Subtotal</span><span>{fmt(subtotal)}</span>
+              </div>
+              {discount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Inter', sans-serif", fontSize: 13, color: '#C49A8A', fontWeight: 500, marginBottom: 10 }}>
+                  <span>Descuento {coupon?.code} ({coupon?.percent}%)</span><span>−{fmt(discount)}</span>
                 </div>
-              ))}
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Inter', sans-serif", fontSize: 13, color: '#6B7280', marginBottom: 10 }}>
+                <span>IGV (18%)</span><span>{fmt(igv)}</span>
+              </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Inter', sans-serif", fontSize: 13, color: '#6B7280', marginBottom: 12 }}>
                 <span>Envío</span>
                 <span style={{ color: shipping === 0 ? '#B5C4B1' : '#1E1A1A', fontWeight: shipping === 0 ? 500 : 400 }}>
@@ -492,6 +533,7 @@ export default function CheckoutPage() {
               </div>
               <div style={{ borderTop: '1px solid #F3EEE9', marginTop: 12, paddingTop: 12 }}>
                 <Row label="Subtotal" value={fmt(subtotal)} />
+                {discount > 0 && <Row label={`Descuento ${coupon?.code || ''}`} value={`−${fmt(discount)}`} />}
                 <Row label="IGV (18%)" value={fmt(igv)} />
                 <Row label="Envío" value={shipping === 0 ? 'Gratis' : fmt(shipping)} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, fontFamily: "'Inter', sans-serif", fontSize: 16, fontWeight: 600, color: '#1E1A1A' }}>

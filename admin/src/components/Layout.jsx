@@ -22,6 +22,7 @@ const NAV_BASE = [
   { to: '/marcas',        icon: Bookmark,        label: 'Marcas' },
   { to: '/apariencia',    icon: Palette,         label: 'Apariencia' },
   { to: '/pedidos',       icon: ClipboardList,   label: 'Pedidos' },
+  { to: '/clientes',      icon: UserCircle,      label: 'Clientes' },
   { to: '/configuracion', icon: Settings,        label: 'Configuración' },
 ]
 const NAV_MASTER = { to: '/usuarios', icon: Shield, label: 'Usuarios' }

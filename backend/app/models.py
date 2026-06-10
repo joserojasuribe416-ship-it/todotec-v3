@@ -68,6 +68,7 @@ class Product(Base):
     ref_cost = Column(Numeric(12, 2), default=0)
     is_active = Column(Boolean, default=True)
     show_in_store = Column(Boolean, default=True)
+    view_count = Column(Integer, default=0)  # analítica: vistas de la página del producto
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
 
@@ -313,6 +314,42 @@ class User(Base):
     created_at = Column(DateTime, server_default=func.now())
 
 
+class Customer(Base):
+    """Cuenta de cliente de la tienda online (separada de los usuarios del admin)."""
+    __tablename__ = "customers"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    email = Column(String, unique=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    nombre = Column(String, default="")
+    apellido = Column(String, default="")
+    dni = Column(String, default="")
+    celular = Column(String, default="")
+    delivery_data = Column(JSON, default=dict)   # dirección guardada
+    cart = Column(JSON, default=list)            # carrito persistente
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, server_default=func.now())
+
+    coupons = relationship("Coupon", back_populates="customer", cascade="all, delete-orphan")
+
+
+class Coupon(Base):
+    """Cupones de descuento de clientes (ej. 30% por crear cuenta)."""
+    __tablename__ = "coupons"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    code = Column(String, unique=True, nullable=False)
+    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=False)
+    percent = Column(Numeric(5, 2), default=30)
+    description = Column(String, default="30% de descuento por crear tu cuenta")
+    is_used = Column(Boolean, default=False)
+    used_at = Column(DateTime, nullable=True)
+    order_id = Column(Integer, nullable=True)    # pedido donde se usó
+    created_at = Column(DateTime, server_default=func.now())
+
+    customer = relationship("Customer", back_populates="coupons")
+
+
 class Order(Base):
     __tablename__ = "orders"
 
@@ -353,6 +390,12 @@ class Order(Base):
 
     # Link a la venta generada automáticamente
     sale_id = Column(Integer, nullable=True)
+
+    # Cliente registrado (null si compra como invitado)
+    customer_id = Column(Integer, nullable=True)
+    # Cupón aplicado
+    coupon_code = Column(String, default="")
+    discount = Column(Numeric(12, 2), default=0)
 
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())

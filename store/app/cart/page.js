@@ -2,20 +2,29 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Trash2, ArrowLeft, CreditCard, MessageCircle, Plus, Minus, ShoppingBag } from 'lucide-react'
+import { Trash2, ArrowLeft, CreditCard, MessageCircle, Plus, Minus, ShoppingBag, Ticket, X, Check } from 'lucide-react'
+import Lk from 'next/link'
 import { getImageUrl } from '../../lib/api'
+import { loadCart, storeCart } from '../../lib/cartStorage'
+import { isLoggedIn, getAppliedCoupon, saveAppliedCoupon, clearAppliedCoupon, apiCheckCoupon } from '../../lib/customer'
 
 export default function CartPage() {
   const router = useRouter()
   const [cart, setCart] = useState([])
+  const [coupon, setCoupon] = useState(null)          // { code, percent }
+  const [couponInput, setCouponInput] = useState('')
+  const [couponError, setCouponError] = useState('')
+  const [logged, setLogged] = useState(false)
 
   useEffect(() => {
-    try { setCart(JSON.parse(sessionStorage.getItem('cart') || '[]')) } catch { setCart([]) }
+    setCart(loadCart())
+    setCoupon(getAppliedCoupon())
+    setLogged(isLoggedIn())
   }, [])
 
   const updateCart = (newCart) => {
     setCart(newCart)
-    sessionStorage.setItem('cart', JSON.stringify(newCart))
+    storeCart(newCart)
     window.dispatchEvent(new Event('cartUpdated'))
   }
   const updateQty = (key, delta) => updateCart(cart.map(i => i.key === key ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i))
@@ -24,8 +33,29 @@ export default function CartPage() {
 
   const fmt = (n) => `S/ ${(n || 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}`
   const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
-  const igv = subtotal * 0.18
-  const total = subtotal + igv
+  // El cupón descuenta sobre el subtotal; el IGV se calcula sobre lo ya descontado
+  const discount = coupon ? Math.round(subtotal * coupon.percent) / 100 : 0
+  const igv = (subtotal - discount) * 0.18
+  const total = subtotal - discount + igv
+
+  const applyCoupon = async () => {
+    setCouponError('')
+    if (!couponInput.trim()) return
+    try {
+      const data = await apiCheckCoupon(couponInput.trim().toUpperCase(), subtotal)
+      const applied = { code: data.code, percent: data.percent }
+      saveAppliedCoupon(applied)
+      setCoupon(applied)
+      setCouponInput('')
+    } catch (err) {
+      setCouponError(err.message)
+    }
+  }
+
+  const removeCoupon = () => {
+    clearAppliedCoupon()
+    setCoupon(null)
+  }
 
   const goCheckout = () => router.push('/checkout')
 
@@ -111,10 +141,52 @@ export default function CartPage() {
             <div>
               <div style={{ background: '#fff', borderRadius: 16, padding: '28px 24px', border: '1px solid #EDE8E4', position: 'sticky', top: 24 }}>
                 <div style={{ fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300, fontSize: 14, color: '#1E1A1A', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 20 }}>Resumen</div>
+                {/* ── Cupón ── */}
+                <div style={{ marginBottom: 16 }}>
+                  {coupon ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FDF0F0', border: '1px dashed #EEC5C5', borderRadius: 10, padding: '10px 12px' }}>
+                      <Ticket size={15} color="#C49A8A" />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 600, color: '#1E1A1A' }}>{coupon.code}</div>
+                        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: '#C49A8A' }}>−{coupon.percent}% aplicado</div>
+                      </div>
+                      <button onClick={removeCoupon} title="Quitar cupón" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'flex' }}>
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : logged ? (
+                    <div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                          value={couponInput}
+                          onChange={e => setCouponInput(e.target.value.toUpperCase())}
+                          placeholder="Código de cupón"
+                          style={{ flex: 1, minWidth: 0, padding: '10px 12px', border: '1px solid #EDE8E4', borderRadius: 8, fontFamily: "'Inter', sans-serif", fontSize: 12, outline: 'none', background: '#FAF7F4', color: '#1E1A1A' }}
+                        />
+                        <button onClick={applyCoupon} style={{ background: '#EEC5C5', color: '#1E1A1A', border: 'none', borderRadius: 8, padding: '0 16px', fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          Aplicar
+                        </button>
+                      </div>
+                      {couponError && <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: '#C0392B', marginTop: 6 }}>{couponError}</p>}
+                    </div>
+                  ) : (
+                    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: '#9CA3AF', background: '#FAF7F4', border: '1px dashed #EDE8E4', borderRadius: 10, padding: '10px 12px', lineHeight: 1.5 }}>
+                      <Ticket size={12} style={{ display: 'inline', verticalAlign: '-2px' }} />{' '}
+                      ¿Tienes un cupón? <Lk href="/login" style={{ color: '#C49A8A', fontWeight: 500 }}>Inicia sesión</Lk> para usarlo
+                      {' '}o <Lk href="/register" style={{ color: '#C49A8A', fontWeight: 500 }}>crea tu cuenta</Lk> y obtén 30%.
+                    </div>
+                  )}
+                </div>
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Inter', sans-serif", fontSize: 13, color: '#6B7280', fontWeight: 300 }}>
                     <span>Subtotal</span><span>{fmt(subtotal)}</span>
                   </div>
+                  {discount > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Inter', sans-serif", fontSize: 13, color: '#C49A8A', fontWeight: 500 }}>
+                      <span><Check size={12} style={{ display: 'inline', verticalAlign: '-2px' }} /> Descuento ({coupon.percent}%)</span><span>−{fmt(discount)}</span>
+                    </div>
+                  )}
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Inter', sans-serif", fontSize: 13, color: '#6B7280', fontWeight: 300 }}>
                     <span>IGV (18%)</span><span>{fmt(igv)}</span>
                   </div>

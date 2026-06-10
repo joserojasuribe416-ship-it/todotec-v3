@@ -1,14 +1,20 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ShoppingBag, Package, ChevronLeft, Check } from 'lucide-react'
 import { getImageUrl } from '../../../lib/api'
+import { loadCart, storeCart } from '../../../lib/cartStorage'
 
 export default function ProductDetail({ product }) {
   const [selectedVariant, setSelectedVariant] = useState(product.variants?.[0] || null)
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
   const [selectedGalleryIdx, setSelectedGalleryIdx] = useState(0)
+
+  // Analítica propia (sin cookies): registra la vista del producto
+  useEffect(() => {
+    fetch(`/api/products/${product.id}/view`, { method: 'POST' }).catch(() => {})
+  }, [product.id])
 
   const fmt = (n) => `S/ ${(n || 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}`
   const imgs = product.images || []
@@ -20,13 +26,13 @@ export default function ProductDetail({ product }) {
 
   const addToCart = () => {
     try {
-      const cart = JSON.parse(sessionStorage.getItem('cart') || '[]')
+      const cart = loadCart()
       const key = `${product.id}-${selectedVariant?.id || 'none'}`
       const idx = cart.findIndex(i => i.key === key)
       const item = { key, id: product.id, name: product.name, variant_id: selectedVariant?.id || null, variant_color: selectedVariant?.color || null, price: product.sale_price, quantity: qty, image: variantImg || imgs[0]?.url || null }
       if (idx >= 0) cart[idx].quantity += qty
       else cart.push(item)
-      sessionStorage.setItem('cart', JSON.stringify(cart))
+      storeCart(cart)
       window.dispatchEvent(new Event('cartUpdated'))
       setAdded(true)
       setTimeout(() => setAdded(false), 2000)

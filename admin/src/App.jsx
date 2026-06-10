@@ -15,6 +15,7 @@ import Marcas from './pages/Marcas'
 import Apariencia from './pages/Apariencia'
 import Pedidos from './pages/Pedidos'
 import Usuarios from './pages/Usuarios'
+import Clientes from './pages/Clientes'
 import Login from './pages/Login'
 
 function ProtectedRoute({ children }) {
@@ -46,6 +47,7 @@ export default function App() {
             <Route path="marcas" element={<Marcas />} />
             <Route path="apariencia" element={<Apariencia />} />
             <Route path="pedidos" element={<Pedidos />} />
+            <Route path="clientes" element={<Clientes />} />
             <Route path="configuracion" element={<Configuracion />} />
             <Route path="usuarios" element={<Usuarios />} />
           </Route>

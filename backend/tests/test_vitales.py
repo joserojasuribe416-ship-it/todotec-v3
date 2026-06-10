@@ -144,6 +144,42 @@ def test_pedido_web_qr_genera_venta_y_descuenta_stock():
 
 # ── 3. Categorías y marcas propagan cambios ───────────────────────────
 
+def test_cliente_cupon_30_y_total_descontado():
+    """Registro → cupón GLOWI30 → pedido con total ya descontado → admin lo ve en Clientes."""
+    H = _owner()
+    pid = client.get("/api/products").json()[0]["id"]
+
+    r = client.post("/api/customers/register", json={
+        "email": "test@glowi.pe", "password": "clave123",
+        "nombre": "Test", "apellido": "Glowi", "accept_privacy": True})
+    assert r.status_code == 201
+    HC = {"Authorization": f"Bearer {r.json()['access_token']}"}
+    cupon = r.json()["coupon"]
+    assert cupon.startswith("GLOWI30-")
+
+    # token de cliente NO sirve en el admin
+    assert client.get("/api/sales", headers=HC).status_code == 401
+
+    # pedido QR con cupón: el servidor recalcula el total con descuento
+    r = client.post("/api/orders/create-qr", json={
+        "items": [{"product_id": pid, "name": "Serum", "quantity": 2, "price": 100.00}],
+        "customer": {"nombre": "T", "apellido": "G", "email": "test@glowi.pe", "dni": "1", "celular": "9"},
+        "delivery": {"type": "pickup"},
+        "subtotal": 200.00, "shipping_cost": 0, "total": 236.00,
+        "coupon_code": cupon}, headers=HC)
+    assert r.status_code == 200
+    assert r.json()["total"] == 165.20   # (200 − 60) × 1.18
+    assert r.json()["discount"] == 60.0
+
+    # el cupón no se puede reutilizar
+    assert client.post("/api/customers/check-coupon",
+                       json={"code": cupon, "subtotal": 100}, headers=HC).status_code == 400
+
+    # módulo Clientes del admin lo lista
+    clientes = client.get("/api/clients", headers=H).json()
+    assert any(c["email"] == "test@glowi.pe" for c in clientes)
+
+
 def test_renombrar_categoria_actualiza_productos():
     H = _owner()
     r = client.post("/api/categories", json={"name": "CatTemp"}, headers=H)

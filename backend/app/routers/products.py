@@ -54,6 +54,16 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
     return p
 
 
+@router.post("/{product_id}/view")
+def register_view(product_id: int, db: Session = Depends(get_db)):
+    """Analítica propia: cuenta cada visita a la página del producto (sin cookies)."""
+    db.query(Product).filter(Product.id == product_id).update(
+        {Product.view_count: Product.view_count + 1}, synchronize_session=False
+    )
+    db.commit()
+    return {"ok": True}
+
+
 @router.post("", response_model=ProductOut, status_code=201, dependencies=[Depends(get_current_user)])
 def create_product(data: ProductCreate, db: Session = Depends(get_db)):
     product = Product(

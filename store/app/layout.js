@@ -1,6 +1,8 @@
 import './globals.css'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import WelcomeBanner from '../components/WelcomeBanner'
+import { Analytics } from '@vercel/analytics/react'
 
 export default function RootLayout({ children }) {
   return (
@@ -13,10 +15,12 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <Navbar />
+        <WelcomeBanner />
         <main className="min-h-screen">
           {children}
         </main>
         <Footer />
+        <Analytics />
       </body>
     </html>
   )
