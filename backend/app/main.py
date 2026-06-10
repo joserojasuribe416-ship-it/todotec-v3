@@ -1,8 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from .database import engine, Base
 from .routers import config, suppliers, products, purchases, sales, accounting, dashboard, categories, cobranzas, brands, appearance, revalidate, orders, auth
+from .routers.auth import get_current_user, require_master
 import os
 
 # Create tables
@@ -88,18 +89,22 @@ app.add_middleware(
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # Routers
+# Routers de solo-admin: protegidos completos con JWT
+ADMIN_ONLY = [Depends(get_current_user)]
+app.include_router(suppliers.router, dependencies=ADMIN_ONLY)
+app.include_router(purchases.router, dependencies=ADMIN_ONLY)
+app.include_router(sales.router, dependencies=ADMIN_ONLY)
+app.include_router(accounting.router, dependencies=ADMIN_ONLY)
+app.include_router(dashboard.router, dependencies=ADMIN_ONLY)
+app.include_router(cobranzas.router, dependencies=ADMIN_ONLY)
+app.include_router(brands.router, dependencies=ADMIN_ONLY)
+app.include_router(revalidate.router, dependencies=ADMIN_ONLY)
+# Routers mixtos: la tienda usa los GET públicos; las mutaciones se
+# protegen endpoint por endpoint dentro de cada router
 app.include_router(config.router)
-app.include_router(suppliers.router)
 app.include_router(products.router)
-app.include_router(purchases.router)
-app.include_router(sales.router)
-app.include_router(accounting.router)
-app.include_router(dashboard.router)
 app.include_router(categories.router)
-app.include_router(brands.router)
 app.include_router(appearance.router)
-app.include_router(cobranzas.router)
-app.include_router(revalidate.router)
 app.include_router(orders.router)
 app.include_router(auth.router)
 
@@ -114,9 +119,10 @@ def health():
     return {"status": "ok"}
 
 
-@app.post("/api/reset-total")
+@app.post("/api/reset-total", dependencies=[Depends(require_master)])
 def reset_total(db=None):
-    """Elimina TODOS los registros operacionales. Mantiene config y categorías."""
+    """Elimina TODOS los registros operacionales. Mantiene config y categorías.
+    SOLO accesible para cuentas master autenticadas."""
     from .database import SessionLocal
     from .models import (
         Sale, SaleItem, Purchase, PurchaseItem,

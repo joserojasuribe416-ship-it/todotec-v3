@@ -13,7 +13,15 @@ from ..models import User
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 # ── Config ────────────────────────────────────────────────────────────────────
-SECRET_KEY = os.getenv("JWT_SECRET", "glowi-skin-secret-key-2025-change-in-prod")
+# JWT_SECRET debe estar definido como variable de entorno (Railway → Variables).
+# Si falta, se genera uno aleatorio por arranque: el sistema funciona pero las
+# sesiones se invalidan en cada redeploy — señal clara de que falta configurarlo.
+import secrets as _secrets
+SECRET_KEY = os.getenv("JWT_SECRET")
+if not SECRET_KEY:
+    SECRET_KEY = _secrets.token_hex(32)
+    print("⚠️  JWT_SECRET no configurado: usando clave aleatoria temporal. "
+          "Definir JWT_SECRET en las variables de entorno para sesiones persistentes.")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 12
 
@@ -84,21 +92,25 @@ class ChangePasswordIn(BaseModel):
 
 
 # ── Seed inicial ──────────────────────────────────────────────────────────────
-INITIAL_USERS = [
-    {"username": "jose",   "full_name": "Jose Rojas",     "password": "GlowiJose2025!",   "role": "master"},
-    {"username": "bruno",  "full_name": "Bruno Mendoza",  "password": "GlowiBruno2025!",  "role": "master"},
-    {"username": "brayan", "full_name": "Brayan",         "password": "GlowiBrayan2025!", "role": "master"},
-]
+# Sin contraseñas en el código. Si la tabla users está vacía (instalación nueva
+# o reset), se crea UNA cuenta master con credenciales tomadas de variables de
+# entorno: INITIAL_ADMIN_USER e INITIAL_ADMIN_PASSWORD.
 
 def seed_users(db: Session):
-    for u in INITIAL_USERS:
-        if not db.query(User).filter(User.username == u["username"]).first():
-            db.add(User(
-                username=u["username"],
-                full_name=u["full_name"],
-                password_hash=hash_password(u["password"]),
-                role=u["role"],
-            ))
+    if db.query(User).count() > 0:
+        return  # ya existen usuarios — no sembrar nada
+    username = os.getenv("INITIAL_ADMIN_USER", "")
+    password = os.getenv("INITIAL_ADMIN_PASSWORD", "")
+    if not username or not password:
+        print("⚠️  Tabla users vacía y sin INITIAL_ADMIN_USER/INITIAL_ADMIN_PASSWORD "
+              "configurados: no se creó ninguna cuenta inicial.")
+        return
+    db.add(User(
+        username=username.lower(),
+        full_name=username,
+        password_hash=hash_password(password),
+        role="master",
+    ))
     db.commit()
 
 

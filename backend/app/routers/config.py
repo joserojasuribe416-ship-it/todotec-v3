@@ -4,6 +4,7 @@ from ..database import get_db
 from ..models import CompanyConfig
 from ..schemas import ConfigOut, ConfigUpdate
 from ..cloudinary_client import upload_image, delete_image
+from .auth import get_current_user
 
 router = APIRouter(prefix="/api/config", tags=["config"])
 
@@ -23,7 +24,7 @@ def get_config(db: Session = Depends(get_db)):
     return get_or_create_config(db)
 
 
-@router.put("", response_model=ConfigOut)
+@router.put("", response_model=ConfigOut, dependencies=[Depends(get_current_user)])
 def update_config(data: ConfigUpdate, db: Session = Depends(get_db)):
     config = get_or_create_config(db)
     for field, value in data.model_dump(exclude_none=True).items():
@@ -33,7 +34,7 @@ def update_config(data: ConfigUpdate, db: Session = Depends(get_db)):
     return config
 
 
-@router.post("/logo")
+@router.post("/logo", dependencies=[Depends(get_current_user)])
 async def upload_logo(file: UploadFile = File(...), db: Session = Depends(get_db)):
     config = get_or_create_config(db)
     delete_image(config.logo_url)

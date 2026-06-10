@@ -5,6 +5,7 @@ from ..database import get_db
 from ..models import Product, ProductVariant, ProductImage
 from ..schemas import ProductCreate, ProductUpdate, ProductOut, VariantCreate, VariantOut
 from ..cloudinary_client import upload_image as cld_upload, delete_image as cld_delete
+from .auth import get_current_user
 import uuid
 
 router = APIRouter(prefix="/api/products", tags=["products"])
@@ -53,7 +54,7 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
     return p
 
 
-@router.post("", response_model=ProductOut, status_code=201)
+@router.post("", response_model=ProductOut, status_code=201, dependencies=[Depends(get_current_user)])
 def create_product(data: ProductCreate, db: Session = Depends(get_db)):
     product = Product(
         sku=make_sku(db),
@@ -65,7 +66,7 @@ def create_product(data: ProductCreate, db: Session = Depends(get_db)):
     return product
 
 
-@router.put("/{product_id}", response_model=ProductOut)
+@router.put("/{product_id}", response_model=ProductOut, dependencies=[Depends(get_current_user)])
 def update_product(product_id: int, data: ProductUpdate, db: Session = Depends(get_db)):
     p = db.query(Product).filter(Product.id == product_id).first()
     if not p:
@@ -77,7 +78,7 @@ def update_product(product_id: int, data: ProductUpdate, db: Session = Depends(g
     return p
 
 
-@router.delete("/{product_id}")
+@router.delete("/{product_id}", dependencies=[Depends(get_current_user)])
 def delete_product(product_id: int, db: Session = Depends(get_db)):
     p = db.query(Product).filter(Product.id == product_id).first()
     if not p:
@@ -93,7 +94,7 @@ def list_variants(product_id: int, db: Session = Depends(get_db)):
     return db.query(ProductVariant).filter(ProductVariant.product_id == product_id).all()
 
 
-@router.post("/{product_id}/variants", response_model=VariantOut, status_code=201)
+@router.post("/{product_id}/variants", response_model=VariantOut, status_code=201, dependencies=[Depends(get_current_user)])
 def add_variant(product_id: int, data: VariantCreate, db: Session = Depends(get_db)):
     p = db.query(Product).filter(Product.id == product_id).first()
     if not p:
@@ -105,7 +106,7 @@ def add_variant(product_id: int, data: VariantCreate, db: Session = Depends(get_
     return v
 
 
-@router.put("/variants/{variant_id}", response_model=VariantOut)
+@router.put("/variants/{variant_id}", response_model=VariantOut, dependencies=[Depends(get_current_user)])
 def update_variant(variant_id: int, data: VariantCreate, db: Session = Depends(get_db)):
     v = db.query(ProductVariant).filter(ProductVariant.id == variant_id).first()
     if not v:
@@ -117,7 +118,7 @@ def update_variant(variant_id: int, data: VariantCreate, db: Session = Depends(g
     return v
 
 
-@router.post("/variants/{variant_id}/image")
+@router.post("/variants/{variant_id}/image", dependencies=[Depends(get_current_user)])
 async def upload_variant_image(variant_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
     v = db.query(ProductVariant).filter(ProductVariant.id == variant_id).first()
     if not v:
@@ -128,7 +129,7 @@ async def upload_variant_image(variant_id: int, file: UploadFile = File(...), db
     return {"id": variant_id, "image_url": v.image_url}
 
 
-@router.delete("/variants/{variant_id}/image")
+@router.delete("/variants/{variant_id}/image", dependencies=[Depends(get_current_user)])
 def delete_variant_image(variant_id: int, db: Session = Depends(get_db)):
     v = db.query(ProductVariant).filter(ProductVariant.id == variant_id).first()
     if not v:
@@ -139,7 +140,7 @@ def delete_variant_image(variant_id: int, db: Session = Depends(get_db)):
     return {"ok": True}
 
 
-@router.delete("/variants/{variant_id}")
+@router.delete("/variants/{variant_id}", dependencies=[Depends(get_current_user)])
 def delete_variant(variant_id: int, db: Session = Depends(get_db)):
     v = db.query(ProductVariant).filter(ProductVariant.id == variant_id).first()
     if not v:
@@ -150,7 +151,7 @@ def delete_variant(variant_id: int, db: Session = Depends(get_db)):
 
 
 # ── Images ────────────────────────────────────────────────────────────
-@router.post("/{product_id}/images")
+@router.post("/{product_id}/images", dependencies=[Depends(get_current_user)])
 async def upload_product_image(product_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
     p = db.query(Product).filter(Product.id == product_id).first()
     if not p:
@@ -172,7 +173,7 @@ async def upload_product_image(product_id: int, file: UploadFile = File(...), db
     return {"id": img.id, "url": img.url, "is_primary": img.is_primary}
 
 
-@router.delete("/images/{image_id}")
+@router.delete("/images/{image_id}", dependencies=[Depends(get_current_user)])
 def delete_product_image(image_id: int, db: Session = Depends(get_db)):
     img = db.query(ProductImage).filter(ProductImage.id == image_id).first()
     if not img:

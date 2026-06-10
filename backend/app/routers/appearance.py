@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from ..database import get_db
 from ..models import Banner, HomepageSection, CompanyConfig, Product
 from ..cloudinary_client import upload_image, delete_image
+from .auth import get_current_user
 import uuid
 
 router = APIRouter(prefix="/api/appearance", tags=["appearance"])
@@ -106,7 +107,7 @@ def get_announcement(db: Session = Depends(get_db)):
     cfg = db.query(CompanyConfig).first()
     return {"announcement_text": getattr(cfg, "announcement_text", "Envío gratis por compras desde S/200") or "Envío gratis por compras desde S/200"}
 
-@router.put("/announcement")
+@router.put("/announcement", dependencies=[Depends(get_current_user)])
 def update_announcement(data: AnnouncementUpdate, db: Session = Depends(get_db)):
     cfg = db.query(CompanyConfig).first()
     if cfg:
@@ -122,7 +123,7 @@ def get_qr_image(db: Session = Depends(get_db)):
     cfg = db.query(CompanyConfig).first()
     return {"qr_image_url": getattr(cfg, "qr_image_url", "") or ""}
 
-@router.post("/qr-image")
+@router.post("/qr-image", dependencies=[Depends(get_current_user)])
 async def upload_qr_image(file: UploadFile = File(...), db: Session = Depends(get_db)):
     url = await upload_image(file, folder="glowi-skin/qr", public_id="payment-qr")
     cfg = db.query(CompanyConfig).first()
@@ -139,12 +140,12 @@ def list_banners(db: Session = Depends(get_db)):
     seed_banners(db)
     return db.query(Banner).filter(Banner.is_active == True).order_by(Banner.order).all()
 
-@router.get("/banners/all", response_model=List[BannerOut])
+@router.get("/banners/all", response_model=List[BannerOut], dependencies=[Depends(get_current_user)])
 def list_all_banners(db: Session = Depends(get_db)):
     seed_banners(db)
     return db.query(Banner).order_by(Banner.order).all()
 
-@router.put("/banners/{banner_id}", response_model=BannerOut)
+@router.put("/banners/{banner_id}", response_model=BannerOut, dependencies=[Depends(get_current_user)])
 def update_banner(banner_id: int, data: BannerUpdate, db: Session = Depends(get_db)):
     banner = db.query(Banner).filter(Banner.id == banner_id).first()
     if not banner:
@@ -155,7 +156,7 @@ def update_banner(banner_id: int, data: BannerUpdate, db: Session = Depends(get_
     db.refresh(banner)
     return banner
 
-@router.post("/banners/{banner_id}/image", response_model=BannerOut)
+@router.post("/banners/{banner_id}/image", response_model=BannerOut, dependencies=[Depends(get_current_user)])
 async def upload_banner_image(banner_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
     banner = db.query(Banner).filter(Banner.id == banner_id).first()
     if not banner:
@@ -169,7 +170,7 @@ async def upload_banner_image(banner_id: int, file: UploadFile = File(...), db: 
     db.refresh(banner)
     return banner
 
-@router.delete("/banners/{banner_id}/image", response_model=BannerOut)
+@router.delete("/banners/{banner_id}/image", response_model=BannerOut, dependencies=[Depends(get_current_user)])
 def delete_banner_image(banner_id: int, db: Session = Depends(get_db)):
     banner = db.query(Banner).filter(Banner.id == banner_id).first()
     if not banner:
@@ -188,7 +189,7 @@ def list_sections(db: Session = Depends(get_db)):
     seed_sections(db)
     return db.query(HomepageSection).order_by(HomepageSection.id).all()
 
-@router.put("/sections/{key}", response_model=SectionOut)
+@router.put("/sections/{key}", response_model=SectionOut, dependencies=[Depends(get_current_user)])
 def update_section(key: str, data: SectionUpdate, db: Session = Depends(get_db)):
     section = db.query(HomepageSection).filter(HomepageSection.key == key).first()
     if not section:

@@ -7,6 +7,7 @@ from typing import List, Optional
 from ..database import get_db
 from ..models import Order, Sale, SaleItem, Product, ProductVariant, AccountingEntry, CompanyConfig
 from ..utils import create_reversal_entries
+from .auth import get_current_user
 
 router = APIRouter(prefix="/api/orders", tags=["orders"])
 
@@ -368,7 +369,7 @@ def verify_payment(order_id: int, payment_id: Optional[str] = None, db: Session 
     }
 
 
-@router.get("")
+@router.get("", dependencies=[Depends(get_current_user)])
 def list_orders(db: Session = Depends(get_db)):
     orders = db.query(Order).order_by(Order.created_at.desc()).all()
     return [
@@ -440,7 +441,7 @@ async def upload_payment_screenshot(order_id: int, file: UploadFile = File(...),
     return {"screenshot_url": url}
 
 
-@router.put("/{order_id}/whatsapp-notified")
+@router.put("/{order_id}/whatsapp-notified", dependencies=[Depends(get_current_user)])
 def mark_whatsapp_notified(order_id: int, db: Session = Depends(get_db)):
     """Marca que el admin ya envió la notificación de WhatsApp."""
     order = db.query(Order).filter(Order.id == order_id).first()
@@ -450,7 +451,7 @@ def mark_whatsapp_notified(order_id: int, db: Session = Depends(get_db)):
     return {"ok": True}
 
 
-@router.post("/manual")
+@router.post("/manual", dependencies=[Depends(get_current_user)])
 def create_manual_order(data: CreateManualOrderIn, db: Session = Depends(get_db)):
     order = Order(
         source="manual",
@@ -478,7 +479,7 @@ def create_manual_order(data: CreateManualOrderIn, db: Session = Depends(get_db)
     }
 
 
-@router.put("/{order_id}/status")
+@router.put("/{order_id}/status", dependencies=[Depends(get_current_user)])
 def update_order_status(order_id: int, data: StatusUpdate, db: Session = Depends(get_db)):
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
@@ -498,7 +499,7 @@ def update_order_status(order_id: int, data: StatusUpdate, db: Session = Depends
     return {"ok": True, "status": data.status}
 
 
-@router.delete("/{order_id}")
+@router.delete("/{order_id}", dependencies=[Depends(get_current_user)])
 def delete_order(order_id: int, db: Session = Depends(get_db)):
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
