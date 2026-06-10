@@ -1,6 +1,9 @@
 import cloudinary
 import cloudinary.uploader
+import logging
 import os
+
+logger = logging.getLogger("todotec.cloudinary")
 
 cloudinary.config(
     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME", ""),
@@ -37,5 +40,6 @@ def delete_image(url: str):
         public_id_with_ext = "/".join(segments)
         public_id = public_id_with_ext.rsplit(".", 1)[0]
         cloudinary.uploader.destroy(public_id)
-    except Exception:
-        pass
+    except Exception as e:
+        # No interrumpe la operación principal, pero queda registrado
+        logger.warning("No se pudo eliminar imagen en Cloudinary (%s): %s", url, e)

@@ -60,8 +60,8 @@ def create_sale(data: SaleCreate, db: Session = Depends(get_db)):
         subtotal += item_subtotal
         sale_items_data.append((item_data, product, item_subtotal))
 
-    tax_amount = subtotal * config.tax_rate
-    total = subtotal + tax_amount
+    tax_amount = round(subtotal * float(config.tax_rate or 0), 2)
+    total = round(subtotal + tax_amount, 2)
 
     # Invoice number
     invoice_number = f"{config.invoice_series}-{str(config.invoice_correlativo).zfill(8)}"

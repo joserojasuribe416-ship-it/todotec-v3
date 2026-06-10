@@ -284,7 +284,8 @@ def delete_purchase(purchase_id: int, db: Session = Depends(get_db)):
                 default.stock = max(0, default.stock - item.quantity)
     # Asientos de reversión (historial contable)
     entries = db.query(AccountingEntry).filter(AccountingEntry.purchase_id == p.id).all()
-    create_reversal_entries(entries, db, label=p.invoice_number or f"Compra #{p.id}")
+    # Bug corregido: Purchase no tiene campo invoice_number (causaba error al eliminar)
+    create_reversal_entries(entries, db, label=f"Compra #{p.id}")
     db.delete(p)
     db.commit()
     return {"ok": True}

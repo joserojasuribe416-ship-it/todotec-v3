@@ -10,11 +10,11 @@ router = APIRouter(prefix="/api/cobranzas", tags=["cobranzas"])
 
 
 def _purchase_paid(p: Purchase) -> float:
-    return sum(pay.amount for pay in p.payments)
+    return float(sum(pay.amount for pay in p.payments))
 
 
 def _sale_paid(s: Sale) -> float:
-    return sum(pay.amount for pay in s.payments)
+    return float(sum(pay.amount for pay in s.payments))
 
 
 # ── Cuentas por Pagar (compras a crédito) ────────────────────────────
@@ -25,7 +25,7 @@ def list_payables(db: Session = Depends(get_db)):
     result = []
     for p in purchases:
         paid = _purchase_paid(p)
-        balance = round(p.total_cost - paid, 2)
+        balance = round(float(p.total_cost) - paid, 2)
         result.append(PayableOut(
             id=p.id,
             purchase_date=p.purchase_date,
@@ -49,7 +49,7 @@ def pay_purchase(purchase_id: int, data: PaymentCreate, db: Session = Depends(ge
         raise HTTPException(status_code=404, detail="Compra a crédito no encontrada")
 
     paid_so_far = _purchase_paid(p)
-    balance = p.total_cost - paid_so_far
+    balance = float(p.total_cost) - paid_so_far
     if data.amount <= 0:
         raise HTTPException(status_code=400, detail="El monto debe ser mayor a 0")
     if round(data.amount, 2) > round(balance, 2):
@@ -76,7 +76,7 @@ def pay_purchase(purchase_id: int, data: PaymentCreate, db: Session = Depends(ge
 
     # Actualizar estado
     new_paid = paid_so_far + data.amount
-    new_balance = round(p.total_cost - new_paid, 2)
+    new_balance = round(float(p.total_cost) - new_paid, 2)
     if new_balance <= 0:
         p.status = "pagado"
     else:
@@ -93,7 +93,7 @@ def pay_purchase(purchase_id: int, data: PaymentCreate, db: Session = Depends(ge
         credit_due_date=p.credit_due_date,
         total_cost=p.total_cost,
         amount_paid=round(paid_final, 2),
-        balance=round(p.total_cost - paid_final, 2),
+        balance=round(float(p.total_cost) - paid_final, 2),
         status=p.status,
         notes=p.notes,
         supplier=p.supplier,
@@ -109,7 +109,7 @@ def list_receivables(db: Session = Depends(get_db)):
     result = []
     for s in sales:
         paid = _sale_paid(s)
-        balance = round(s.total - paid, 2)
+        balance = round(float(s.total) - paid, 2)
         result.append(ReceivableOut(
             id=s.id,
             sale_date=s.sale_date,
@@ -135,7 +135,7 @@ def collect_sale(sale_id: int, data: PaymentCreate, db: Session = Depends(get_db
         raise HTTPException(status_code=404, detail="Venta a crédito no encontrada")
 
     paid_so_far = _sale_paid(s)
-    balance = s.total - paid_so_far
+    balance = float(s.total) - paid_so_far
     if data.amount <= 0:
         raise HTTPException(status_code=400, detail="El monto debe ser mayor a 0")
     if round(data.amount, 2) > round(balance, 2):
@@ -162,7 +162,7 @@ def collect_sale(sale_id: int, data: PaymentCreate, db: Session = Depends(get_db
 
     # Actualizar estado
     new_paid = paid_so_far + data.amount
-    new_balance = round(s.total - new_paid, 2)
+    new_balance = round(float(s.total) - new_paid, 2)
     if new_balance <= 0:
         s.status = "cobrado"
     else:
@@ -182,7 +182,7 @@ def collect_sale(sale_id: int, data: PaymentCreate, db: Session = Depends(get_db
         customer_phone=s.customer_phone,
         total=s.total,
         amount_paid=round(paid_final, 2),
-        balance=round(s.total - paid_final, 2),
+        balance=round(float(s.total) - paid_final, 2),
         status=s.status,
         notes=s.notes,
         payments=[PaymentOut.model_validate(pay) for pay in s.payments],

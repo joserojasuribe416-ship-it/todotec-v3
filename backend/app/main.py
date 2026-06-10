@@ -5,6 +5,15 @@ from .database import engine, Base
 from .routers import config, suppliers, products, purchases, sales, accounting, dashboard, categories, cobranzas, brands, appearance, revalidate, orders, auth
 from .routers.auth import get_current_user, require_master, require_owner
 import os
+import logging
+
+# ── Bitácora (logging) ────────────────────────────────────────────────
+# Todos los errores quedan registrados y son visibles en Railway → Logs
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+)
+logger = logging.getLogger("todotec")
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -39,19 +48,31 @@ def _run_migrations():
         "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username VARCHAR UNIQUE NOT NULL, full_name VARCHAR DEFAULT '', password_hash VARCHAR NOT NULL, role VARCHAR DEFAULT 'standard', is_active BOOLEAN DEFAULT TRUE, created_at TIMESTAMP DEFAULT NOW())",
         # Rol Owner: jose pasa a owner (solo si aún no existe ningún owner)
         "UPDATE users SET role = 'owner' WHERE username = 'jose' AND NOT EXISTS (SELECT 1 FROM users WHERE role = 'owner')",
+        # ── Dinero en decimal exacto (NUMERIC) en vez de FLOAT ──
+        "ALTER TABLE products ALTER COLUMN sale_price TYPE NUMERIC(12,2) USING ROUND(sale_price::numeric, 2), ALTER COLUMN ref_cost TYPE NUMERIC(12,2) USING ROUND(ref_cost::numeric, 2)",
+        "ALTER TABLE purchases ALTER COLUMN shipping_cost TYPE NUMERIC(12,2) USING ROUND(shipping_cost::numeric, 2), ALTER COLUMN taxes TYPE NUMERIC(12,2) USING ROUND(taxes::numeric, 2), ALTER COLUMN total_cost TYPE NUMERIC(12,2) USING ROUND(total_cost::numeric, 2)",
+        "ALTER TABLE purchase_items ALTER COLUMN unit_cost TYPE NUMERIC(12,2) USING ROUND(unit_cost::numeric, 2), ALTER COLUMN subtotal TYPE NUMERIC(12,2) USING ROUND(subtotal::numeric, 2)",
+        "ALTER TABLE sales ALTER COLUMN subtotal TYPE NUMERIC(12,2) USING ROUND(subtotal::numeric, 2), ALTER COLUMN tax_amount TYPE NUMERIC(12,2) USING ROUND(tax_amount::numeric, 2), ALTER COLUMN total TYPE NUMERIC(12,2) USING ROUND(total::numeric, 2)",
+        "ALTER TABLE sale_items ALTER COLUMN catalog_price TYPE NUMERIC(12,2) USING ROUND(catalog_price::numeric, 2), ALTER COLUMN sale_price TYPE NUMERIC(12,2) USING ROUND(sale_price::numeric, 2), ALTER COLUMN unit_cost TYPE NUMERIC(12,2) USING ROUND(unit_cost::numeric, 2), ALTER COLUMN subtotal TYPE NUMERIC(12,2) USING ROUND(subtotal::numeric, 2)",
+        "ALTER TABLE accounting_entries ALTER COLUMN amount TYPE NUMERIC(12,2) USING ROUND(amount::numeric, 2)",
+        "ALTER TABLE capital_contributions ALTER COLUMN amount TYPE NUMERIC(12,2) USING ROUND(amount::numeric, 2)",
+        "ALTER TABLE payments ALTER COLUMN amount TYPE NUMERIC(12,2) USING ROUND(amount::numeric, 2)",
+        "ALTER TABLE orders ALTER COLUMN subtotal TYPE NUMERIC(12,2) USING ROUND(subtotal::numeric, 2), ALTER COLUMN shipping_cost TYPE NUMERIC(12,2) USING ROUND(shipping_cost::numeric, 2), ALTER COLUMN total TYPE NUMERIC(12,2) USING ROUND(total::numeric, 2)",
+        "ALTER TABLE company_config ALTER COLUMN exchange_rate TYPE NUMERIC(10,4) USING ROUND(exchange_rate::numeric, 4), ALTER COLUMN tax_rate TYPE NUMERIC(6,4) USING ROUND(tax_rate::numeric, 4)",
     ]
-    with engine.connect() as conn:
-        for sql in migrations:
-            try:
+    # Cada migración en su propia transacción: si una falla, las demás
+    # se ejecutan igual y el error queda registrado en la bitácora.
+    for sql in migrations:
+        try:
+            with engine.begin() as conn:
                 conn.execute(text(sql))
-            except Exception:
-                pass
-        conn.commit()
+        except Exception as e:
+            logger.warning("Migración falló (%s...): %s", sql[:60], e)
 
 try:
     _run_migrations()
 except Exception:
-    pass
+    logger.exception("Error general al ejecutar migraciones")
 
 # Ensure uploads directory exists
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
@@ -157,8 +178,8 @@ def reset_total(db=None):
                 if f != ".gitkeep" and not f.startswith("logo_"):
                     try:
                         os.remove(os.path.join(uploads_dir, f))
-                    except:
-                        pass
+                    except Exception as e:
+                        logger.warning("Reset: no se pudo borrar archivo %s: %s", f, e)
         return {"ok": True, "message": "Reset total completado"}
     except Exception as e:
         db.rollback()

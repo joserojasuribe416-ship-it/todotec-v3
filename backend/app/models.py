@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text, Boolean, JSON
+from sqlalchemy import Column, Integer, String, Float, Numeric, DateTime, ForeignKey, Text, Boolean, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from .database import Base
@@ -21,8 +21,8 @@ class CompanyConfig(Base):
     email = Column(String, default="")
     logo_url = Column(String, default="")
     currency = Column(String, default="PEN")
-    exchange_rate = Column(Float, default=3.75)
-    tax_rate = Column(Float, default=0.18)
+    exchange_rate = Column(Numeric(10, 4), default=3.75)
+    tax_rate = Column(Numeric(6, 4), default=0.18)
     invoice_series = Column(String, default="F001")
     invoice_correlativo = Column(Integer, default=1)
     whatsapp = Column(String, default="")
@@ -64,8 +64,8 @@ class Product(Base):
     brand = Column(String, default="")
     benefit = Column(String, default="")
     description = Column(Text, default="")
-    sale_price = Column(Float, default=0.0)
-    ref_cost = Column(Float, default=0.0)
+    sale_price = Column(Numeric(12, 2), default=0)
+    ref_cost = Column(Numeric(12, 2), default=0)
     is_active = Column(Boolean, default=True)
     show_in_store = Column(Boolean, default=True)
     created_at = Column(DateTime, server_default=func.now())
@@ -122,9 +122,9 @@ class Purchase(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     supplier_id = Column(Integer, ForeignKey("suppliers.id"), nullable=True)
     purchase_date = Column(DateTime, server_default=func.now())
-    shipping_cost = Column(Float, default=0.0)
-    taxes = Column(Float, default=0.0)
-    total_cost = Column(Float, default=0.0)
+    shipping_cost = Column(Numeric(12, 2), default=0)
+    taxes = Column(Numeric(12, 2), default=0)
+    total_cost = Column(Numeric(12, 2), default=0)
     notes = Column(Text, default="")
     is_credit = Column(Boolean, default=False)
     credit_days = Column(Integer, default=0)
@@ -145,8 +145,8 @@ class PurchaseItem(Base):
     purchase_id = Column(Integer, ForeignKey("purchases.id"), nullable=False)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
     quantity = Column(Integer, nullable=False)
-    unit_cost = Column(Float, nullable=False)  # costo unitario (incluye proporción de envío/impuestos)
-    subtotal = Column(Float, nullable=False)
+    unit_cost = Column(Numeric(12, 2), nullable=False)  # costo unitario (incluye proporción de envío/impuestos)
+    subtotal = Column(Numeric(12, 2), nullable=False)
     variants_data = Column(JSON, default=list)  # [{"color": "Negro", "qty": 5}, ...]
 
     purchase = relationship("Purchase", back_populates="items")
@@ -162,9 +162,9 @@ class Sale(Base):
     customer_email = Column(String, default="")
     customer_phone = Column(String, default="")
     customer_address = Column(String, default="")
-    subtotal = Column(Float, default=0.0)
-    tax_amount = Column(Float, default=0.0)
-    total = Column(Float, default=0.0)
+    subtotal = Column(Numeric(12, 2), default=0)
+    tax_amount = Column(Numeric(12, 2), default=0)
+    total = Column(Numeric(12, 2), default=0)
     is_credit = Column(Boolean, default=False)
     credit_days = Column(Integer, default=0)
     credit_due_date = Column(DateTime, nullable=True)
@@ -187,10 +187,10 @@ class SaleItem(Base):
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
     variant_id = Column(Integer, ForeignKey("product_variants.id"), nullable=True)
     quantity = Column(Integer, nullable=False)
-    catalog_price = Column(Float, nullable=False)
-    sale_price = Column(Float, nullable=False)
-    unit_cost = Column(Float, default=0.0)
-    subtotal = Column(Float, nullable=False)
+    catalog_price = Column(Numeric(12, 2), nullable=False)
+    sale_price = Column(Numeric(12, 2), nullable=False)
+    unit_cost = Column(Numeric(12, 2), default=0)
+    subtotal = Column(Numeric(12, 2), nullable=False)
 
     sale = relationship("Sale", back_populates="items")
     product = relationship("Product", back_populates="sale_items")
@@ -206,7 +206,7 @@ class AccountingEntry(Base):
     description = Column(String, nullable=False)
     debit_account = Column(String, nullable=False)
     credit_account = Column(String, nullable=False)
-    amount = Column(Float, nullable=False)
+    amount = Column(Numeric(12, 2), nullable=False)
     purchase_id = Column(Integer, ForeignKey("purchases.id"), nullable=True)
     sale_id = Column(Integer, ForeignKey("sales.id"), nullable=True)
     capital_id = Column(Integer, ForeignKey("capital_contributions.id"), nullable=True)
@@ -278,7 +278,7 @@ class CapitalContribution(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     contribution_date = Column(DateTime, server_default=func.now())
     contributor = Column(String, default="Socio")
-    amount = Column(Float, nullable=False)
+    amount = Column(Numeric(12, 2), nullable=False)
     description = Column(Text, default="")
     created_at = Column(DateTime, server_default=func.now())
 
@@ -291,7 +291,7 @@ class Payment(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     payment_date = Column(DateTime, server_default=func.now())
-    amount = Column(Float, nullable=False)
+    amount = Column(Numeric(12, 2), nullable=False)
     notes = Column(String, default="")
     purchase_id = Column(Integer, ForeignKey("purchases.id"), nullable=True)
     sale_id = Column(Integer, ForeignKey("sales.id"), nullable=True)
@@ -335,9 +335,9 @@ class Order(Base):
     items = Column(JSON, default=list)
 
     # Amounts
-    subtotal = Column(Float, default=0.0)
-    shipping_cost = Column(Float, default=0.0)
-    total = Column(Float, default=0.0)
+    subtotal = Column(Numeric(12, 2), default=0)
+    shipping_cost = Column(Numeric(12, 2), default=0)
+    total = Column(Numeric(12, 2), default=0)
 
     # Origen del pedido
     source = Column(String, default="web")  # web | manual

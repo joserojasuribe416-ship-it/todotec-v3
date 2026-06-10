@@ -100,7 +100,7 @@ def income_statement(db: Session = Depends(get_db)):
     # COGS: cuenta deudora
     cogs = _account(db, "Costo de Ventas")
     gross_profit = sales_total - cogs
-    expenses = 0.0
+    expenses = 0  # entero: compatible con aritmética Decimal
     net_income = gross_profit - expenses
     return {
         "ventas": round(max(sales_total, 0), 2),

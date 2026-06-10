@@ -1,4 +1,5 @@
 import os
+import logging
 import mercadopago
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
 from sqlalchemy.orm import Session
@@ -10,6 +11,7 @@ from ..utils import create_reversal_entries
 from .auth import get_current_user
 
 router = APIRouter(prefix="/api/orders", tags=["orders"])
+logger = logging.getLogger("todotec.orders")
 
 
 # ── Auto-venta al pagar ───────────────────────────────────────────────────────
@@ -59,7 +61,7 @@ def _create_sale_from_order(order: Order, db: Session):
     if not sale_items_data:
         return None  # Nada que registrar
 
-    tax_rate = getattr(config, "tax_rate", 0.18) or 0.18
+    tax_rate = float(getattr(config, "tax_rate", 0.18) or 0.18)
     tax_amount = round(subtotal * tax_rate, 2)
     total = round(subtotal + tax_amount, 2)
 
@@ -324,8 +326,15 @@ async def mp_webhook(request: Request, db: Session = Depends(get_db)):
                         if sale_id:
                             order.sale_id = sale_id
                         db.commit()
+                        logger.info("Webhook MP: pedido #%s pagado, venta %s creada", 10000 + order.id, sale_id)
+            else:
+                logger.warning("Webhook MP: consulta del pago %s devolvió status %s", resource_id, payment_info["status"])
         except Exception:
-            pass
+            db.rollback()
+            # Registrar el error y responder 500: MercadoPago reintenta el aviso
+            # automáticamente, así el pago no se pierde por una falla momentánea.
+            logger.exception("Webhook MP: error procesando pago %s — MP reintentará", resource_id)
+            raise HTTPException(status_code=500, detail="Error procesando webhook, reintentar")
 
     return {"ok": True}
 
@@ -352,8 +361,10 @@ def verify_payment(order_id: int, payment_id: Optional[str] = None, db: Session 
                         order.sale_id = sale_id
                     db.commit()
                     db.refresh(order)
+                    logger.info("Verify: pedido #%s confirmado, venta %s creada", 10000 + order.id, sale_id)
         except Exception:
-            pass
+            db.rollback()
+            logger.exception("Verify: error verificando pago %s del pedido %s", payment_id, order_id)
 
     return {
         "id": order.id,
