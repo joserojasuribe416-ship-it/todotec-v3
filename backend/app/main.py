@@ -59,6 +59,28 @@ def _run_migrations():
         "ALTER TABLE payments ALTER COLUMN amount TYPE NUMERIC(12,2) USING ROUND(amount::numeric, 2)",
         "ALTER TABLE orders ALTER COLUMN subtotal TYPE NUMERIC(12,2) USING ROUND(subtotal::numeric, 2), ALTER COLUMN shipping_cost TYPE NUMERIC(12,2) USING ROUND(shipping_cost::numeric, 2), ALTER COLUMN total TYPE NUMERIC(12,2) USING ROUND(total::numeric, 2)",
         "ALTER TABLE company_config ALTER COLUMN exchange_rate TYPE NUMERIC(10,4) USING ROUND(exchange_rate::numeric, 4), ALTER COLUMN tax_rate TYPE NUMERIC(6,4) USING ROUND(tax_rate::numeric, 4)",
+        # ── Índices para acelerar las consultas frecuentes ──
+        "CREATE INDEX IF NOT EXISTS idx_sales_date ON sales (sale_date)",
+        "CREATE INDEX IF NOT EXISTS idx_sales_credit ON sales (is_credit)",
+        "CREATE INDEX IF NOT EXISTS idx_purchases_date ON purchases (purchase_date)",
+        "CREATE INDEX IF NOT EXISTS idx_purchases_credit ON purchases (is_credit)",
+        "CREATE INDEX IF NOT EXISTS idx_orders_status ON orders (status)",
+        "CREATE INDEX IF NOT EXISTS idx_orders_created ON orders (created_at)",
+        "CREATE INDEX IF NOT EXISTS idx_acc_debit ON accounting_entries (debit_account)",
+        "CREATE INDEX IF NOT EXISTS idx_acc_credit ON accounting_entries (credit_account)",
+        "CREATE INDEX IF NOT EXISTS idx_acc_type ON accounting_entries (entry_type)",
+        "CREATE INDEX IF NOT EXISTS idx_acc_sale ON accounting_entries (sale_id)",
+        "CREATE INDEX IF NOT EXISTS idx_acc_purchase ON accounting_entries (purchase_id)",
+        "CREATE INDEX IF NOT EXISTS idx_saleitems_sale ON sale_items (sale_id)",
+        "CREATE INDEX IF NOT EXISTS idx_saleitems_product ON sale_items (product_id)",
+        "CREATE INDEX IF NOT EXISTS idx_purchitems_purchase ON purchase_items (purchase_id)",
+        "CREATE INDEX IF NOT EXISTS idx_purchitems_product ON purchase_items (product_id)",
+        "CREATE INDEX IF NOT EXISTS idx_variants_product ON product_variants (product_id)",
+        "CREATE INDEX IF NOT EXISTS idx_images_product ON product_images (product_id)",
+        "CREATE INDEX IF NOT EXISTS idx_products_category ON products (category)",
+        "CREATE INDEX IF NOT EXISTS idx_products_store ON products (is_active, show_in_store)",
+        "CREATE INDEX IF NOT EXISTS idx_payments_purchase ON payments (purchase_id)",
+        "CREATE INDEX IF NOT EXISTS idx_payments_sale ON payments (sale_id)",
     ]
     # Cada migración en su propia transacción: si una falla, las demás
     # se ejecutan igual y el error queda registrado en la bitácora.

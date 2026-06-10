@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from ..database import get_db
-from ..models import Category
+from ..models import Category, Product
 from .auth import get_current_user
 from pydantic import BaseModel
 from typing import Optional
@@ -72,8 +72,12 @@ def update_category(cat_id: int, data: CategoryUpdate, db: Session = Depends(get
     cat = db.query(Category).filter(Category.id == cat_id).first()
     if not cat:
         raise HTTPException(status_code=404, detail="Categoría no encontrada")
+    old_name = cat.name
     for field, value in data.model_dump(exclude_none=True).items():
         setattr(cat, field, value)
+    # Propagar el renombre a los productos que usaban el nombre anterior
+    if data.name and data.name != old_name:
+        db.query(Product).filter(Product.category == old_name).update({"category": data.name})
     db.commit()
     db.refresh(cat)
     return cat
@@ -84,6 +88,8 @@ def delete_category(cat_id: int, db: Session = Depends(get_db)):
     cat = db.query(Category).filter(Category.id == cat_id).first()
     if not cat:
         raise HTTPException(status_code=404, detail="Categoría no encontrada")
+    # Los productos que usaban esta categoría quedan "sin categoría"
+    db.query(Product).filter(Product.category == cat.name).update({"category": ""})
     db.delete(cat)
     db.commit()
     return {"ok": True}

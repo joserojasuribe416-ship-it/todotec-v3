@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from ..database import get_db
-from ..models import Brand
+from ..models import Brand, Product
 from pydantic import BaseModel
 from typing import Optional
 
@@ -71,8 +71,12 @@ def update_brand(brand_id: int, data: BrandUpdate, db: Session = Depends(get_db)
     brand = db.query(Brand).filter(Brand.id == brand_id).first()
     if not brand:
         raise HTTPException(status_code=404, detail="Marca no encontrada")
+    old_name = brand.name
     for field, value in data.model_dump(exclude_none=True).items():
         setattr(brand, field, value)
+    # Propagar el renombre a los productos que usaban el nombre anterior
+    if data.name and data.name != old_name:
+        db.query(Product).filter(Product.brand == old_name).update({"brand": data.name})
     db.commit()
     db.refresh(brand)
     return brand
@@ -83,6 +87,8 @@ def delete_brand(brand_id: int, db: Session = Depends(get_db)):
     brand = db.query(Brand).filter(Brand.id == brand_id).first()
     if not brand:
         raise HTTPException(status_code=404, detail="Marca no encontrada")
+    # Los productos que usaban esta marca quedan "sin marca" (no apuntando a un nombre fantasma)
+    db.query(Product).filter(Product.brand == brand.name).update({"brand": ""})
     db.delete(brand)
     db.commit()
     return {"ok": True}
