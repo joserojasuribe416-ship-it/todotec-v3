@@ -2,10 +2,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Check, ShoppingBag, Loader2, QrCode, CreditCard, Upload, X } from 'lucide-react'
+import { ArrowLeft, Check, ShoppingBag, Loader2, QrCode, CreditCard, Upload, X, Ticket } from 'lucide-react'
 import { getImageUrl } from '../../lib/api'
 import { loadCart, clearCart } from '../../lib/cartStorage'
-import { isLoggedIn, getCustomer as getStoredCustomer, apiMe, getAppliedCoupon, clearAppliedCoupon, getToken } from '../../lib/customer'
+import { isLoggedIn, getCustomer as getStoredCustomer, apiMe, getAppliedCoupon, clearAppliedCoupon, getToken, saveAppliedCoupon, apiCheckCoupon, apiMyCoupons } from '../../lib/customer'
 
 // ── Puntos de recojo ──────────────────────────────────────────────────────────
 const PICKUP_POINTS = [
@@ -118,10 +118,17 @@ export default function CheckoutPage() {
   const fileInputRef = useRef(null)
 
   const [coupon, setCoupon] = useState(null)
+  const [availableCoupons, setAvailableCoupons] = useState([])
+  const [applyingCoupon, setApplyingCoupon] = useState(false)
+  const [couponOk, setCouponOk] = useState(false)
+  const [couponErr, setCouponErr] = useState('')
 
   useEffect(() => {
     setCart(loadCart())
     setCoupon(getAppliedCoupon())
+    if (isLoggedIn()) {
+      apiMyCoupons().then(cs => setAvailableCoupons(cs.filter(c => !c.is_used))).catch(() => {})
+    }
     // Cliente con sesión: precargar sus datos guardados (editables)
     if (isLoggedIn()) {
       const fill = (p) => {
@@ -158,6 +165,30 @@ export default function CheckoutPage() {
     const reader = new FileReader()
     reader.onload = ev => setScreenshotPreview(ev.target.result)
     reader.readAsDataURL(file)
+  }
+
+  // ── Cupones en el checkout ─────────────────────────────────────────────────
+  const applyCheckoutCoupon = async (code) => {
+    if (applyingCoupon) return
+    setCouponErr(''); setCouponOk(false); setApplyingCoupon(true)
+    try {
+      const data = await apiCheckCoupon(code, cart.reduce((s, i) => s + i.price * i.quantity, 0))
+      const applied = { code: data.code, percent: data.percent }
+      saveAppliedCoupon(applied)
+      setCoupon(applied)
+      setCouponOk(true)
+      setTimeout(() => setCouponOk(false), 2500)
+    } catch (err) {
+      setCouponErr(err.message)
+    } finally {
+      setApplyingCoupon(false)
+    }
+  }
+
+  const removeCheckoutCoupon = () => {
+    clearAppliedCoupon()
+    setCoupon(null)
+    setCouponOk(false)
   }
 
   // Amounts — el cupón descuenta el subtotal; el IGV se calcula sobre lo descontado
@@ -331,6 +362,43 @@ export default function CheckoutPage() {
                   <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 500, color: '#1E1A1A' }}>{fmt(item.price * item.quantity)}</div>
                 </div>
               ))}
+            </div>
+
+            {/* ── Cupones ── */}
+            <div style={{ marginBottom: 14 }}>
+              {coupon ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#FDF0F0', border: '1px dashed #EEC5C5', borderRadius: 12, padding: '12px 14px' }}>
+                  <Ticket size={16} color="#C49A8A" />
+                  <div style={{ flex: 1, fontFamily: "'Inter', sans-serif" }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#1E1A1A' }}>{coupon.code}</span>
+                    <span style={{ fontSize: 12, color: '#C49A8A', marginLeft: 8 }}>−{coupon.percent}% aplicado</span>
+                    {couponOk && <span style={{ fontSize: 12, color: '#5B7B53', fontWeight: 500, marginLeft: 8 }}><Check size={12} style={{ display: 'inline', verticalAlign: '-2px' }} /> Cupón agregado</span>}
+                  </div>
+                  <button onClick={removeCheckoutCoupon} title="Quitar cupón" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'flex' }}>
+                    <X size={15} />
+                  </button>
+                </div>
+              ) : availableCoupons.length > 0 ? (
+                <div style={{ background: '#fff', border: '1px solid #EDE8E4', borderRadius: 12, padding: '14px 16px', opacity: applyingCoupon ? 0.55 : 1, pointerEvents: applyingCoupon ? 'none' : 'auto', transition: 'opacity 0.2s' }}>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+                    Tus cupones disponibles — toca para aplicar
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {availableCoupons.map(cp => (
+                      <button key={cp.code} onClick={() => applyCheckoutCoupon(cp.code)} disabled={applyingCoupon} style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        background: '#FDF0F0', border: '1px dashed #EEC5C5', borderRadius: 20,
+                        padding: '7px 14px', cursor: applyingCoupon ? 'wait' : 'pointer',
+                        fontFamily: "'Inter', sans-serif", fontSize: 12, color: '#1E1A1A', fontWeight: 500,
+                      }}>
+                        {applyingCoupon ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Ticket size={12} color="#C49A8A" />}
+                        {cp.code} · −{cp.percent}%
+                      </button>
+                    ))}
+                  </div>
+                  {couponErr && <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: '#C0392B', marginTop: 8 }}>{couponErr}</p>}
+                </div>
+              ) : null}
             </div>
 
             {/* Totals */}

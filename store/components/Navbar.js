@@ -123,7 +123,7 @@ function NavbarInner() {
               <Search size={13} color="#C49A8A" />
               <input
                 className="tt-input"
-                style={{ width: 110, fontSize: 12, fontFamily: "'Inter', sans-serif" }}
+                style={{ width: 90, fontSize: 12, fontFamily: "'Inter', sans-serif" }}
                 placeholder="Buscar..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
@@ -139,7 +139,7 @@ function NavbarInner() {
             </Link>
             <Link href={customerName ? '/account' : '/login'} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
               <User size={18} color={customerName ? '#C49A8A' : '#374151'} strokeWidth={1.5} />
-              <span style={{ fontSize: 9, color: customerName ? '#C49A8A' : '#6B7280', fontFamily: "'Inter', sans-serif", letterSpacing: '0.03em', maxWidth: 64, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span className="nb-contact" style={{ fontSize: 9, color: customerName ? '#C49A8A' : '#6B7280', fontFamily: "'Inter', sans-serif", letterSpacing: '0.03em', maxWidth: 64, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {customerName || 'Mi Perfil'}
               </span>
             </Link>

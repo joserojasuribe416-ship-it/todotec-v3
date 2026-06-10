@@ -2,11 +2,11 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Trash2, ArrowLeft, CreditCard, MessageCircle, Plus, Minus, ShoppingBag, Ticket, X, Check } from 'lucide-react'
+import { Trash2, ArrowLeft, CreditCard, MessageCircle, Plus, Minus, ShoppingBag, Ticket, X, Check, Loader2 } from 'lucide-react'
 import Lk from 'next/link'
 import { getImageUrl } from '../../lib/api'
 import { loadCart, storeCart } from '../../lib/cartStorage'
-import { isLoggedIn, getAppliedCoupon, saveAppliedCoupon, clearAppliedCoupon, apiCheckCoupon } from '../../lib/customer'
+import { isLoggedIn, getAppliedCoupon, saveAppliedCoupon, clearAppliedCoupon, apiCheckCoupon, apiMyCoupons } from '../../lib/customer'
 
 export default function CartPage() {
   const router = useRouter()
@@ -14,12 +14,17 @@ export default function CartPage() {
   const [coupon, setCoupon] = useState(null)          // { code, percent }
   const [couponInput, setCouponInput] = useState('')
   const [couponError, setCouponError] = useState('')
+  const [couponOk, setCouponOk] = useState(false)     // "Cupón agregado"
+  const [applying, setApplying] = useState(false)     // sombreado mientras carga
+  const [available, setAvailable] = useState([])      // cupones sin usar del cliente
   const [logged, setLogged] = useState(false)
 
   useEffect(() => {
     setCart(loadCart())
     setCoupon(getAppliedCoupon())
-    setLogged(isLoggedIn())
+    const li = isLoggedIn()
+    setLogged(li)
+    if (li) apiMyCoupons().then(cs => setAvailable(cs.filter(c => !c.is_used))).catch(() => {})
   }, [])
 
   const updateCart = (newCart) => {
@@ -38,23 +43,29 @@ export default function CartPage() {
   const igv = (subtotal - discount) * 0.18
   const total = subtotal - discount + igv
 
-  const applyCoupon = async () => {
-    setCouponError('')
-    if (!couponInput.trim()) return
+  const applyCoupon = async (codeArg) => {
+    const code = (codeArg || couponInput).trim().toUpperCase()
+    if (!code || applying) return
+    setCouponError(''); setCouponOk(false); setApplying(true)
     try {
-      const data = await apiCheckCoupon(couponInput.trim().toUpperCase(), subtotal)
+      const data = await apiCheckCoupon(code, subtotal)
       const applied = { code: data.code, percent: data.percent }
       saveAppliedCoupon(applied)
       setCoupon(applied)
       setCouponInput('')
+      setCouponOk(true)
+      setTimeout(() => setCouponOk(false), 2500)
     } catch (err) {
       setCouponError(err.message)
+    } finally {
+      setApplying(false)
     }
   }
 
   const removeCoupon = () => {
     clearAppliedCoupon()
     setCoupon(null)
+    setCouponOk(false)
   }
 
   const goCheckout = () => router.push('/checkout')
@@ -147,7 +158,10 @@ export default function CartPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FDF0F0', border: '1px dashed #EEC5C5', borderRadius: 10, padding: '10px 12px' }}>
                       <Ticket size={15} color="#C49A8A" />
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 600, color: '#1E1A1A' }}>{coupon.code}</div>
+                        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 600, color: '#1E1A1A' }}>
+                          {coupon.code}
+                          {couponOk && <span style={{ color: '#5B7B53', fontWeight: 500, marginLeft: 8 }}><Check size={11} style={{ display: 'inline', verticalAlign: '-1px' }} /> Cupón agregado</span>}
+                        </div>
                         <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: '#C49A8A' }}>−{coupon.percent}% aplicado</div>
                       </div>
                       <button onClick={removeCoupon} title="Quitar cupón" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', display: 'flex' }}>
@@ -155,16 +169,35 @@ export default function CartPage() {
                       </button>
                     </div>
                   ) : logged ? (
-                    <div>
+                    <div style={{ opacity: applying ? 0.55 : 1, pointerEvents: applying ? 'none' : 'auto', transition: 'opacity 0.2s' }}>
+                      {/* Tus cupones disponibles: un click y listo */}
+                      {available.length > 0 && (
+                        <div style={{ marginBottom: 10 }}>
+                          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>Tus cupones disponibles</div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                            {available.map(cp => (
+                              <button key={cp.code} onClick={() => applyCoupon(cp.code)} disabled={applying} style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 6,
+                                background: '#FDF0F0', border: '1px dashed #EEC5C5', borderRadius: 20,
+                                padding: '6px 12px', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+                                fontSize: 11, color: '#1E1A1A', fontWeight: 500,
+                              }}>
+                                <Ticket size={11} color="#C49A8A" /> {cp.code} · −{cp.percent}%
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       <div style={{ display: 'flex', gap: 8 }}>
                         <input
                           value={couponInput}
                           onChange={e => setCouponInput(e.target.value.toUpperCase())}
                           placeholder="Código de cupón"
+                          disabled={applying}
                           style={{ flex: 1, minWidth: 0, padding: '10px 12px', border: '1px solid #EDE8E4', borderRadius: 8, fontFamily: "'Inter', sans-serif", fontSize: 12, outline: 'none', background: '#FAF7F4', color: '#1E1A1A' }}
                         />
-                        <button onClick={applyCoupon} style={{ background: '#EEC5C5', color: '#1E1A1A', border: 'none', borderRadius: 8, padding: '0 16px', fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                          Aplicar
+                        <button onClick={() => applyCoupon()} disabled={applying} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#EEC5C5', color: '#1E1A1A', border: 'none', borderRadius: 8, padding: '0 16px', fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', cursor: applying ? 'wait' : 'pointer', whiteSpace: 'nowrap' }}>
+                          {applying ? <><Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> Aplicando...</> : 'Aplicar'}
                         </button>
                       </div>
                       {couponError && <p style={{ fontFamily: "'Inter', sans-serif", fontSize: 11, color: '#C0392B', marginTop: 6 }}>{couponError}</p>}
