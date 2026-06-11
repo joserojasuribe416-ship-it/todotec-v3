@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from .database import engine, Base
 from .routers import config, suppliers, products, purchases, sales, accounting, dashboard, categories, cobranzas, brands, necessities, appearance, revalidate, orders, auth, customers, clients
 from .routers.auth import get_current_user, require_master, require_owner
@@ -32,7 +31,6 @@ def _run_migrations():
         "ALTER TABLE sales ADD COLUMN IF NOT EXISTS credit_days INTEGER DEFAULT 0",
         "CREATE TABLE IF NOT EXISTS payments (id SERIAL PRIMARY KEY, payment_date TIMESTAMP DEFAULT NOW(), amount FLOAT NOT NULL, notes VARCHAR DEFAULT '', purchase_id INTEGER REFERENCES purchases(id) ON DELETE CASCADE, sale_id INTEGER REFERENCES sales(id) ON DELETE CASCADE, created_at TIMESTAMP DEFAULT NOW())",
         "ALTER TABLE products ADD COLUMN IF NOT EXISTS brand VARCHAR DEFAULT ''",
-        "ALTER TABLE products ADD COLUMN IF NOT EXISTS benefit VARCHAR DEFAULT ''",
         "CREATE TABLE IF NOT EXISTS brands (id SERIAL PRIMARY KEY, name VARCHAR UNIQUE NOT NULL, description VARCHAR DEFAULT '', is_active BOOLEAN DEFAULT TRUE, \"order\" INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT NOW())",
         "CREATE TABLE IF NOT EXISTS banners (id SERIAL PRIMARY KEY, tag VARCHAR DEFAULT '', title VARCHAR DEFAULT '', subtitle VARCHAR DEFAULT '', cta VARCHAR DEFAULT 'Ver catálogo', href VARCHAR DEFAULT '/catalog', image_url VARCHAR DEFAULT '', bg VARCHAR DEFAULT '#1E1A1A', accent VARCHAR DEFAULT '#EEC5C5', text_bg VARCHAR DEFAULT '#1E1A1A', text_color VARCHAR DEFAULT '#FAF7F4', tag_color VARCHAR DEFAULT '#EEC5C5', cta_bg VARCHAR DEFAULT '#EEC5C5', cta_color VARCHAR DEFAULT '#1E1A1A', \"order\" INTEGER DEFAULT 0, is_active BOOLEAN DEFAULT TRUE, created_at TIMESTAMP DEFAULT NOW())",
         "CREATE TABLE IF NOT EXISTS homepage_sections (id SERIAL PRIMARY KEY, key VARCHAR UNIQUE NOT NULL, title VARCHAR DEFAULT '', subtitle VARCHAR DEFAULT '', product_ids JSON DEFAULT '[]', max_items INTEGER DEFAULT 10, is_active BOOLEAN DEFAULT TRUE)",
@@ -102,17 +100,11 @@ def _run_migrations():
         "INSERT INTO necessities (name, description, is_active, \"order\") VALUES ('Sensibilidad', '', TRUE, 4) ON CONFLICT DO NOTHING",
         "INSERT INTO necessities (name, description, is_active, \"order\") VALUES ('Luminosidad', '', TRUE, 5) ON CONFLICT DO NOTHING",
         "INSERT INTO necessities (name, description, is_active, \"order\") VALUES ('Firmeza', '', TRUE, 6) ON CONFLICT DO NOTHING",
-        # Mapear productos: si benefit = 'Anti-manchas', asignar necessity_id = (SELECT id FROM necessities WHERE name = 'Anti-manchas')
-        "UPDATE products SET necessity_id = (SELECT id FROM necessities WHERE name = 'Anti-manchas') WHERE benefit = 'Anti-manchas' AND necessity_id IS NULL",
-        "UPDATE products SET necessity_id = (SELECT id FROM necessities WHERE name = 'Hidratación') WHERE benefit = 'Hidratación' AND necessity_id IS NULL",
-        "UPDATE products SET necessity_id = (SELECT id FROM necessities WHERE name = 'Anti-edad') WHERE benefit = 'Anti-edad' AND necessity_id IS NULL",
-        "UPDATE products SET necessity_id = (SELECT id FROM necessities WHERE name = 'Tratamiento acné') WHERE benefit = 'Tratamiento acné' AND necessity_id IS NULL",
-        "UPDATE products SET necessity_id = (SELECT id FROM necessities WHERE name = 'Sensibilidad') WHERE benefit = 'Sensibilidad' AND necessity_id IS NULL",
-        "UPDATE products SET necessity_id = (SELECT id FROM necessities WHERE name = 'Luminosidad') WHERE benefit = 'Luminosidad' AND necessity_id IS NULL",
-        "UPDATE products SET necessity_id = (SELECT id FROM necessities WHERE name = 'Firmeza') WHERE benefit = 'Firmeza' AND necessity_id IS NULL",
         # Para valores de benefit que no coincidan con las predeterminadas, dejar en NULL (el usuario puede asignar manualmente)
         "CREATE INDEX IF NOT EXISTS idx_products_necessity ON products (necessity_id)",
         # ── Campos adicionales de productos: guía de uso, tipo de piel, especificaciones ──
+        # Limpieza: la columna benefit fue reemplazada por necessity_id
+        "ALTER TABLE products DROP COLUMN IF EXISTS benefit",
         "ALTER TABLE products ADD COLUMN IF NOT EXISTS usage_guide TEXT DEFAULT ''",
         "ALTER TABLE products ADD COLUMN IF NOT EXISTS skin_type TEXT DEFAULT ''",
         "ALTER TABLE products ADD COLUMN IF NOT EXISTS specifications TEXT DEFAULT ''",
@@ -130,10 +122,6 @@ try:
     _run_migrations()
 except Exception:
     logger.exception("Error general al ejecutar migraciones")
-
-# Ensure uploads directory exists
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app = FastAPI(
     title="TodoTec API",
@@ -165,9 +153,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Static files for uploads
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
-
 # Routers
 # Routers de solo-admin: protegidos completos con JWT
 ADMIN_ONLY = [Depends(get_current_user)]
@@ -177,12 +162,12 @@ app.include_router(sales.router, dependencies=ADMIN_ONLY)
 app.include_router(accounting.router, dependencies=ADMIN_ONLY)
 app.include_router(dashboard.router, dependencies=ADMIN_ONLY)
 app.include_router(cobranzas.router, dependencies=ADMIN_ONLY)
-app.include_router(brands.router, dependencies=ADMIN_ONLY)
-app.include_router(necessities.router, dependencies=ADMIN_ONLY)
 app.include_router(revalidate.router, dependencies=ADMIN_ONLY)
 app.include_router(clients.router, dependencies=ADMIN_ONLY)
 # Routers mixtos: la tienda usa los GET públicos; las mutaciones se
 # protegen endpoint por endpoint dentro de cada router
+app.include_router(brands.router)
+app.include_router(necessities.router)
 app.include_router(config.router)
 app.include_router(products.router)
 app.include_router(categories.router)
@@ -211,12 +196,14 @@ def reset_total(db=None):
     from .models import (
         Sale, SaleItem, Purchase, PurchaseItem,
         Product, ProductVariant, ProductImage,
-        Supplier, AccountingEntry, CapitalContribution, CompanyConfig
+        Supplier, AccountingEntry, CapitalContribution, CompanyConfig,
+        Order, Payment, Customer
     )
-    import os, shutil
     db = SessionLocal()
     try:
         # Delete in order (foreign keys)
+        db.query(Payment).delete()          # abonos de créditos
+        db.query(Order).delete()            # pedidos web (referencian ventas/productos)
         db.query(AccountingEntry).delete()
         db.query(CapitalContribution).delete()
         db.query(SaleItem).delete()
@@ -227,6 +214,9 @@ def reset_total(db=None):
         db.query(ProductVariant).delete()
         db.query(Product).delete()
         db.query(Supplier).delete()
+        # Las cuentas de clientes y sus cupones se CONSERVAN (son personas reales),
+        # pero sus carritos guardados apuntaban a productos eliminados → se vacían
+        db.query(Customer).update({Customer.cart: []})
         # Reset invoice correlativo
         config = db.query(CompanyConfig).first()
         if config:

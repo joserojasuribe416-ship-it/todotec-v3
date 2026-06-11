@@ -1,0 +1,37 @@
+# Respaldo diario de la base de datos de producción.
+# Guarda una copia completa en GitHub (pestaña Actions → artifacts) por 30 días.
+#
+# REQUIERE UN PASO MANUAL (una sola vez):
+#   GitHub → repo todotec-v3 → Settings → Secrets and variables → Actions →
+#   New repository secret → Name: DATABASE_PUBLIC_URL
+#   Value: la "Public Network URL" de PostgreSQL en Railway
+#   (Railway → servicio Postgres → Variables → DATABASE_PUBLIC_URL)
+name: Respaldo diario BD
+
+on:
+  schedule:
+    - cron: '0 9 * * *'   # 9:00 UTC = 4:00 am hora de Perú
+  workflow_dispatch:        # también se puede ejecutar a mano desde GitHub
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generar respaldo con pg_dump
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_PUBLIC_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::Falta el secret DATABASE_PUBLIC_URL — ver instrucciones en este archivo"
+            exit 1
+          fi
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+          pg_dump "$DATABASE_URL" --format=custom --no-owner --file=glowiskin_$(date +%Y%m%d).dump
+          ls -lh *.dump
+
+      - name: Guardar el respaldo (30 días)
+        uses: actions/upload-artifact@v4
+        with:
+          name: respaldo-bd-${{ github.run_id }}
+          path: '*.dump'
+          retention-days: 30

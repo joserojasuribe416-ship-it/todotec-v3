@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from ..database import get_db
 from ..models import Brand, Product
+from .auth import get_current_user
 from pydantic import BaseModel
 from typing import Optional
 
@@ -54,7 +55,7 @@ def list_all_brands(db: Session = Depends(get_db)):
     return db.query(Brand).order_by(Brand.order, Brand.name).all()
 
 
-@router.post("", response_model=BrandOut, status_code=201)
+@router.post("", response_model=BrandOut, status_code=201, dependencies=[Depends(get_current_user)])
 def create_brand(data: BrandCreate, db: Session = Depends(get_db)):
     exists = db.query(Brand).filter(Brand.name == data.name).first()
     if exists:
@@ -66,7 +67,7 @@ def create_brand(data: BrandCreate, db: Session = Depends(get_db)):
     return brand
 
 
-@router.put("/{brand_id}", response_model=BrandOut)
+@router.put("/{brand_id}", response_model=BrandOut, dependencies=[Depends(get_current_user)])
 def update_brand(brand_id: int, data: BrandUpdate, db: Session = Depends(get_db)):
     brand = db.query(Brand).filter(Brand.id == brand_id).first()
     if not brand:
@@ -82,7 +83,7 @@ def update_brand(brand_id: int, data: BrandUpdate, db: Session = Depends(get_db)
     return brand
 
 
-@router.delete("/{brand_id}")
+@router.delete("/{brand_id}", dependencies=[Depends(get_current_user)])
 def delete_brand(brand_id: int, db: Session = Depends(get_db)):
     brand = db.query(Brand).filter(Brand.id == brand_id).first()
     if not brand:

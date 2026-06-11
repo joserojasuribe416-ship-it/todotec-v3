@@ -87,7 +87,9 @@ def update_product(product_id: int, data: ProductUpdate, db: Session = Depends(g
     p = db.query(Product).filter(Product.id == product_id).first()
     if not p:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-    for field, value in data.model_dump(exclude_none=True).items():
+    # exclude_unset: solo actualiza los campos enviados, y permite limpiar
+    # valores con null explícito (ej. quitar la etiqueta de necesidad)
+    for field, value in data.model_dump(exclude_unset=True).items():
         setattr(p, field, value)
     db.commit()
     db.refresh(p)

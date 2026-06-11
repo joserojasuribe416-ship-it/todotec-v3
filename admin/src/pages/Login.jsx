@@ -17,7 +17,14 @@ export default function Login() {
     setError('')
     setLoading(true)
     try {
-      await login(username.trim(), password)
+      // Leer los valores REALES de los campos al momento de enviar.
+      // El autofill de Chrome rellena los inputs visualmente pero no
+      // actualiza el estado de React hasta que el usuario interactúa;
+      // FormData lee lo que de verdad está escrito en el formulario.
+      const fd = new FormData(e.currentTarget)
+      const u = String(fd.get('username') || username).trim().toLowerCase()
+      const p = String(fd.get('password') || password)
+      await login(u, p)
       navigate('/', { replace: true })
     } catch (err) {
       setError(err.response?.data?.detail || 'Usuario o contraseña incorrectos')
@@ -61,6 +68,7 @@ export default function Login() {
               </label>
               <input
                 type="text"
+                name="username"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
                 placeholder="ej: jose"
@@ -85,6 +93,7 @@ export default function Login() {
               <div style={{ position: 'relative' }}>
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  name="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"

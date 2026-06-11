@@ -53,6 +53,12 @@ def test_endpoints_de_tienda_son_publicos():
     assert client.get("/api/categories").status_code == 200
     assert client.get("/api/config").status_code == 200
     assert client.get("/api/appearance/banners").status_code == 200
+    # Filtros del catálogo: marcas y necesidades deben ser públicos
+    assert client.get("/api/brands").status_code == 200
+    assert client.get("/api/necessities").status_code == 200
+    # ...pero sus mutaciones siguen protegidas
+    assert client.post("/api/brands", json={"name": "X"}).status_code == 401
+    assert client.post("/api/necessities", json={"name": "X"}).status_code == 401
 
 
 def test_jerarquia_de_roles():
@@ -140,6 +146,46 @@ def test_pedido_web_qr_genera_venta_y_descuenta_stock():
 
     orden = [o for o in client.get("/api/orders", headers=H).json() if o["id"] == oid][0]
     assert orden["sale_id"] is not None  # venta enlazada creada
+
+
+def test_pedido_sin_stock_se_rechaza():
+    """El checkout rechaza pedidos que superan el stock ANTES de cobrar."""
+    pid = client.get("/api/products").json()[0]["id"]
+    r = client.post("/api/orders/create-qr", json={
+        "items": [{"product_id": pid, "name": "Serum", "quantity": 99999, "price": 49.90}],
+        "customer": {"nombre": "X", "apellido": "Y", "email": "x@y.com", "dni": "1", "celular": "9"},
+        "delivery": {"type": "pickup"},
+        "subtotal": 100, "shipping_cost": 0, "total": 118})
+    assert r.status_code == 400
+    assert "Stock insuficiente" in r.json()["detail"]
+
+
+def test_cupon_se_libera_al_cancelar_pedido():
+    """Si el pedido se cancela, el cliente recupera su cupón."""
+    H = _owner()
+    pid = client.get("/api/products").json()[0]["id"]
+    r = client.post("/api/customers/register", json={
+        "email": "libera@glowi.pe", "password": "clave123", "accept_privacy": True})
+    HC = {"Authorization": f"Bearer {r.json()['access_token']}"}
+    cupon = r.json()["coupon"]
+
+    r = client.post("/api/orders/create-qr", json={
+        "items": [{"product_id": pid, "name": "Serum", "quantity": 1, "price": 49.90}],
+        "customer": {"nombre": "L", "apellido": "G", "email": "libera@glowi.pe", "dni": "1", "celular": "9"},
+        "delivery": {"type": "pickup"},
+        "subtotal": 49.90, "shipping_cost": 0, "total": 58.88,
+        "coupon_code": cupon}, headers=HC)
+    assert r.status_code == 200
+    oid = r.json()["order_id"]
+
+    # usado: no se puede aplicar de nuevo
+    assert client.post("/api/customers/check-coupon",
+                       json={"code": cupon, "subtotal": 100}, headers=HC).status_code == 400
+    # admin cancela el pedido → el cupón vuelve a estar disponible
+    assert client.put(f"/api/orders/{oid}/status",
+                      json={"status": "cancelled"}, headers=H).status_code == 200
+    assert client.post("/api/customers/check-coupon",
+                       json={"code": cupon, "subtotal": 100}, headers=HC).status_code == 200
 
 
 # ── 3. Categorías y marcas propagan cambios ───────────────────────────

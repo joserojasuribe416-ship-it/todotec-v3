@@ -48,15 +48,18 @@ def _create_sale_from_order(order: Order, db: Session):
         if not product:
             continue
 
-        # Buscar variante por color
+        # Buscar variante por color — with_for_update bloquea la fila mientras
+        # se descuenta el stock (evita que dos pagos simultáneos tomen la misma unidad)
         variant = None
         if variant_color:
             variant = db.query(ProductVariant).filter(
                 ProductVariant.product_id == product_id,
                 ProductVariant.color == variant_color,
-            ).first()
+            ).with_for_update().first()
         if not variant and product.variants:
-            variant = product.variants[0]
+            variant = db.query(ProductVariant).filter(
+                ProductVariant.product_id == product_id,
+            ).with_for_update().first()
 
         final_price = round(price * discount_factor, 2)
         item_subtotal = round(final_price * quantity, 2)
@@ -125,8 +128,14 @@ def _create_sale_from_order(order: Order, db: Session):
             subtotal=item_data["subtotal"],
         ))
 
-        # Descontar stock
+        # Descontar stock — si no alcanza (caso límite: el pago ya se hizo),
+        # se descuenta lo que hay y queda registrado en la bitácora para reponer
         if variant:
+            if variant.stock < item_data["quantity"]:
+                logger.warning(
+                    "SOBREVENTA en pedido #%s: %s (%s) pedido x%s pero stock era %s — reponer y contactar al cliente",
+                    10000 + order.id, product.name, variant.color, item_data["quantity"], variant.stock,
+                )
             variant.stock = max(0, variant.stock - item_data["quantity"])
         elif product.variants:
             for v in product.variants:
@@ -223,6 +232,40 @@ class CreateQROrderIn(BaseModel):
     coupon_code: Optional[str] = ""
 
 
+def _validate_stock(items, db: Session):
+    """Rechaza el pedido ANTES de cobrar si no hay stock suficiente."""
+    for item in items:
+        product = db.query(Product).filter(Product.id == item.product_id, Product.is_active == True).first()
+        if not product:
+            raise HTTPException(status_code=400, detail=f"El producto '{item.name}' ya no está disponible")
+        if item.variant_color:
+            variant = db.query(ProductVariant).filter(
+                ProductVariant.product_id == item.product_id,
+                ProductVariant.color == item.variant_color,
+            ).first()
+            available = variant.stock if variant else product.total_stock
+            label = f"{product.name} ({item.variant_color})"
+        else:
+            available = product.total_stock
+            label = product.name
+        if available < item.quantity:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Stock insuficiente para {label}: quedan {available} unidad(es) y pediste {item.quantity}",
+            )
+
+
+def _release_coupon(order: Order, db: Session):
+    """Devuelve el cupón al cliente cuando su pedido se cancela o elimina."""
+    if order.coupon_code:
+        coupon = db.query(Coupon).filter(Coupon.code == order.coupon_code).first()
+        if coupon and coupon.is_used:
+            coupon.is_used = False
+            coupon.used_at = None
+            coupon.order_id = None
+            logger.info("Cupón %s liberado (pedido #%s cancelado/eliminado)", coupon.code, 10000 + order.id)
+
+
 def _resolve_coupon_and_customer(data, request: Request, db: Session):
     """Identifica al cliente (si hay sesión) y valida/consume el cupón.
     Devuelve (customer_id, coupon, discount). El descuento se calcula
@@ -259,6 +302,8 @@ def create_preference(data: CreatePreferenceIn, request: Request, db: Session = 
         backend_url = f"https://{backend_url}"
     sandbox = os.getenv("MP_SANDBOX", "true").lower() == "true"
 
+    # Stock validado ANTES de mandar al cliente a pagar
+    _validate_stock(data.items, db)
     # Cliente registrado + cupón (validado y calculado en el servidor)
     customer_id, coupon, discount = _resolve_coupon_and_customer(data, request, db)
     discounted_subtotal = round(data.subtotal - discount, 2)
@@ -468,6 +513,7 @@ def list_orders(db: Session = Depends(get_db)):
 @router.post("/create-qr")
 def create_qr_order(data: CreateQROrderIn, request: Request, db: Session = Depends(get_db)):
     """Crea un pedido con pago por QR (pendiente de confirmación por admin)."""
+    _validate_stock(data.items, db)
     customer_id, coupon, discount = _resolve_coupon_and_customer(data, request, db)
     discounted_subtotal = round(data.subtotal - discount, 2)
     total = round(discounted_subtotal * 1.18 + data.shipping_cost, 2)
@@ -561,6 +607,10 @@ def update_order_status(order_id: int, data: StatusUpdate, db: Session = Depends
     prev_status = order.status
     order.status = data.status
 
+    # Pedido cancelado: el cupón vuelve a estar disponible para el cliente
+    if data.status == "cancelled" and prev_status != "cancelled":
+        _release_coupon(order, db)
+
     # Si se marca como pagado y aún no tiene venta, generarla
     if data.status == "paid" and prev_status != "paid" and not order.sale_id:
         db.flush()
@@ -596,6 +646,9 @@ def delete_order(order_id: int, db: Session = Depends(get_db)):
             entries = db.query(AccountingEntry).filter(AccountingEntry.sale_id == sale.id).all()
             create_reversal_entries(entries, db, label=f"Pedido #{10000 + order.id}")
             db.delete(sale)
+
+    # El cupón usado en este pedido vuelve al cliente
+    _release_coupon(order, db)
 
     db.delete(order)
     db.commit()

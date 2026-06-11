@@ -1,0 +1,32 @@
+# Red de seguridad: cada push corre las pruebas vitales automáticamente.
+# Si algo se rompe, GitHub marca el commit con una X roja y envía un correo —
+# ANTES de que el error llegue a los clientes.
+name: Pruebas vitales
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Instalar dependencias
+        run: |
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Correr pruebas vitales
+        run: python -m pytest tests/ -v

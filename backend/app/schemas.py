@@ -177,7 +177,6 @@ class PurchaseItemCreate(BaseModel):
     product_name: Optional[str] = None
     category: Optional[str] = ""
     brand: Optional[str] = ""
-    benefit: Optional[str] = ""
     description: Optional[str] = ""
     sale_price: float = 0.0
     quantity: int

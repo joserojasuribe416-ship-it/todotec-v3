@@ -1,5 +1,6 @@
 import os
-from datetime import datetime, timedelta
+import logging
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -11,6 +12,7 @@ from ..database import get_db
 from ..models import User
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+logger = logging.getLogger("todotec.auth")
 
 # ── Config ────────────────────────────────────────────────────────────────────
 # JWT_SECRET debe estar definido como variable de entorno (Railway → Variables).
@@ -38,7 +40,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def create_token(data: dict, expires_hours: int = ACCESS_TOKEN_EXPIRE_HOURS) -> str:
     payload = data.copy()
-    payload["exp"] = datetime.utcnow() + timedelta(hours=expires_hours)
+    payload["exp"] = datetime.now(timezone.utc) + timedelta(hours=expires_hours)
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
@@ -132,9 +134,14 @@ def seed_users(db: Session):
 @router.post("/login", response_model=TokenOut)
 def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     seed_users(db)  # garantiza que existen las cuentas iniciales
-    user = db.query(User).filter(User.username == form.username, User.is_active == True).first()
+    # Usuario insensible a mayúsculas y sin espacios: "Bruno " == "bruno"
+    username = form.username.strip().lower()
+    user = db.query(User).filter(User.username == username, User.is_active == True).first()
     if not user or not verify_password(form.password, user.password_hash):
+        # Bitácora para diagnosticar problemas de acceso (sin guardar la contraseña)
+        logger.warning("Login admin FALLIDO — usuario: '%s' (existe: %s)", form.username, bool(user))
         raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
+    logger.info("Login admin OK — %s (%s)", user.username, user.role)
     token = create_token({"sub": user.username, "role": user.role})
     return {
         "access_token": token,
