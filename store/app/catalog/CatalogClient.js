@@ -39,15 +39,22 @@ function FilterGroup({ title, children, defaultOpen = true }) {
   )
 }
 
-export default function CatalogClient({ products, categories, activeCategory, activeSearch }) {
+export default function CatalogClient({ products, categories, brands, necessities, activeCategory, activeBrand, activeNecessity, activeSearch }) {
   const router = useRouter()
   const [sort, setSort] = useState('relevance')
   const [priceRange, setPriceRange] = useState(null)
+  const [selectedBrand, setSelectedBrand] = useState(activeBrand || '')
+  const [selectedNecessity, setSelectedNecessity] = useState(activeNecessity || null)
 
   const sorted = products
     .filter(p => {
-      if (!priceRange) return true
-      return p.sale_price >= priceRange.min && p.sale_price < priceRange.max
+      // Filtro precio
+      if (priceRange && (p.sale_price < priceRange.min || p.sale_price >= priceRange.max)) return false
+      // Filtro marca
+      if (selectedBrand && p.brand !== selectedBrand) return false
+      // Filtro necesidad
+      if (selectedNecessity && p.necessity_id !== selectedNecessity) return false
+      return true
     })
     .sort((a, b) => {
       if (sort === 'price_asc')  return a.sale_price - b.sale_price
@@ -108,9 +115,9 @@ export default function CatalogClient({ products, categories, activeCategory, ac
           style={{
             padding: '6px 14px', borderRadius: 20, fontSize: 10, whiteSpace: 'nowrap',
             border: '1px solid', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
-            background: !activeCategory ? '#1E1A1A' : '#fff',
-            color: !activeCategory ? '#EEC5C5' : '#1E1A1A',
-            borderColor: !activeCategory ? '#1E1A1A' : '#EDE8E4',
+            background: !activeCategory && !activeBrand && !activeNecessity ? '#1E1A1A' : '#fff',
+            color: !activeCategory && !activeBrand && !activeNecessity ? '#EEC5C5' : '#1E1A1A',
+            borderColor: !activeCategory && !activeBrand && !activeNecessity ? '#1E1A1A' : '#EDE8E4',
           }}
         >Todos</button>
         {categories.map(cat => (
@@ -125,6 +132,32 @@ export default function CatalogClient({ products, categories, activeCategory, ac
               borderColor: activeCategory === cat ? '#1E1A1A' : '#EDE8E4',
             }}
           >{cat}</button>
+        ))}
+        {brands.map(brand => (
+          <button
+            key={brand}
+            onClick={() => router.push(`/catalog?brand=${encodeURIComponent(brand)}`)}
+            style={{
+              padding: '6px 14px', borderRadius: 20, fontSize: 10, whiteSpace: 'nowrap',
+              border: '1px solid', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+              background: selectedBrand === brand ? '#1E1A1A' : '#fff',
+              color: selectedBrand === brand ? '#EEC5C5' : '#1E1A1A',
+              borderColor: selectedBrand === brand ? '#1E1A1A' : '#EDE8E4',
+            }}
+          >{brand}</button>
+        ))}
+        {necessities.map(n => (
+          <button
+            key={n.id}
+            onClick={() => router.push(`/catalog?necessity=${n.id}`)}
+            style={{
+              padding: '6px 14px', borderRadius: 20, fontSize: 10, whiteSpace: 'nowrap',
+              border: '1px solid', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+              background: selectedNecessity === n.id ? '#1E1A1A' : '#fff',
+              color: selectedNecessity === n.id ? '#EEC5C5' : '#1E1A1A',
+              borderColor: selectedNecessity === n.id ? '#1E1A1A' : '#EDE8E4',
+            }}
+          >{n.name}</button>
         ))}
         {PRICE_RANGES.map(r => (
           <button
@@ -167,6 +200,66 @@ export default function CatalogClient({ products, categories, activeCategory, ac
                       {activeCategory === cat.value && <span style={{ color: '#EEC5C5', fontSize: 9 }}>✓</span>}
                     </div>
                     <span style={{ fontSize: 11, color: '#374151', fontFamily: "'Inter', sans-serif" }}>{cat.name}</span>
+                  </div>
+                </div>
+              ))}
+            </FilterGroup>
+
+            <FilterGroup title="Marca">
+              {[{ name: 'Todas', value: '' }, ...brands.map(b => ({ name: b, value: b }))].map(brand => (
+                <div
+                  key={brand.value}
+                  onClick={() => {
+                    setSelectedBrand(brand.value)
+                    const qs = new URLSearchParams()
+                    if (brand.value) qs.set('brand', brand.value)
+                    if (selectedNecessity) qs.set('necessity', selectedNecessity)
+                    if (activeCategory) qs.set('category', activeCategory)
+                    if (activeSearch) qs.set('search', activeSearch)
+                    router.push(`/catalog${qs.toString() ? '?' + qs.toString() : ''}`)
+                  }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 0', cursor: 'pointer' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{
+                      width: 14, height: 14, borderRadius: 3, flexShrink: 0,
+                      border: selectedBrand === brand.value ? 'none' : '1.5px solid #EDE8E4',
+                      background: selectedBrand === brand.value ? '#1E1A1A' : '#fff',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      {selectedBrand === brand.value && <span style={{ color: '#EEC5C5', fontSize: 9 }}>✓</span>}
+                    </div>
+                    <span style={{ fontSize: 11, color: '#374151', fontFamily: "'Inter', sans-serif" }}>{brand.name}</span>
+                  </div>
+                </div>
+              ))}
+            </FilterGroup>
+
+            <FilterGroup title="Necesidad">
+              {[{ id: null, name: 'Todas' }, ...necessities].map(n => (
+                <div
+                  key={n.id || 'all'}
+                  onClick={() => {
+                    setSelectedNecessity(n.id)
+                    const qs = new URLSearchParams()
+                    if (n.id) qs.set('necessity', n.id)
+                    if (selectedBrand) qs.set('brand', selectedBrand)
+                    if (activeCategory) qs.set('category', activeCategory)
+                    if (activeSearch) qs.set('search', activeSearch)
+                    router.push(`/catalog${qs.toString() ? '?' + qs.toString() : ''}`)
+                  }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 0', cursor: 'pointer' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{
+                      width: 14, height: 14, borderRadius: 3, flexShrink: 0,
+                      border: selectedNecessity === n.id ? 'none' : '1.5px solid #EDE8E4',
+                      background: selectedNecessity === n.id ? '#1E1A1A' : '#fff',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      {selectedNecessity === n.id && <span style={{ color: '#EEC5C5', fontSize: 9 }}>✓</span>}
+                    </div>
+                    <span style={{ fontSize: 11, color: '#374151', fontFamily: "'Inter', sans-serif" }}>{n.name}</span>
                   </div>
                 </div>
               ))}

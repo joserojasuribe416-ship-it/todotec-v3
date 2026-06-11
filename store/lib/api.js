@@ -20,6 +20,20 @@ export async function fetchCategories() {
   return data.map(c => c.name)
 }
 
+export async function fetchBrands() {
+  const res = await fetch(`${API_BASE}/api/brands`, { cache: 'force-cache' })
+  if (!res.ok) return []
+  const data = await res.json()
+  return data.map(b => b.name)
+}
+
+export async function fetchNecessities() {
+  const res = await fetch(`${API_BASE}/api/necessities`, { cache: 'force-cache' })
+  if (!res.ok) return []
+  const data = await res.json()
+  return data.map(n => ({ id: n.id, name: n.name }))
+}
+
 export async function fetchConfig() {
   const res = await fetch(`${API_BASE}/api/config`, { cache: 'force-cache' })
   if (!res.ok) return { company_name: 'Glowi Skin', whatsapp: '', email: '' }
