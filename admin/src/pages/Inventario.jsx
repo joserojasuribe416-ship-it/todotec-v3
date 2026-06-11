@@ -5,8 +5,9 @@ import toast from 'react-hot-toast'
 
 function NewProductModal({ onClose, onSaved }) {
   const [form, setForm] = useState({
-    name: '', category: '', brand: '', benefit: '',
-    description: '', sale_price: '', ref_cost: '', show_in_store: true
+    name: '', category: '', brand: '', necessity_id: null,
+    description: '', usage_guide: '', skin_type: '', specifications: '',
+    sale_price: '', ref_cost: '', show_in_store: true
   })
   const [variants, setVariants] = useState([{ color: '' }])
   const [categoryList, setCategoryList] = useState([])
@@ -33,8 +34,11 @@ function NewProductModal({ onClose, onSaved }) {
         name: form.name.trim(),
         category: form.category,
         brand: form.brand,
-        benefit: form.benefit,
+        necessity_id: form.necessity_id || null,
         description: form.description,
+        usage_guide: form.usage_guide,
+        skin_type: form.skin_type,
+        specifications: form.specifications,
         sale_price: parseFloat(form.sale_price) || 0,
         ref_cost: parseFloat(form.ref_cost) || 0,
         show_in_store: form.show_in_store,
@@ -89,12 +93,20 @@ function NewProductModal({ onClose, onSaved }) {
               <p className="text-xs text-gray-400 mt-1">Estimado. El costo real se registra al hacer la compra.</p>
             </div>
             <div className="col-span-2">
-              <label className="label">Beneficio</label>
-              <input className="input" value={form.benefit} onChange={e => set('benefit', e.target.value)} placeholder="Ej: Hidratación, Anti-acné..." />
-            </div>
-            <div className="col-span-2">
               <label className="label">Descripción</label>
               <textarea className="input" rows={2} value={form.description} onChange={e => set('description', e.target.value)} />
+            </div>
+            <div className="col-span-2">
+              <label className="label">Guía de Uso</label>
+              <textarea className="input" rows={2} value={form.usage_guide} onChange={e => set('usage_guide', e.target.value)} placeholder="Ej: Aplicar en rostro limpio..." />
+            </div>
+            <div className="col-span-2">
+              <label className="label">Tipo de Piel</label>
+              <textarea className="input" rows={2} value={form.skin_type} onChange={e => set('skin_type', e.target.value)} placeholder="Ej: Ideal para todo tipo de piel..." />
+            </div>
+            <div className="col-span-2">
+              <label className="label">Especificaciones</label>
+              <textarea className="input" rows={2} value={form.specifications} onChange={e => set('specifications', e.target.value)} placeholder="Ej: Ingredientes clave, modo de uso, precauciones..." />
             </div>
           </div>
 
@@ -143,7 +155,18 @@ function NewProductModal({ onClose, onSaved }) {
 }
 
 function EditModal({ product, onClose, onSaved }) {
-  const [data, setData] = useState({ name: product.name, category: product.category, brand: product.brand || '', benefit: product.benefit || '', description: product.description, sale_price: product.sale_price, show_in_store: product.show_in_store })
+  const [data, setData] = useState({
+    name: product.name,
+    category: product.category,
+    brand: product.brand || '',
+    necessity_id: product.necessity_id || null,
+    description: product.description,
+    usage_guide: product.usage_guide || '',
+    skin_type: product.skin_type || '',
+    specifications: product.specifications || '',
+    sale_price: product.sale_price,
+    show_in_store: product.show_in_store
+  })
   const [uploading, setUploading] = useState(false)
   const [variantUploading, setVariantUploading] = useState({})
   const [categoryList, setCategoryList] = useState([])
@@ -211,10 +234,6 @@ function EditModal({ product, onClose, onSaved }) {
                 {brandList.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
               </select>
             </div>
-            <div>
-              <label className="label">Beneficio</label>
-              <input className="input" value={data.benefit} onChange={e => setData(d => ({ ...d, benefit: e.target.value }))} placeholder="Ej: Hidratación, Anti-acné..." />
-            </div>
           </div>
           <div>
             <label className="label">Precio de venta (S/)</label>
@@ -223,6 +242,18 @@ function EditModal({ product, onClose, onSaved }) {
           <div>
             <label className="label">Descripción</label>
             <textarea className="input" rows={3} value={data.description} onChange={e => setData(d => ({ ...d, description: e.target.value }))} />
+          </div>
+          <div>
+            <label className="label">Guía de Uso</label>
+            <textarea className="input" rows={3} value={data.usage_guide} onChange={e => setData(d => ({ ...d, usage_guide: e.target.value }))} placeholder="Ej: Aplicar en rostro limpio..." />
+          </div>
+          <div>
+            <label className="label">Tipo de Piel</label>
+            <textarea className="input" rows={3} value={data.skin_type} onChange={e => setData(d => ({ ...d, skin_type: e.target.value }))} placeholder="Ej: Ideal para todo tipo de piel..." />
+          </div>
+          <div>
+            <label className="label">Especificaciones</label>
+            <textarea className="input" rows={3} value={data.specifications} onChange={e => setData(d => ({ ...d, specifications: e.target.value }))} placeholder="Ej: Ingredientes clave, modo de uso..." />
           </div>
           <div className="flex items-center gap-3">
             <input type="checkbox" id="store" checked={data.show_in_store} onChange={e => setData(d => ({ ...d, show_in_store: e.target.checked }))} className="w-4 h-4 accent-[#C49A8A]" />

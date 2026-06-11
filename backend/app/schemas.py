@@ -122,6 +122,9 @@ class ProductCreate(BaseModel):
     brand: Optional[str] = ""
     necessity_id: Optional[int] = None
     description: Optional[str] = ""
+    usage_guide: Optional[str] = ""
+    skin_type: Optional[str] = ""
+    specifications: Optional[str] = ""
     sale_price: float = 0.0
     ref_cost: float = 0.0
     show_in_store: bool = True
@@ -132,6 +135,9 @@ class ProductUpdate(BaseModel):
     brand: Optional[str] = None
     necessity_id: Optional[int] = None
     description: Optional[str] = None
+    usage_guide: Optional[str] = None
+    skin_type: Optional[str] = None
+    specifications: Optional[str] = None
     sale_price: Optional[float] = None
     ref_cost: Optional[float] = None
     is_active: Optional[bool] = None
@@ -145,6 +151,9 @@ class ProductOut(BaseModel):
     brand: str = ""
     necessity_id: Optional[int] = None
     description: str
+    usage_guide: str = ""
+    skin_type: str = ""
+    specifications: str = ""
     sale_price: float
     ref_cost: float = 0.0
     is_active: bool

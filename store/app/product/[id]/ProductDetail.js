@@ -1,9 +1,45 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ShoppingBag, Package, ChevronLeft, Check } from 'lucide-react'
+import { ShoppingBag, Package, ChevronLeft, Check, ChevronDown } from 'lucide-react'
 import { getImageUrl } from '../../../lib/api'
 import { loadCart, storeCart } from '../../../lib/cartStorage'
+
+function AccordionSection({ title, children, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen)
+
+  return (
+    <div style={{ borderBottom: '1px solid #EDE8E4' }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '16px 0', background: 'none', border: 'none', cursor: 'pointer',
+          fontFamily: "'Josefin Sans', sans-serif", fontSize: 13, fontWeight: 300,
+          color: '#1E1A1A', letterSpacing: '0.05em', textTransform: 'uppercase'
+        }}
+      >
+        {title}
+        <ChevronDown
+          size={16}
+          style={{
+            color: '#9CA3AF', transition: 'transform 0.3s',
+            transform: open ? 'rotate(180deg)' : 'rotate(0deg)'
+          }}
+        />
+      </button>
+      {open && (
+        <div style={{
+          paddingBottom: 16,
+          fontFamily: "'Inter', sans-serif", fontSize: 14, color: '#6B7280',
+          lineHeight: 1.8, fontWeight: 300
+        }}>
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function ProductDetail({ product }) {
   const [selectedVariant, setSelectedVariant] = useState(product.variants?.[0] || null)
@@ -97,8 +133,9 @@ export default function ProductDetail({ product }) {
             </div>
           </div>
 
-          {/* Info */}
+          {/* Info - Reorganizado */}
           <div style={{ paddingTop: 8 }}>
+            {/* Categoría */}
             {product.category && (
               <span style={{
                 display: 'inline-block', fontFamily: "'Inter', sans-serif",
@@ -107,25 +144,23 @@ export default function ProductDetail({ product }) {
                 marginBottom: 16, borderBottom: '1px solid #EEC5C5', paddingBottom: 2
               }}>{product.category}</span>
             )}
+
+            {/* Nombre */}
             <h1 style={{
               fontFamily: "'Josefin Sans', sans-serif",
               fontSize: 'clamp(1.6rem, 3.5vw, 2.4rem)',
               fontWeight: 100, color: '#1E1A1A',
               letterSpacing: '0.04em', textTransform: 'uppercase',
-              lineHeight: 1.1, marginBottom: 14
+              lineHeight: 1.1, marginBottom: 20
             }}>{product.name}</h1>
+
+            {/* Precio */}
             <div style={{
               fontFamily: "'Inter', sans-serif",
               fontSize: 28, fontWeight: 300, color: '#1E1A1A', marginBottom: 24, letterSpacing: '0.02em'
             }}>{fmt(product.sale_price)}</div>
 
-            {product.description && (
-              <p style={{ fontFamily: "'Inter', sans-serif", color: '#6B7280', marginBottom: 28, lineHeight: 1.8, fontSize: 14, fontWeight: 300 }}>
-                {product.description}
-              </p>
-            )}
-
-            {/* Variants */}
+            {/* Color - Variants */}
             {product.variants?.length > 0 && (
               <div style={{ marginBottom: 24 }}>
                 <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, fontWeight: 400, color: '#9CA3AF', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>
@@ -156,8 +191,8 @@ export default function ProductDetail({ product }) {
               </div>
             )}
 
-            {/* Qty */}
-            <div style={{ marginBottom: 28 }}>
+            {/* Cantidad */}
+            <div style={{ marginBottom: 24 }}>
               <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: '#9CA3AF', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10 }}>Cantidad</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 0, width: 'fit-content', border: '1px solid #EDE8E4', borderRadius: 8, overflow: 'hidden' }}>
                 <button onClick={() => setQty(q => Math.max(1, q - 1))} style={{
@@ -172,8 +207,8 @@ export default function ProductDetail({ product }) {
               </div>
             </div>
 
-            {/* CTA */}
-            <div style={{ display: 'flex', gap: 10 }}>
+            {/* Botón de compra */}
+            <div style={{ display: 'flex', gap: 10, marginBottom: 32 }}>
               <button onClick={addToCart} disabled={!inStock} style={{
                 flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 fontFamily: "'Inter', sans-serif", fontWeight: 400, fontSize: 12,
@@ -195,10 +230,35 @@ export default function ProductDetail({ product }) {
             </div>
 
             {!inStock && (
-              <p style={{ fontFamily: "'Inter', sans-serif", color: '#C49A8A', fontSize: 12, marginTop: 12, fontWeight: 300, letterSpacing: '0.04em' }}>
+              <p style={{ fontFamily: "'Inter', sans-serif", color: '#C49A8A', fontSize: 12, marginBottom: 24, fontWeight: 300, letterSpacing: '0.04em' }}>
                 Este producto está agotado.
               </p>
             )}
+
+            {/* Acordeones - Panales */}
+            <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid #EDE8E4' }}>
+              <AccordionSection title="Descripción" defaultOpen={true}>
+                {product.description}
+              </AccordionSection>
+
+              {product.usage_guide && (
+                <AccordionSection title="Guía de Uso" defaultOpen={false}>
+                  <p>{product.usage_guide}</p>
+                </AccordionSection>
+              )}
+
+              {product.skin_type && (
+                <AccordionSection title="Tipo de Piel" defaultOpen={false}>
+                  <p>{product.skin_type}</p>
+                </AccordionSection>
+              )}
+
+              {product.specifications && (
+                <AccordionSection title="Especificaciones" defaultOpen={false}>
+                  <div style={{ whiteSpace: 'pre-line' }}>{product.specifications}</div>
+                </AccordionSection>
+              )}
+            </div>
           </div>
         </div>
       </div>

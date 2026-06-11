@@ -112,6 +112,10 @@ def _run_migrations():
         "UPDATE products SET necessity_id = (SELECT id FROM necessities WHERE name = 'Firmeza') WHERE benefit = 'Firmeza' AND necessity_id IS NULL",
         # Para valores de benefit que no coincidan con las predeterminadas, dejar en NULL (el usuario puede asignar manualmente)
         "CREATE INDEX IF NOT EXISTS idx_products_necessity ON products (necessity_id)",
+        # ── Campos adicionales de productos: guía de uso, tipo de piel, especificaciones ──
+        "ALTER TABLE products ADD COLUMN IF NOT EXISTS usage_guide TEXT DEFAULT ''",
+        "ALTER TABLE products ADD COLUMN IF NOT EXISTS skin_type TEXT DEFAULT ''",
+        "ALTER TABLE products ADD COLUMN IF NOT EXISTS specifications TEXT DEFAULT ''",
     ]
     # Cada migración en su propia transacción: si una falla, las demás
     # se ejecutan igual y el error queda registrado en la bitácora.
