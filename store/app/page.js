@@ -54,7 +54,7 @@ export default async function HomePage() {
           }}>
             <div>
               <div style={{ fontFamily: "'Josefin Sans', sans-serif", fontSize: 20, fontWeight: 100, color: '#FAF7F4', letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1.2 }}>
-                Retiro en<br />Lima Centro
+                Puntos para<br />recojo gratis
               </div>
               <div style={{ fontSize: 11, fontWeight: 300, color: '#6B7280', marginTop: 4, fontFamily: "'Inter', sans-serif" }}>
                 Coordinamos entrega directa
