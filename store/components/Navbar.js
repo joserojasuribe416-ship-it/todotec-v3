@@ -143,7 +143,7 @@ function NavbarInner() {
                 {customerName || 'Mi Perfil'}
               </span>
             </Link>
-            <Link href="/cart" style={{ textDecoration: 'none', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            <button onClick={() => window.dispatchEvent(new Event('openCartDrawer'))} aria-label="Abrir carrito" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
               <div style={{ position: 'relative' }}>
                 <ShoppingCart size={18} color="#374151" strokeWidth={1.5} />
                 {cartCount > 0 && (
@@ -156,7 +156,7 @@ function NavbarInner() {
                 )}
               </div>
               <span className="nb-contact" style={{ fontSize: 9, color: '#6B7280', fontFamily: "'Inter', sans-serif", letterSpacing: '0.03em' }}>Carrito</span>
-            </Link>
+            </button>
           </div>
 
         </div>

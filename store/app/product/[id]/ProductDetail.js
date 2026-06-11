@@ -69,6 +69,7 @@ export default function ProductDetail({ product }) {
       if (idx >= 0) cart[idx].quantity += qty
       else cart.push(item)
       storeCart(cart)
+      window.dispatchEvent(new Event('openCartDrawer'))
       window.dispatchEvent(new Event('cartUpdated'))
       setAdded(true)
       setTimeout(() => setAdded(false), 2000)

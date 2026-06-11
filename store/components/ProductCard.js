@@ -34,6 +34,7 @@ export default function ProductCard({ product }) {
         variant_color: null,
       })
       storeCart(cart)
+      window.dispatchEvent(new Event('openCartDrawer'))
       window.dispatchEvent(new Event('cartUpdated'))
       const btn = e.currentTarget
       const original = btn.innerHTML

@@ -3,6 +3,7 @@ import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import WelcomeBanner from '../components/WelcomeBanner'
 import Prefetcher from '../components/Prefetcher'
+import CartDrawer from '../components/CartDrawer'
 import { Analytics } from '@vercel/analytics/react'
 
 export default function RootLayout({ children }) {
@@ -17,6 +18,7 @@ export default function RootLayout({ children }) {
       <body>
         <Navbar />
         <WelcomeBanner />
+        <CartDrawer />
         <Prefetcher />
         <main className="min-h-screen">
           {children}
