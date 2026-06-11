@@ -39,9 +39,8 @@ function NewProductModal({ onClose, onSaved }) {
         ref_cost: parseFloat(form.ref_cost) || 0,
         show_in_store: form.show_in_store,
       })
-      for (const v of variants) {
-        await addVariant(product.id, { color: v.color.trim(), stock: 0 })
-      }
+      // Variantes en paralelo: un solo "viaje" al servidor en vez de uno por color
+      await Promise.all(variants.map(v => addVariant(product.id, { color: v.color.trim(), stock: 0 })))
       toast.success('Producto creado')
       onSaved()
       onClose()

@@ -35,6 +35,31 @@ api.interceptors.response.use(
 export default api
 
 // ── Config ────────────────────────────────────────────────────────────
+// ── Compresión de imágenes en el navegador ────────────────────────────
+// Las fotos de celular pesan 3-8 MB; comprimirlas antes de subir hace la
+// subida ~20x más rápida. Máx 1600px, JPEG 82%. Si el resultado no es más
+// liviano (o el archivo ya es pequeño), se sube el original.
+const compressImage = (file, maxDim = 1600, quality = 0.82) => new Promise((resolve) => {
+  if (!file?.type?.startsWith('image/') || file.type === 'image/gif' || file.size < 300 * 1024) return resolve(file)
+  const img = new Image()
+  const url = URL.createObjectURL(file)
+  img.onload = () => {
+    URL.revokeObjectURL(url)
+    const scale = Math.min(1, maxDim / Math.max(img.width, img.height))
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.round(img.width * scale)
+    canvas.height = Math.round(img.height * scale)
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+    canvas.toBlob(blob => {
+      if (blob && blob.size < file.size) {
+        resolve(new File([blob], file.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' }))
+      } else resolve(file)
+    }, 'image/jpeg', quality)
+  }
+  img.onerror = () => { URL.revokeObjectURL(url); resolve(file) }
+  img.src = url
+})
+
 export const getConfig = () => api.get('/config').then(r => r.data)
 export const updateConfig = (data) => api.put('/config', data).then(r => r.data)
 export const uploadLogo = (file) => {
@@ -61,13 +86,13 @@ export const deleteProduct = (id) => api.delete(`/products/${id}`).then(r => r.d
 export const addVariant = (productId, data) => api.post(`/products/${productId}/variants`, data).then(r => r.data)
 export const getCategories = () => api.get('/products/categories').then(r => r.data)
 export const getBrands = () => api.get('/brands').then(r => r.data)
-export const uploadProductImage = (productId, file) => {
-  const fd = new FormData(); fd.append('file', file)
+export const uploadProductImage = async (productId, file) => {
+  const fd = new FormData(); fd.append('file', await compressImage(file))
   return api.post(`/products/${productId}/images`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data)
 }
 export const deleteProductImage = (imageId) => api.delete(`/products/images/${imageId}`).then(r => r.data)
-export const uploadVariantImage = (variantId, file) => {
-  const fd = new FormData(); fd.append('file', file)
+export const uploadVariantImage = async (variantId, file) => {
+  const fd = new FormData(); fd.append('file', await compressImage(file))
   return api.post(`/products/variants/${variantId}/image`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data)
 }
 export const deleteVariantImage = (variantId) => api.delete(`/products/variants/${variantId}/image`).then(r => r.data)
@@ -99,8 +124,8 @@ export const updateAnnouncement = (text) => api.put('/appearance/announcement', 
 export const getBannersAll = () => api.get('/appearance/banners/all').then(r => r.data)
 export const getBannersActive = () => api.get('/appearance/banners').then(r => r.data)
 export const updateBanner = (id, data) => api.put(`/appearance/banners/${id}`, data).then(r => r.data)
-export const uploadBannerImage = (id, file) => {
-  const fd = new FormData(); fd.append('file', file)
+export const uploadBannerImage = async (id, file) => {
+  const fd = new FormData(); fd.append('file', await compressImage(file, 2000))
   return api.post(`/appearance/banners/${id}/image`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data)
 }
 export const deleteBannerImage = (id) => api.delete(`/appearance/banners/${id}/image`).then(r => r.data)

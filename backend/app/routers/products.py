@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from typing import List, Optional
 from ..database import get_db
 from ..models import Product, ProductVariant, ProductImage
@@ -28,7 +28,13 @@ def list_products(
     store_only: bool = Query(False),
     db: Session = Depends(get_db)
 ):
-    q = db.query(Product)
+    # Eager loading: trae variantes, imágenes y compras en 4 consultas totales,
+    # en vez de 3 consultas POR PRODUCTO (problema N+1 que ralentizaba el módulo)
+    q = db.query(Product).options(
+        selectinload(Product.variants),
+        selectinload(Product.images),
+        selectinload(Product.purchase_items),
+    )
     if search:
         q = q.filter(Product.name.ilike(f"%{search}%"))
     if category:
