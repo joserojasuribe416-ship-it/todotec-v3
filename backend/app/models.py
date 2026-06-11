@@ -62,7 +62,7 @@ class Product(Base):
     name = Column(String, nullable=False)
     category = Column(String, default="")
     brand = Column(String, default="")
-    benefit = Column(String, default="")
+    necessity_id = Column(Integer, ForeignKey("necessities.id"), nullable=True)
     description = Column(Text, default="")
     sale_price = Column(Numeric(12, 2), default=0)
     ref_cost = Column(Numeric(12, 2), default=0)
@@ -72,6 +72,7 @@ class Product(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
 
+    necessity = relationship("Necessity")
     variants = relationship("ProductVariant", back_populates="product", cascade="all, delete-orphan")
     images = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan")
     purchase_items = relationship("PurchaseItem", back_populates="product")
@@ -230,6 +231,17 @@ class Category(Base):
 
 class Brand(Base):
     __tablename__ = "brands"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, unique=True, nullable=False)
+    description = Column(String, default="")
+    is_active = Column(Boolean, default=True)
+    order = Column(Integer, default=0)
+    created_at = Column(DateTime, server_default=func.now())
+
+
+class Necessity(Base):
+    __tablename__ = "necessities"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, nullable=False)

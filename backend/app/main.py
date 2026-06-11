@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from .database import engine, Base
-from .routers import config, suppliers, products, purchases, sales, accounting, dashboard, categories, cobranzas, brands, appearance, revalidate, orders, auth, customers, clients
+from .routers import config, suppliers, products, purchases, sales, accounting, dashboard, categories, cobranzas, brands, necessities, appearance, revalidate, orders, auth, customers, clients
 from .routers.auth import get_current_user, require_master, require_owner
 import os
 import logging
@@ -90,6 +90,28 @@ def _run_migrations():
         "CREATE INDEX IF NOT EXISTS idx_products_store ON products (is_active, show_in_store)",
         "CREATE INDEX IF NOT EXISTS idx_payments_purchase ON payments (purchase_id)",
         "CREATE INDEX IF NOT EXISTS idx_payments_sale ON payments (sale_id)",
+        # ── Necesidades (reemplaza campo benefit) ──
+        "CREATE TABLE IF NOT EXISTS necessities (id SERIAL PRIMARY KEY, name VARCHAR UNIQUE NOT NULL, description VARCHAR DEFAULT '', is_active BOOLEAN DEFAULT TRUE, \"order\" INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT NOW())",
+        "ALTER TABLE products ADD COLUMN IF NOT EXISTS necessity_id INTEGER REFERENCES necessities(id) ON DELETE SET NULL",
+        # ── Migración: mapear valores actuales de benefit a necessity_id ──
+        # Anti-manchas → id 1, Hidratación → id 2, Anti-edad → id 3, etc.
+        "INSERT INTO necessities (name, description, is_active, \"order\") VALUES ('Anti-manchas', '', TRUE, 0) ON CONFLICT DO NOTHING",
+        "INSERT INTO necessities (name, description, is_active, \"order\") VALUES ('Hidratación', '', TRUE, 1) ON CONFLICT DO NOTHING",
+        "INSERT INTO necessities (name, description, is_active, \"order\") VALUES ('Anti-edad', '', TRUE, 2) ON CONFLICT DO NOTHING",
+        "INSERT INTO necessities (name, description, is_active, \"order\") VALUES ('Tratamiento acné', '', TRUE, 3) ON CONFLICT DO NOTHING",
+        "INSERT INTO necessities (name, description, is_active, \"order\") VALUES ('Sensibilidad', '', TRUE, 4) ON CONFLICT DO NOTHING",
+        "INSERT INTO necessities (name, description, is_active, \"order\") VALUES ('Luminosidad', '', TRUE, 5) ON CONFLICT DO NOTHING",
+        "INSERT INTO necessities (name, description, is_active, \"order\") VALUES ('Firmeza', '', TRUE, 6) ON CONFLICT DO NOTHING",
+        # Mapear productos: si benefit = 'Anti-manchas', asignar necessity_id = (SELECT id FROM necessities WHERE name = 'Anti-manchas')
+        "UPDATE products SET necessity_id = (SELECT id FROM necessities WHERE name = 'Anti-manchas') WHERE benefit = 'Anti-manchas' AND necessity_id IS NULL",
+        "UPDATE products SET necessity_id = (SELECT id FROM necessities WHERE name = 'Hidratación') WHERE benefit = 'Hidratación' AND necessity_id IS NULL",
+        "UPDATE products SET necessity_id = (SELECT id FROM necessities WHERE name = 'Anti-edad') WHERE benefit = 'Anti-edad' AND necessity_id IS NULL",
+        "UPDATE products SET necessity_id = (SELECT id FROM necessities WHERE name = 'Tratamiento acné') WHERE benefit = 'Tratamiento acné' AND necessity_id IS NULL",
+        "UPDATE products SET necessity_id = (SELECT id FROM necessities WHERE name = 'Sensibilidad') WHERE benefit = 'Sensibilidad' AND necessity_id IS NULL",
+        "UPDATE products SET necessity_id = (SELECT id FROM necessities WHERE name = 'Luminosidad') WHERE benefit = 'Luminosidad' AND necessity_id IS NULL",
+        "UPDATE products SET necessity_id = (SELECT id FROM necessities WHERE name = 'Firmeza') WHERE benefit = 'Firmeza' AND necessity_id IS NULL",
+        # Para valores de benefit que no coincidan con las predeterminadas, dejar en NULL (el usuario puede asignar manualmente)
+        "CREATE INDEX IF NOT EXISTS idx_products_necessity ON products (necessity_id)",
     ]
     # Cada migración en su propia transacción: si una falla, las demás
     # se ejecutan igual y el error queda registrado en la bitácora.
@@ -152,6 +174,7 @@ app.include_router(accounting.router, dependencies=ADMIN_ONLY)
 app.include_router(dashboard.router, dependencies=ADMIN_ONLY)
 app.include_router(cobranzas.router, dependencies=ADMIN_ONLY)
 app.include_router(brands.router, dependencies=ADMIN_ONLY)
+app.include_router(necessities.router, dependencies=ADMIN_ONLY)
 app.include_router(revalidate.router, dependencies=ADMIN_ONLY)
 app.include_router(clients.router, dependencies=ADMIN_ONLY)
 # Routers mixtos: la tienda usa los GET públicos; las mutaciones se

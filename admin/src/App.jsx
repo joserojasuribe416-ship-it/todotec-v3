@@ -10,8 +10,7 @@ import Ventas from './pages/Ventas'
 import Contabilidad from './pages/Contabilidad'
 import Configuracion from './pages/Configuracion'
 import Cobranzas from './pages/Cobranzas'
-import Categorias from './pages/Categorias'
-import Marcas from './pages/Marcas'
+import Etiquetas from './pages/Etiquetas'
 import Apariencia from './pages/Apariencia'
 import Pedidos from './pages/Pedidos'
 import Usuarios from './pages/Usuarios'
@@ -43,8 +42,7 @@ export default function App() {
             <Route path="ventas" element={<Ventas />} />
             <Route path="cobranzas" element={<Cobranzas />} />
             <Route path="contabilidad" element={<Contabilidad />} />
-            <Route path="categorias" element={<Categorias />} />
-            <Route path="marcas" element={<Marcas />} />
+            <Route path="etiquetas" element={<Etiquetas />} />
             <Route path="apariencia" element={<Apariencia />} />
             <Route path="pedidos" element={<Pedidos />} />
             <Route path="clientes" element={<Clientes />} />

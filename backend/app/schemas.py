@@ -105,12 +105,22 @@ class VariantOut(BaseModel):
         from_attributes = True
 
 
+# ── Necessity ───────────────────────────────────────────────────────
+class NecessityOut(BaseModel):
+    id: int
+    name: str
+    description: str
+    is_active: bool
+    class Config:
+        from_attributes = True
+
+
 # ── Product ──────────────────────────────────────────────────────────
 class ProductCreate(BaseModel):
     name: str
     category: Optional[str] = ""
     brand: Optional[str] = ""
-    benefit: Optional[str] = ""
+    necessity_id: Optional[int] = None
     description: Optional[str] = ""
     sale_price: float = 0.0
     ref_cost: float = 0.0
@@ -120,7 +130,7 @@ class ProductUpdate(BaseModel):
     name: Optional[str] = None
     category: Optional[str] = None
     brand: Optional[str] = None
-    benefit: Optional[str] = None
+    necessity_id: Optional[int] = None
     description: Optional[str] = None
     sale_price: Optional[float] = None
     ref_cost: Optional[float] = None
@@ -133,7 +143,7 @@ class ProductOut(BaseModel):
     name: str
     category: str
     brand: str = ""
-    benefit: str = ""
+    necessity_id: Optional[int] = None
     description: str
     sale_price: float
     ref_cost: float = 0.0
