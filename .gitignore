@@ -11,6 +11,8 @@ backend/.env
 
 # Node
 admin/node_modules/
+admin/dist/
+admin/*.timestamp-*.mjs
 admin/.env.local
 store/node_modules/
 store/.env.local
@@ -18,4 +20,5 @@ store/.next/
 
 # OS
 .DS_Store
+.Rhistory
 *.log
