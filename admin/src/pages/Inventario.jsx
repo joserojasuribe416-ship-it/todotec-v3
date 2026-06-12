@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { getProducts, updateProduct, deleteProduct, getCategories, getBrands, uploadProductImage, deleteProductImage, uploadVariantImage, deleteVariantImage, createProduct, addVariant } from '../api/client'
-import { Search, Edit2, Trash2, X, Image, Eye, EyeOff, Camera, Plus } from 'lucide-react'
+import { Search, Edit2, Trash2, X, Image, Eye, EyeOff, Camera, Plus, Boxes, Package } from 'lucide-react'
 import toast from 'react-hot-toast'
+import PacksManager from '../components/PacksManager'
 
 function NewProductModal({ onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -362,6 +363,7 @@ function EditModal({ product, onClose, onSaved }) {
 }
 
 export default function Inventario() {
+  const [tab, setTab] = useState('products')
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [search, setSearch] = useState('')
@@ -431,13 +433,25 @@ export default function Inventario() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Inventario</h1>
-          <p className="text-sm text-gray-500">{displayProducts.length} producto{displayProducts.length !== 1 ? 's' : ''}</p>
+          <p className="text-sm text-gray-500">Productos físicos y packs promocionales</p>
         </div>
-        <button className="btn-blue flex items-center gap-2" onClick={() => setCreating(true)}>
+        {tab === 'products' && <button className="btn-blue flex items-center gap-2" onClick={() => setCreating(true)}>
           <Plus size={15} /> Nuevo producto
-        </button>
+        </button>}
       </div>
 
+      <div className="border-b border-gray-200">
+        <div className="flex gap-7">
+          <button onClick={() => setTab('products')} className={`pb-3 px-1 border-b-2 font-semibold flex items-center gap-2 ${tab === 'products' ? 'border-[#1E1A1A] text-[#1E1A1A]' : 'border-transparent text-gray-500'}`}>
+            <Package size={16} /> Productos
+          </button>
+          <button onClick={() => setTab('packs')} className={`pb-3 px-1 border-b-2 font-semibold flex items-center gap-2 ${tab === 'packs' ? 'border-[#1E1A1A] text-[#1E1A1A]' : 'border-transparent text-gray-500'}`}>
+            <Boxes size={16} /> Packs
+          </button>
+        </div>
+      </div>
+
+      {tab === 'packs' ? <PacksManager /> : <>
       {/* Filters */}
       <div className="flex gap-3 flex-wrap">
         <div className="relative">
@@ -574,6 +588,7 @@ export default function Inventario() {
           })
         }} />
       )}
+      </>}
     </div>
   )
 }

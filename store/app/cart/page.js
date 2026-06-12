@@ -35,8 +35,23 @@ export default function CartPage() {
   const updateQty = (key, delta) => updateCart(cart.map(i => i.key === key ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i))
   const remove = (key) => updateCart(cart.filter(i => i.key !== key))
   const clear = () => updateCart([])
+  const packGroups = Object.values(cart.filter(item => item.pack_id).reduce((groups, item) => {
+    const key = item.pack_group || `pack-${item.pack_id}`
+    if (!groups[key]) groups[key] = { key, pack_id: item.pack_id, pack_name: item.pack_name, items: [] }
+    groups[key].items.push(item)
+    return groups
+  }, {}))
+  const regularItems = cart.filter(item => !item.pack_id)
+  const updatePackQty = (group, delta) => {
+    const current = Math.max(1, Math.round(group.items[0].quantity / (group.items[0].pack_unit_quantity || 1)))
+    const nextQty = Math.max(1, current + delta)
+    updateCart(cart.map(item => group.items.some(groupItem => groupItem.key === item.key)
+      ? { ...item, quantity: (item.pack_unit_quantity || 1) * nextQty, pack_quantity: nextQty }
+      : item))
+  }
+  const removePack = (group) => updateCart(cart.filter(item => !group.items.some(groupItem => groupItem.key === item.key)))
 
-  const fmt = (n) => `S/ ${(n || 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}`
+  const fmt = (n) => `S/ ${(n || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
   // El cupón descuenta sobre el subtotal; el IGV se calcula sobre lo ya descontado
   const discount = coupon ? Math.round(subtotal * coupon.percent) / 100 : 0
@@ -106,7 +121,43 @@ export default function CartPage() {
           <div className="cart-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 32 }}>
             {/* Items */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {cart.map(item => (
+              {packGroups.map(group => {
+                const packQty = Math.max(1, Math.round(group.items[0].quantity / (group.items[0].pack_unit_quantity || 1)))
+                const packTotal = group.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+                const regularTotal = group.items.reduce((sum, item) => sum + (item.regular_price || item.price) * item.quantity, 0)
+                return (
+                <div key={group.key} style={{ background: '#fff', borderRadius: 14, border: '1px solid #EEC5C5', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: '#FDF0F0', borderBottom: '1px solid #EEC5C5' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 9, color: '#C49A8A', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 3 }}>Pack promocional</div>
+                      <div style={{ fontFamily: "'Josefin Sans', sans-serif", fontSize: 15, color: '#1E1A1A', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{group.pack_name}</div>
+                      <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: '#5B7B53', marginTop: 3 }}>Ahorras {fmt(regularTotal - packTotal)}</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <button onClick={() => updatePackQty(group, -1)} style={{ width: 28, height: 28, border: '1px solid #EDE8E4', borderRadius: 6, background: '#fff', cursor: 'pointer' }}><Minus size={11} /></button>
+                      <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, minWidth: 20, textAlign: 'center' }}>{packQty}</span>
+                      <button onClick={() => updatePackQty(group, 1)} style={{ width: 28, height: 28, border: '1px solid #EDE8E4', borderRadius: 6, background: '#fff', cursor: 'pointer' }}><Plus size={11} /></button>
+                    </div>
+                    <div style={{ minWidth: 88, textAlign: 'right', fontFamily: "'Inter', sans-serif", fontSize: 14, fontWeight: 600 }}>{fmt(packTotal)}</div>
+                    <button onClick={() => removePack(group)} title="Eliminar pack" style={{ background: 'none', border: 'none', color: '#C49A8A', cursor: 'pointer' }}><Trash2 size={14} /></button>
+                  </div>
+                  <div style={{ padding: '8px 16px' }}>
+                    {group.items.map(item => (
+                      <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 0', borderBottom: '1px solid #F3EEE9' }}>
+                        <div style={{ width: 46, height: 46, borderRadius: 7, overflow: 'hidden', background: '#FDF0F0', flexShrink: 0 }}>
+                          {item.image ? <img src={getImageUrl(item.image)} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <ShoppingBag size={15} color="#EEC5C5" />}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: '#1E1A1A', fontWeight: 500 }}>{item.name}</div>
+                          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: '#C49A8A', marginTop: 2 }}>{item.variant_color} · × {item.quantity}</div>
+                        </div>
+                        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: '#6B7280' }}>{fmt(item.price * item.quantity)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )})}
+              {regularItems.map(item => (
                 <div key={item.key} className="cart-item" style={{
                   display: 'flex', alignItems: 'center', gap: 16,
                   background: '#fff', borderRadius: 14, padding: '16px',

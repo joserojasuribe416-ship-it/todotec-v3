@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
 from ..database import get_db
-from ..models import Order, Sale, SaleItem, Product, ProductVariant, AccountingEntry, CompanyConfig, Coupon
+from ..models import Order, Sale, SaleItem, Product, ProductVariant, AccountingEntry, CompanyConfig, Coupon, Pack
 from ..utils import create_reversal_entries
 from .auth import get_current_user
 from .customers import get_optional_customer
@@ -42,6 +42,7 @@ def _create_sale_from_order(order: Order, db: Session):
         product_id = item_json.get("product_id")
         quantity = int(item_json.get("quantity", 1))
         price = float(item_json.get("price", 0.0))
+        catalog_price = float(item_json.get("catalog_price", price))
         variant_color = item_json.get("variant_color", "")
 
         product = db.query(Product).filter(Product.id == product_id).first()
@@ -69,7 +70,7 @@ def _create_sale_from_order(order: Order, db: Session):
             "variant": variant,
             "quantity": quantity,
             "price": final_price,
-            "catalog_price": price,
+            "catalog_price": catalog_price,
             "subtotal": item_subtotal,
         })
 
@@ -184,6 +185,8 @@ class OrderItemIn(BaseModel):
     price: float
     variant_color: Optional[str] = ""
     image: Optional[str] = ""
+    pack_id: Optional[int] = None
+    pack_name: Optional[str] = ""
 
 class CustomerIn(BaseModel):
     nombre: str
@@ -232,27 +235,109 @@ class CreateQROrderIn(BaseModel):
     coupon_code: Optional[str] = ""
 
 
-def _validate_stock(items, db: Session):
-    """Rechaza el pedido ANTES de cobrar si no hay stock suficiente."""
+def _canonicalize_items(items, db: Session):
+    """Reconstruye composición, precios y stock desde la base de datos."""
+    canonical = []
+    stock_required = {}
+    pack_groups = {}
+
+    def add_stock(product, variant, quantity):
+        key = f"variant:{variant.id}" if variant else f"product:{product.id}"
+        required = stock_required.setdefault(key, {
+            "product": product, "variant": variant, "quantity": 0,
+        })
+        required["quantity"] += quantity
+
     for item in items:
-        product = db.query(Product).filter(Product.id == item.product_id, Product.is_active == True).first()
+        if item.pack_id:
+            pack_groups.setdefault(item.pack_id, []).append(item)
+            continue
+        product = db.query(Product).filter(
+            Product.id == item.product_id,
+            Product.is_active == True,
+            Product.show_in_store == True,
+        ).first()
         if not product:
             raise HTTPException(status_code=400, detail=f"El producto '{item.name}' ya no está disponible")
+        variant = None
         if item.variant_color:
             variant = db.query(ProductVariant).filter(
-                ProductVariant.product_id == item.product_id,
+                ProductVariant.product_id == product.id,
                 ProductVariant.color == item.variant_color,
             ).first()
-            available = variant.stock if variant else product.total_stock
-            label = f"{product.name} ({item.variant_color})"
-        else:
-            available = product.total_stock
-            label = product.name
-        if available < item.quantity:
+        if not variant and product.variants:
+            variant = product.variants[0]
+        quantity = max(1, int(item.quantity))
+        price = round(float(item.price or 0), 2)
+        canonical.append({
+            "product_id": product.id, "name": product.name, "quantity": quantity,
+            "price": price, "catalog_price": price,
+            "variant_color": variant.color if variant else "",
+            "image": item.image or "", "pack_id": None, "pack_name": "",
+        })
+        add_stock(product, variant, quantity)
+
+    for pack_id, submitted in pack_groups.items():
+        pack = db.query(Pack).filter(
+            Pack.id == pack_id,
+            Pack.is_active == True,
+            Pack.show_in_store == True,
+        ).first()
+        if not pack or not pack.items:
+            raise HTTPException(status_code=400, detail="El pack ya no está disponible")
+        submitted_map = {
+            (item.product_id, item.variant_color or ""): item for item in submitted
+        }
+        expected_keys = {
+            (row.product_id, row.variant.color if row.variant else "") for row in pack.items
+        }
+        if set(submitted_map) != expected_keys:
+            raise HTTPException(status_code=400, detail=f"El contenido del pack '{pack.name}' fue modificado")
+
+        multiplier = None
+        for row in pack.items:
+            submitted_item = submitted_map[(row.product_id, row.variant.color if row.variant else "")]
+            if submitted_item.quantity < 1 or submitted_item.quantity % row.quantity != 0:
+                raise HTTPException(status_code=400, detail=f"Cantidad inválida para el pack '{pack.name}'")
+            current = submitted_item.quantity // row.quantity
+            if multiplier is None:
+                multiplier = current
+            elif multiplier != current:
+                raise HTTPException(status_code=400, detail=f"El pack '{pack.name}' debe comprarse completo")
+
+        factor = max(0.0, 1.0 - float(pack.discount_percent or 0) / 100)
+        for row in sorted(pack.items, key=lambda value: (value.order, value.id)):
+            product = row.product
+            variant = row.variant
+            if not product or not product.is_active or not product.show_in_store or not variant:
+                raise HTTPException(status_code=400, detail=f"Un producto del pack '{pack.name}' ya no está disponible")
+            quantity = row.quantity * multiplier
+            catalog_price = round(float(product.sale_price or 0), 2)
+            price = round(catalog_price * factor, 2)
+            submitted_item = submitted_map[(product.id, variant.color)]
+            canonical.append({
+                "product_id": product.id, "name": product.name, "quantity": quantity,
+                "price": price, "catalog_price": catalog_price,
+                "variant_color": variant.color,
+                "image": submitted_item.image or variant.image_url or "",
+                "pack_id": pack.id, "pack_name": pack.name,
+            })
+            add_stock(product, variant, quantity)
+
+    for required in stock_required.values():
+        product = required["product"]
+        variant = required["variant"]
+        available = variant.stock if variant else product.total_stock
+        if available < required["quantity"]:
+            label = f"{product.name} ({variant.color})" if variant else product.name
             raise HTTPException(
                 status_code=400,
-                detail=f"Stock insuficiente para {label}: quedan {available} unidad(es) y pediste {item.quantity}",
+                detail=f"Stock insuficiente para {label}: quedan {available} unidad(es) y necesitas {required['quantity']}",
             )
+    if not canonical:
+        raise HTTPException(status_code=400, detail="El pedido no contiene productos")
+    subtotal = round(sum(item["price"] * item["quantity"] for item in canonical), 2)
+    return canonical, subtotal
 
 
 def _release_coupon(order: Order, db: Session):
@@ -266,7 +351,7 @@ def _release_coupon(order: Order, db: Session):
             logger.info("Cupón %s liberado (pedido #%s cancelado/eliminado)", coupon.code, 10000 + order.id)
 
 
-def _resolve_coupon_and_customer(data, request: Request, db: Session):
+def _resolve_coupon_and_customer(data, request: Request, db: Session, subtotal: float):
     """Identifica al cliente (si hay sesión) y valida/consume el cupón.
     Devuelve (customer_id, coupon, discount). El descuento se calcula
     SIEMPRE en el servidor — nunca se confía en el monto del navegador."""
@@ -280,7 +365,7 @@ def _resolve_coupon_and_customer(data, request: Request, db: Session):
             raise HTTPException(status_code=400, detail="Cupón inválido o ya utilizado")
         if not customer or coupon.customer_id != customer.id:
             raise HTTPException(status_code=400, detail="Inicia sesión con la cuenta dueña del cupón")
-        discount = round(data.subtotal * float(coupon.percent) / 100, 2)
+        discount = round(subtotal * float(coupon.percent) / 100, 2)
     return (customer.id if customer else None), coupon, discount
 
 
@@ -302,13 +387,12 @@ def create_preference(data: CreatePreferenceIn, request: Request, db: Session = 
         backend_url = f"https://{backend_url}"
     sandbox = os.getenv("MP_SANDBOX", "true").lower() == "true"
 
-    # Stock validado ANTES de mandar al cliente a pagar
-    _validate_stock(data.items, db)
+    canonical_items, canonical_subtotal = _canonicalize_items(data.items, db)
     # Cliente registrado + cupón (validado y calculado en el servidor)
-    customer_id, coupon, discount = _resolve_coupon_and_customer(data, request, db)
-    discounted_subtotal = round(data.subtotal - discount, 2)
+    customer_id, coupon, discount = _resolve_coupon_and_customer(data, request, db, canonical_subtotal)
+    discounted_subtotal = round(canonical_subtotal - discount, 2)
     total = round(discounted_subtotal * 1.18 + data.shipping_cost, 2)
-    factor = (discounted_subtotal / data.subtotal) if data.subtotal > 0 else 1.0
+    factor = (discounted_subtotal / canonical_subtotal) if canonical_subtotal > 0 else 1.0
 
     # Guardar orden en DB (pending)
     order = Order(
@@ -320,8 +404,8 @@ def create_preference(data: CreatePreferenceIn, request: Request, db: Session = 
         customer_celular=data.customer.celular,
         delivery_type=data.delivery.type,
         delivery_data=data.delivery.model_dump(),
-        items=[i.model_dump() for i in data.items],
-        subtotal=data.subtotal,
+        items=canonical_items,
+        subtotal=canonical_subtotal,
         shipping_cost=data.shipping_cost,
         total=total,
         customer_id=customer_id,
@@ -337,13 +421,13 @@ def create_preference(data: CreatePreferenceIn, request: Request, db: Session = 
     # Construir items para MP (precios con descuento proporcional si hay cupón)
     mp_items = [
         {
-            "id": str(item.product_id),
-            "title": item.name + (f" – {item.variant_color}" if item.variant_color else ""),
-            "quantity": item.quantity,
-            "unit_price": round(item.price * factor, 2),
+            "id": str(item["product_id"]),
+            "title": (f"{item['pack_name']}: " if item.get("pack_name") else "") + item["name"] + (f" – {item['variant_color']}" if item["variant_color"] else ""),
+            "quantity": item["quantity"],
+            "unit_price": round(item["price"] * factor, 2),
             "currency_id": "PEN",
         }
-        for item in data.items
+        for item in canonical_items
     ]
 
     igv = round(discounted_subtotal * 0.18, 2)
@@ -513,9 +597,9 @@ def list_orders(db: Session = Depends(get_db)):
 @router.post("/create-qr")
 def create_qr_order(data: CreateQROrderIn, request: Request, db: Session = Depends(get_db)):
     """Crea un pedido con pago por QR (pendiente de confirmación por admin)."""
-    _validate_stock(data.items, db)
-    customer_id, coupon, discount = _resolve_coupon_and_customer(data, request, db)
-    discounted_subtotal = round(data.subtotal - discount, 2)
+    canonical_items, canonical_subtotal = _canonicalize_items(data.items, db)
+    customer_id, coupon, discount = _resolve_coupon_and_customer(data, request, db, canonical_subtotal)
+    discounted_subtotal = round(canonical_subtotal - discount, 2)
     total = round(discounted_subtotal * 1.18 + data.shipping_cost, 2)
 
     order = Order(
@@ -529,8 +613,8 @@ def create_qr_order(data: CreateQROrderIn, request: Request, db: Session = Depen
         customer_celular=data.customer.celular,
         delivery_type=data.delivery.type,
         delivery_data=data.delivery.model_dump(),
-        items=[i.model_dump() for i in data.items],
-        subtotal=data.subtotal,
+        items=canonical_items,
+        subtotal=canonical_subtotal,
         shipping_cost=data.shipping_cost,
         total=total,
         mp_preference_id="",

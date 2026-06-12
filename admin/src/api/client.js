@@ -97,6 +97,17 @@ export const uploadVariantImage = async (variantId, file) => {
 }
 export const deleteVariantImage = (variantId) => api.delete(`/products/variants/${variantId}/image`).then(r => r.data)
 
+// ── Packs ────────────────────────────────────────────────────────────
+export const getPacks = () => api.get('/packs/all').then(r => r.data)
+export const createPack = (data) => api.post('/packs', data).then(r => r.data)
+export const updatePack = (id, data) => api.put(`/packs/${id}`, data).then(r => r.data)
+export const deletePack = (id) => api.delete(`/packs/${id}`).then(r => r.data)
+export const uploadPackImage = async (id, file) => {
+  const fd = new FormData(); fd.append('file', await compressImage(file, 1800))
+  return api.post(`/packs/${id}/image`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data)
+}
+export const deletePackImage = (id) => api.delete(`/packs/${id}/image`).then(r => r.data)
+
 // ── Purchases ─────────────────────────────────────────────────────────
 export const getPurchases = () => api.get('/purchases').then(r => r.data)
 export const getPurchase = (id) => api.get(`/purchases/${id}`).then(r => r.data)

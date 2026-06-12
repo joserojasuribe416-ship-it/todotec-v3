@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
-from .routers import config, suppliers, products, purchases, sales, accounting, dashboard, categories, cobranzas, brands, necessities, appearance, revalidate, orders, auth, customers, clients
+from .routers import config, suppliers, products, packs, purchases, sales, accounting, dashboard, categories, cobranzas, brands, necessities, appearance, revalidate, orders, auth, customers, clients
 from .routers.auth import get_current_user, require_master, require_owner
 import os
 import logging
@@ -108,6 +108,12 @@ def _run_migrations():
         "ALTER TABLE products ADD COLUMN IF NOT EXISTS usage_guide TEXT DEFAULT ''",
         "ALTER TABLE products ADD COLUMN IF NOT EXISTS skin_type TEXT DEFAULT ''",
         "ALTER TABLE products ADD COLUMN IF NOT EXISTS specifications TEXT DEFAULT ''",
+        # ── Packs promocionales compuestos por productos existentes ──
+        "CREATE TABLE IF NOT EXISTS packs (id SERIAL PRIMARY KEY, name VARCHAR NOT NULL, slug VARCHAR UNIQUE NOT NULL, subtitle VARCHAR DEFAULT '', description TEXT DEFAULT '', target_audience TEXT DEFAULT '', benefits TEXT DEFAULT '', usage_guide TEXT DEFAULT '', recommendations TEXT DEFAULT '', image_url VARCHAR DEFAULT '', discount_percent NUMERIC(5,2) DEFAULT 0, is_active BOOLEAN DEFAULT TRUE, show_in_store BOOLEAN DEFAULT TRUE, created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP)",
+        "CREATE TABLE IF NOT EXISTS pack_items (id SERIAL PRIMARY KEY, pack_id INTEGER NOT NULL REFERENCES packs(id) ON DELETE CASCADE, product_id INTEGER NOT NULL REFERENCES products(id), variant_id INTEGER NOT NULL REFERENCES product_variants(id), quantity INTEGER NOT NULL DEFAULT 1, \"order\" INTEGER DEFAULT 0)",
+        "CREATE INDEX IF NOT EXISTS idx_packs_store ON packs (is_active, show_in_store)",
+        "CREATE INDEX IF NOT EXISTS idx_packitems_pack ON pack_items (pack_id)",
+        "CREATE INDEX IF NOT EXISTS idx_packitems_product ON pack_items (product_id)",
     ]
     # Cada migración en su propia transacción: si una falla, las demás
     # se ejecutan igual y el error queda registrado en la bitácora.
@@ -170,6 +176,7 @@ app.include_router(brands.router)
 app.include_router(necessities.router)
 app.include_router(config.router)
 app.include_router(products.router)
+app.include_router(packs.router)
 app.include_router(categories.router)
 app.include_router(appearance.router)
 app.include_router(orders.router)
@@ -197,7 +204,7 @@ def reset_total(db=None):
         Sale, SaleItem, Purchase, PurchaseItem,
         Product, ProductVariant, ProductImage,
         Supplier, AccountingEntry, CapitalContribution, CompanyConfig,
-        Order, Payment, Customer
+        Order, Payment, Customer, Pack, PackItem
     )
     db = SessionLocal()
     try:
@@ -211,6 +218,8 @@ def reset_total(db=None):
         db.query(PurchaseItem).delete()
         db.query(Purchase).delete()
         db.query(ProductImage).delete()
+        db.query(PackItem).delete()
+        db.query(Pack).delete()
         db.query(ProductVariant).delete()
         db.query(Product).delete()
         db.query(Supplier).delete()

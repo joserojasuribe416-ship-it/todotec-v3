@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import api from '../api/client'
-import { getProducts } from '../api/client'
+import { getPacks, getProducts } from '../api/client'
 import { Save, Image, X, Trash2, Search, GripVertical, Eye, EyeOff, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -49,18 +49,26 @@ function AnnouncementSection() {
 
 // ── Banners ───────────────────────────────────────────────────────────────────
 function BannerEditModal({ banner, onClose, onSaved }) {
+  const currentPackSlug = banner.href?.startsWith('/packs/') ? banner.href.replace('/packs/', '') : ''
   const [form, setForm] = useState({
     tag: banner.tag, title: banner.title, subtitle: banner.subtitle,
     cta: banner.cta, href: banner.href,
     bg: banner.bg, text_bg: banner.text_bg, text_color: banner.text_color,
     tag_color: banner.tag_color, cta_bg: banner.cta_bg, cta_color: banner.cta_color,
   })
+  const [destination, setDestination] = useState(currentPackSlug ? 'pack' : 'custom')
+  const [packSlug, setPackSlug] = useState(currentPackSlug)
+  const [packs, setPacks] = useState([])
   const [uploading, setUploading] = useState(false)
+
+  useEffect(() => { getPacks().then(setPacks).catch(() => {}) }, [])
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   const save = async () => {
-    await api.put(`/appearance/banners/${banner.id}`, form)
+    const href = destination === 'pack' ? `/packs/${packSlug}` : form.href
+    if (destination === 'pack' && !packSlug) return toast.error('Selecciona un pack')
+    await api.put(`/appearance/banners/${banner.id}`, { ...form, href })
     toast.success('Banner guardado')
     onSaved(); onClose()
   }
@@ -121,8 +129,29 @@ function BannerEditModal({ banner, onClose, onSaved }) {
               <input className="input" value={form.tag} onChange={e => set('tag', e.target.value)} placeholder="Ej: Korean Skincare" />
             </div>
             <div>
-              <label className="label">Link del botón (href)</label>
-              <input className="input" value={form.href} onChange={e => set('href', e.target.value)} placeholder="/catalog" />
+              <label className="label">Destino del banner</label>
+              <select className="input" value={destination} onChange={e => setDestination(e.target.value)}>
+                <option value="custom">Página o enlace</option>
+                <option value="pack">Pack promocional</option>
+              </select>
+            </div>
+            <div>
+              {destination === 'pack' ? (
+                <>
+                  <label className="label">Pack</label>
+                  <select className="input" value={packSlug} onChange={e => setPackSlug(e.target.value)}>
+                    <option value="">Selecciona un pack</option>
+                    {packs.filter(pack => pack.is_active && pack.show_in_store).map(pack => (
+                      <option key={pack.id} value={pack.slug}>{pack.name}</option>
+                    ))}
+                  </select>
+                </>
+              ) : (
+                <>
+                  <label className="label">Link del botón (href)</label>
+                  <input className="input" value={form.href} onChange={e => set('href', e.target.value)} placeholder="/catalog" />
+                </>
+              )}
             </div>
             <div className="col-span-2">
               <label className="label">Título (usa \n para salto de línea)</label>

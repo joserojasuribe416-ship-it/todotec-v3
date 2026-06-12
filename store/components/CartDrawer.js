@@ -10,7 +10,7 @@ import { getImageUrl } from '../lib/api'
 import { loadCart, storeCart } from '../lib/cartStorage'
 import { getAppliedCoupon } from '../lib/customer'
 
-const fmt = (n) => `S/ ${(n || 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}`
+const fmt = (n) => `S/ ${(n || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
 export default function CartDrawer() {
   const router = useRouter()
@@ -48,11 +48,22 @@ export default function CartDrawer() {
   }
 
   const updateQty = (key, delta) => {
-    const next = cart.map(i => i.key === key ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i)
+    const target = cart.find(i => i.key === key)
+    let next
+    if (target?.pack_id) {
+      const current = Math.max(1, Math.round(target.quantity / (target.pack_unit_quantity || 1)))
+      const nextPackQty = Math.max(1, current + delta)
+      next = cart.map(i => i.pack_id === target.pack_id
+        ? { ...i, quantity: (i.pack_unit_quantity || 1) * nextPackQty, pack_quantity: nextPackQty }
+        : i)
+    } else {
+      next = cart.map(i => i.key === key ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i)
+    }
     setCart(next); storeCart(next)
   }
   const remove = (key) => {
-    const next = cart.filter(i => i.key !== key)
+    const target = cart.find(i => i.key === key)
+    const next = target?.pack_id ? cart.filter(i => i.pack_id !== target.pack_id) : cart.filter(i => i.key !== key)
     setCart(next); storeCart(next)
   }
 
@@ -110,12 +121,13 @@ export default function CartDrawer() {
                   : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ShoppingBag size={16} color="#EEC5C5" /></div>}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
+                {item.pack_id && <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 8, color: '#C49A8A', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>{item.pack_name}</div>}
                 <div style={{ fontFamily: "'Josefin Sans', sans-serif", fontWeight: 300, fontSize: 12, color: '#1E1A1A', letterSpacing: '0.03em', textTransform: 'uppercase', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
                 {item.variant_color && <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10, color: '#C49A8A', marginTop: 2 }}>{item.variant_color}</div>}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <button onClick={() => updateQty(item.key, -1)} style={{ width: 24, height: 24, border: '1px solid #EDE8E4', borderRadius: 5, background: '#FAF7F4', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1E1A1A' }}><Minus size={10} /></button>
-                    <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 500, minWidth: 18, textAlign: 'center' }}>{item.quantity}</span>
+                    <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 500, minWidth: 18, textAlign: 'center' }}>{item.pack_id ? Math.max(1, Math.round(item.quantity / (item.pack_unit_quantity || 1))) : item.quantity}</span>
                     <button onClick={() => updateQty(item.key, 1)} style={{ width: 24, height: 24, border: '1px solid #EDE8E4', borderRadius: 5, background: '#FAF7F4', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1E1A1A' }}><Plus size={10} /></button>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

@@ -56,6 +56,22 @@ export async function fetchBanners() {
   } catch { return [] }
 }
 
+export async function fetchPack(slug) {
+  try {
+    const res = await fetch(`${API_BASE}/api/packs/${slug}`, { cache: 'force-cache' })
+    if (!res.ok) return null
+    return res.json()
+  } catch { return null }
+}
+
+export async function fetchPacks() {
+  try {
+    const res = await fetch(`${API_BASE}/api/packs`, { cache: 'force-cache' })
+    if (!res.ok) return []
+    return res.json()
+  } catch { return [] }
+}
+
 export async function fetchProductsByIds(ids = []) {
   if (ids.length === 0) return []
   const all = await fetchProducts({ store_only: 'true' })

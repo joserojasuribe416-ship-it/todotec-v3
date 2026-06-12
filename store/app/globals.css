@@ -232,6 +232,7 @@
 
   /* Detalle de producto: galería arriba, info abajo */
   .pd-grid            { grid-template-columns: 1fr !important; gap: 24px !important; }
+  .pack-hero-grid     { grid-template-columns: 1fr !important; gap: 24px !important; }
 
   /* Carrito: items arriba, resumen abajo; filas que se acomodan */
   .cart-layout        { grid-template-columns: 1fr !important; gap: 20px !important; }

@@ -238,3 +238,59 @@ def test_renombrar_categoria_actualiza_productos():
 
     client.delete(f"/api/categories/{cat_id}", headers=H)
     assert client.get(f"/api/products/{pid}").json()["category"] == ""
+
+
+def test_pack_recalcula_precio_y_exige_composicion_completa():
+    H = _owner()
+    product = next(
+        product
+        for product in client.get("/api/products").json()
+        if product["variants"]
+    )
+    variant = product["variants"][0]
+
+    r = client.post("/api/packs", json={
+        "name": "Pack Test",
+        "subtitle": "Oferta segura",
+        "description": "Descripción",
+        "target_audience": "Piel de prueba",
+        "benefits": "Beneficios",
+        "usage_guide": "Paso 1 y paso 2",
+        "recommendations": "Usar diariamente",
+        "discount_percent": 20,
+        "items": [{
+            "product_id": product["id"],
+            "variant_id": variant["id"],
+            "quantity": 2,
+        }],
+    }, headers=H)
+    assert r.status_code == 201
+    pack = r.json()
+    assert pack["pack_price"] == round(float(product["sale_price"]) * 2 * 0.8, 2)
+
+    # El navegador intenta mandar precio cero: el backend lo reemplaza por el precio real.
+    payload = {
+        "items": [{
+            "product_id": product["id"],
+            "name": "Nombre manipulado",
+            "quantity": 2,
+            "price": 0,
+            "variant_color": variant["color"],
+            "pack_id": pack["id"],
+            "pack_name": pack["name"],
+        }],
+        "customer": {"nombre": "Pack", "apellido": "Test", "email": "pack@test.pe", "dni": "12345678", "celular": "999999999"},
+        "delivery": {"type": "pickup"},
+        "subtotal": 0,
+        "shipping_cost": 0,
+        "total": 0,
+    }
+    r = client.post("/api/orders/create-qr", json=payload)
+    assert r.status_code == 200
+    assert r.json()["total"] == round(pack["pack_price"] * 1.18, 2)
+
+    # No se puede comprar media composición y conservar el descuento.
+    payload["items"][0]["quantity"] = 1
+    r = client.post("/api/orders/create-qr", json=payload)
+    assert r.status_code == 400
+    assert "Cantidad inválida" in r.json()["detail"]

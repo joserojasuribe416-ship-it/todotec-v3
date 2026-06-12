@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy.orm import Session, selectinload
 from typing import List, Optional
 from ..database import get_db
-from ..models import Product, ProductVariant, ProductImage
+from ..models import Product, ProductVariant, ProductImage, PackItem
 from ..schemas import ProductCreate, ProductUpdate, ProductOut, VariantCreate, VariantOut
 from ..cloudinary_client import upload_image as cld_upload, delete_image as cld_delete
 from .auth import get_current_user
@@ -101,6 +101,8 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     p = db.query(Product).filter(Product.id == product_id).first()
     if not p:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
+    if db.query(PackItem).filter(PackItem.product_id == product_id).first():
+        raise HTTPException(status_code=400, detail="El producto pertenece a un pack. Retíralo del pack antes de eliminarlo")
     db.delete(p)
     db.commit()
     return {"ok": True}
@@ -163,6 +165,8 @@ def delete_variant(variant_id: int, db: Session = Depends(get_db)):
     v = db.query(ProductVariant).filter(ProductVariant.id == variant_id).first()
     if not v:
         raise HTTPException(status_code=404, detail="Variante no encontrada")
+    if db.query(PackItem).filter(PackItem.variant_id == variant_id).first():
+        raise HTTPException(status_code=400, detail="La variante pertenece a un pack. Retírala del pack antes de eliminarla")
     db.delete(v)
     db.commit()
     return {"ok": True}

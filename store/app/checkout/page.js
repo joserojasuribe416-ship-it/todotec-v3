@@ -48,7 +48,7 @@ const UBIGEO = {
 const DEPARTMENTS = Object.keys(UBIGEO).sort()
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const fmt = (n) => `S/ ${(n || 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}`
+const fmt = (n) => `S/ ${(n || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
 const inputStyle = {
   width: '100%', padding: '11px 14px', border: '1px solid #EDE8E4', borderRadius: 8,
@@ -252,7 +252,11 @@ export default function CheckoutPage() {
       ? { type: 'pickup', point_name: pickup.name, point_address: pickup.address }
       : { type: 'delivery', department: dept, province, district, address }
     return {
-      items: cart.map(i => ({ product_id: i.id || 0, name: i.name, quantity: i.quantity, price: i.price, variant_color: i.variant_color || '', image: i.image || '' })),
+      items: cart.map(i => ({
+        product_id: i.id || 0, name: i.name, quantity: i.quantity, price: i.price,
+        variant_color: i.variant_color || '', image: i.image || '',
+        pack_id: i.pack_id || null, pack_name: i.pack_name || '',
+      })),
       customer: { ...customer },
       delivery,
       subtotal: Math.round(subtotal * 100) / 100,

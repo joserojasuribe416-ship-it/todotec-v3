@@ -121,6 +121,43 @@ class ProductImage(Base):
     product = relationship("Product", back_populates="images")
 
 
+class Pack(Base):
+    __tablename__ = "packs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    slug = Column(String, unique=True, nullable=False)
+    subtitle = Column(String, default="")
+    description = Column(Text, default="")
+    target_audience = Column(Text, default="")
+    benefits = Column(Text, default="")
+    usage_guide = Column(Text, default="")
+    recommendations = Column(Text, default="")
+    image_url = Column(String, default="")
+    discount_percent = Column(Numeric(5, 2), default=0)
+    is_active = Column(Boolean, default=True)
+    show_in_store = Column(Boolean, default=True)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())
+
+    items = relationship("PackItem", back_populates="pack", cascade="all, delete-orphan")
+
+
+class PackItem(Base):
+    __tablename__ = "pack_items"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    pack_id = Column(Integer, ForeignKey("packs.id", ondelete="CASCADE"), nullable=False)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    variant_id = Column(Integer, ForeignKey("product_variants.id"), nullable=False)
+    quantity = Column(Integer, nullable=False, default=1)
+    order = Column(Integer, default=0)
+
+    pack = relationship("Pack", back_populates="items")
+    product = relationship("Product")
+    variant = relationship("ProductVariant")
+
+
 class Purchase(Base):
     __tablename__ = "purchases"
 
